@@ -17,10 +17,23 @@ export const Login = ({ onNavigate }: LoginProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!email.trim()) {
+      setError('Email is required');
+      return;
+    }
+    if (!email.includes('@')) {
+      setError('Please enter a valid email');
+      return;
+    }
+    if (!password) {
+      setError('Password is required');
+      return;
+    }
     setLoading(true);
 
     try {
-      await signIn(email, password);
+      await signIn(email.trim(), password);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Invalid email or password');
     } finally {
@@ -34,7 +47,7 @@ export const Login = ({ onNavigate }: LoginProps) => {
     }}>
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-600 mb-2">Speak2HR</h1>
+          <h1 className="text-3xl font-bold text-blue-600 mb-2">Career Connect AI</h1>
           <p className="text-gray-500">Interview Learning Platform</p>
         </div>
 

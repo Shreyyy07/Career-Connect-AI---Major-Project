@@ -9,8 +9,10 @@ interface RegisterProps {
 export const Register = ({ onNavigate }: RegisterProps) => {
   const { signUp } = useAuth();
   const [fullName, setFullName] = useState('');
+  const [role, setRole] = useState<'candidate' | 'hr'>('candidate');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -19,10 +21,23 @@ export const Register = ({ onNavigate }: RegisterProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!fullName.trim()) {
+      setError('Full name is required');
+      return;
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
     setLoading(true);
 
     try {
-      await signUp(email, password, fullName);
+      await signUp(email, password, fullName.trim(), role);
       setSuccess(true);
       setTimeout(() => onNavigate('login'), 2000);
     } catch (err: unknown) {
@@ -38,7 +53,7 @@ export const Register = ({ onNavigate }: RegisterProps) => {
     }}>
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-600 mb-2">Speak2HR</h1>
+          <h1 className="text-3xl font-bold text-blue-600 mb-2">Career Connect AI</h1>
           <p className="text-gray-500">Create your account</p>
         </div>
 
@@ -55,6 +70,20 @@ export const Register = ({ onNavigate }: RegisterProps) => {
         )}
 
         <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-medium mb-2">
+              I am a *
+            </label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value as 'candidate' | 'hr')}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none bg-white"
+              required
+            >
+              <option value="candidate">Candidate</option>
+              <option value="hr">HR Recruiter</option>
+            </select>
+          </div>
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-medium mb-2">
               Full Name *
@@ -102,7 +131,7 @@ export const Register = ({ onNavigate }: RegisterProps) => {
                 className="w-full pl-11 pr-12 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
                 placeholder="••••••"
                 required
-                minLength={6}
+                minLength={8}
               />
               <button
                 type="button"
@@ -111,6 +140,24 @@ export const Register = ({ onNavigate }: RegisterProps) => {
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <label className="block text-gray-700 text-sm font-medium mb-2">
+              Confirm Password *
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                placeholder="••••••"
+                required
+                minLength={8}
+              />
             </div>
           </div>
 

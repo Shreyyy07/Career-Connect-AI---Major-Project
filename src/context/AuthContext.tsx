@@ -1,12 +1,11 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
+import { apiFetch, setToken, getToken } from '../lib/api';
 
 interface AuthContextType {
-  user: User | null;
+  user: { id: number; email: string; role: string; name: string } | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, fullName?: string) => Promise<void>;
+  signUp: (email: string, password: string, fullName: string, role: 'candidate' | 'hr') => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }
@@ -14,54 +13,50 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthContextType['user']>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    // v1: token presence => "authenticated"; profile endpoint will be added next.
+    const token = getToken();
+    if (!token) {
+      setUser(null);
       setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      (async () => {
-        setUser(session?.user ?? null);
-      })();
-    });
-
-    return () => subscription.unsubscribe();
+      return;
+    }
+    // Minimal user placeholder to unlock app; real profile wiring comes next.
+    setUser({ id: 0, email: 'authenticated', role: 'candidate', name: 'User' });
+    setLoading(false);
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
+    const res = await apiFetch<{ token: string }>('/api/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    setToken(res.token);
+    setUser({ id: 0, email, role: 'candidate', name: 'User' });
   };
 
-  const signUp = async (email: string, password: string, fullName?: string) => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) throw error;
-
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .insert({
-          id: data.user.id,
-          email,
-          full_name: fullName || '',
-        });
-
-      if (profileError) throw profileError;
-    }
+  const signUp = async (email: string, password: string, fullName: string, role: 'candidate' | 'hr') => {
+    const res = await apiFetch<{ token: string; userID: number }>('/api/v1/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ name: fullName, email, password, role }),
+    });
+    setToken(res.token);
+    setUser({ id: res.userID, email, role, name: fullName });
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    setToken(null);
+    setUser(null);
   };
 
   const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
-    if (error) throw error;
+    // PRD specifies OTP reset; backend endpoint will be added later.
+    // For now, keep UX consistent.
+    await Promise.resolve(email);
+    throw new Error('Password reset is not implemented yet. We will add OTP flow next.');
   };
 
   return (

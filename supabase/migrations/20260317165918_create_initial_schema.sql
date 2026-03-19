@@ -1,8 +1,8 @@
 /*
-  # Speak2HR Interview Learning Platform - Initial Schema
+  # Career Connect AI - Initial Schema
 
   ## Overview
-  Creates the foundational database structure for the interview learning platform
+  Creates the foundational database structure for the platform
   including user profiles, interviews, assessments, sessions, and statistics.
 
   ## New Tables

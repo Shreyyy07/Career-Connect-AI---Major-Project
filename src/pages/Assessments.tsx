@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { FileText, Plus, Clock, CheckCircle } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Assessment } from '../types';
+import { apiFetch } from '../lib/api';
 
 export const Assessments = () => {
   const { user } = useAuth();
@@ -17,13 +17,7 @@ export const Assessments = () => {
 
   const fetchAssessments = async () => {
     try {
-      const { data, error } = await supabase
-        .from('assessments')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const data = await apiFetch<Assessment[]>('/api/v1/assessments');
       setAssessments(data || []);
     } catch (error) {
       console.error('Error fetching assessments:', error);
@@ -34,26 +28,7 @@ export const Assessments = () => {
 
   const createNewAssessment = async () => {
     try {
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('id')
-        .eq('id', user?.id)
-        .maybeSingle();
-
-      if (!profile) {
-        alert('Please complete your profile first');
-        return;
-      }
-
-      const { error } = await supabase
-        .from('assessments')
-        .insert({
-          user_id: user?.id,
-          title: `Assessment ${assessments.length + 1}`,
-          status: 'pending',
-        });
-
-      if (error) throw error;
+      await apiFetch('/api/v1/assessments', { method: 'POST' });
       fetchAssessments();
     } catch (error) {
       console.error('Error creating assessment:', error);

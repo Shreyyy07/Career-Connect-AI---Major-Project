@@ -1,12 +1,21 @@
 import { useEffect, useState } from 'react';
 import { BarChart2, TrendingUp, Award } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { Interview } from '../types';
+import { apiFetch } from '../lib/api';
+
+type InterviewRow = {
+  sessionID: string;
+  type: 'ai' | 'hr';
+  completed_at: string | null;
+  score: number;
+  feedback?: string;
+  evalID?: number | null;
+  reportURL?: string | null;
+};
 
 export const Reports = () => {
   const { user } = useAuth();
-  const [interviews, setInterviews] = useState<Interview[]>([]);
+  const [interviews, setInterviews] = useState<InterviewRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,14 +26,7 @@ export const Reports = () => {
 
   const fetchInterviews = async () => {
     try {
-      const { data, error } = await supabase
-        .from('interviews')
-        .select('*')
-        .eq('user_id', user?.id)
-        .eq('status', 'completed')
-        .order('completed_at', { ascending: false });
-
-      if (error) throw error;
+      const data = await apiFetch<InterviewRow[]>('/api/v1/candidate/history');
       setInterviews(data || []);
     } catch (error) {
       console.error('Error fetching interviews:', error);
@@ -33,9 +35,8 @@ export const Reports = () => {
     }
   };
 
-  const averageScore = interviews.length > 0
-    ? interviews.reduce((sum, interview) => sum + (interview.score || 0), 0) / interviews.length
-    : 0;
+  const averageScore =
+    interviews.length > 0 ? interviews.reduce((sum, interview) => sum + (interview.score || 0), 0) / interviews.length : 0;
 
   if (loading) {
     return (
@@ -116,7 +117,7 @@ export const Reports = () => {
               </thead>
               <tbody>
                 {interviews.map((interview) => (
-                  <tr key={interview.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <tr key={interview.sessionID} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4 text-sm text-gray-900">
                       {interview.completed_at
                         ? new Date(interview.completed_at).toLocaleDateString()
@@ -143,7 +144,19 @@ export const Reports = () => {
                       </span>
                     </td>
                     <td className="py-3 px-4 text-sm text-gray-600">
-                      {interview.feedback || 'No feedback available'}
+                      <div className="flex items-center justify-between gap-3">
+                        <span>{interview.feedback || 'No feedback available'}</span>
+                        {interview.reportURL && (
+                          <a
+                            href={`http://127.0.0.1:8000${interview.reportURL}`}
+                            className="text-blue-600 hover:underline whitespace-nowrap"
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Download PDF
+                          </a>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

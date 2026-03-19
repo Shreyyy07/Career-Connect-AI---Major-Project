@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { User, Mail, Save } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { apiFetch } from '../lib/api';
 
 export const Profile = () => {
   const { user } = useAuth();
@@ -19,18 +19,9 @@ export const Profile = () => {
 
   const fetchProfile = async () => {
     try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user?.id)
-        .maybeSingle();
-
-      if (error) throw error;
-
-      if (data) {
-        setFullName(data.full_name || '');
-        setEmail(data.email || '');
-      }
+      const data = await apiFetch<{ id: number; email: string; name: string; role: string }>('/api/v1/profile');
+      setFullName(data.name || '');
+      setEmail(data.email || '');
     } catch (error) {
       console.error('Error fetching profile:', error);
     } finally {
@@ -44,15 +35,10 @@ export const Profile = () => {
     setMessage('');
 
     try {
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({
-          full_name: fullName,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user?.id);
-
-      if (error) throw error;
+      await apiFetch('/api/v1/profile', {
+        method: 'PUT',
+        body: JSON.stringify({ name: fullName }),
+      });
 
       setMessage('Profile updated successfully!');
       setTimeout(() => setMessage(''), 3000);

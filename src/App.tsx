@@ -9,6 +9,7 @@ import { InterviewSelection } from './pages/InterviewSelection';
 import { Assessments } from './pages/Assessments';
 import { Reports } from './pages/Reports';
 import { Profile } from './pages/Profile';
+import { ResumeMatch } from './pages/ResumeMatch';
 
 function App() {
   const { user, loading } = useAuth();
@@ -41,6 +42,8 @@ function App() {
         return <InterviewSelection onNavigate={setAppPage} />;
       case 'assessments':
         return <Assessments />;
+      case 'resume-match':
+        return <ResumeMatch />;
       case 'reports':
         return <Reports />;
       case 'profile':
