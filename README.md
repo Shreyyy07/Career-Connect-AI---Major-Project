@@ -348,7 +348,7 @@ MIT — see [LICENSE](LICENSE) for details.
 
 <div align="center">
 
-Built with ❤️ by **Shrey** · Powered by **GPT-4.1**, **Doc2Vec** & **FastAPI**
+Built with ❤️ by **Shrey**
 
 ⭐ Star this repo if you find it useful!
 
