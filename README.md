@@ -34,10 +34,10 @@
 | 🧠 **Semantic Matching** | Doc2Vec cosine similarity + GPT-4.1 hybrid score (FR-4.1, 4.4) |
 | 🎨 **Match Score UI** | Circular progress rings, colour-coded tier (Green / Amber / Red) (FR-4.2) |
 | 🔍 **Skill Overlap** | Matched, missing, and extra skills (FR-4.3) |
-| 📊 **Recruiter View** | Sortable & filterable ranked candidate table (FR-4.5) |
+| 📊 **Recruiter View** | Sortable and filterable ranked candidate table (FR-4.5) |
 | 🗺️ **Skill Gap Analysis** | AI-detected missing skills with impact ranking (FR-5.1, 5.3) |
 | 📚 **Learning Recommendations** | GPT-4.1 course names, topic descriptions, estimated time (FR-5.2) |
-| 📖 **Smart Article Redirect** | "Start Learning →" opens best GPT-chosen tutorial in new tab |
+| 📖 **Smart Article Redirect** | Start Learning opens best GPT-chosen tutorial in new tab |
 | ✅ **Progress Tracking** | Mark skills In Progress / Completed; full event history (FR-5.4) |
 | 🤖 **AI Interview** | Dynamic JD-contextualised question generation via GPT-4.1 RAG |
 
@@ -59,72 +59,57 @@
 
 ```mermaid
 graph TB
-    subgraph Frontend["🖥️ Frontend (React + Vite + Tailwind)"]
+    subgraph FE["Frontend - React + Vite + Tailwind"]
         UI_Auth[Auth Pages]
         UI_Dashboard[Dashboard]
-        UI_Match[Resume & Job Match]
+        UI_Match[Resume Match]
         UI_Interview[AI Interview]
         UI_Reports[Reports]
     end
 
-    subgraph Backend["⚙️ Backend (FastAPI)"]
-        direction TB
-        API[REST API :8000]
+    subgraph BE["Backend - FastAPI"]
+        API[REST API port 8000]
 
         subgraph Routers["Routers"]
-<<<<<<< HEAD
-            R_Auth["/auth"]
-            R_Resume["/resume"]
-            R_JD["/jd"]
-            R_Match["/match"]
-            R_Interview["/interview"]
-            R_Eval["/evaluation"]
-            R_Rec["/recommendations"]
-            R_Report["/report"]
-            R_HR["/hr"]
-=======
-            R_Auth[/auth]
-            R_Resume[/resume]
-            R_JD[/jd]
-            R_Match[/match]
-            R_Interview[/interview]
-            R_Eval[/evaluation]
-            R_Rec[/recommendations]
-            R_Report[/report]
-            R_HR[/hr]
->>>>>>> f06da706347c84a58cc0c2d750d86acddf231d37
+            R_Auth["auth"]
+            R_Resume["resume"]
+            R_JD["jd"]
+            R_Match["match"]
+            R_Interview["interview"]
+            R_Rec["recommendations"]
+            R_HR["hr"]
         end
 
-        subgraph Services["AI Services"]
-            SVC_AI["ai_service.py — GPT-4.1 via GitHub AI"]
-            SVC_D2V["doc2vec_service.py — Doc2Vec Embeddings"]
-            SVC_GEM["gemini_service.py — Compatibility Shim"]
+        subgraph AIServices["AI Services"]
+            SVC_AI["ai_service.py - GPT-4.1"]
+            SVC_D2V["doc2vec_service.py"]
+            SVC_GEM["gemini_service.py shim"]
         end
 
-        subgraph Core["Core"]
-            SEC["security.py — JWT + Passlib"]
-            CFG["config.py — Pydantic Settings"]
-            DB_MOD["models.py — SQLAlchemy ORM"]
+        subgraph CoreLayer["Core"]
+            SEC["security.py - JWT"]
+            CFG["config.py - Settings"]
+            MODELS["models.py - ORM"]
         end
     end
 
-    subgraph Storage["💾 Storage"]
-        DB[(SQLite / PostgreSQL)]
-        FS[File System — Doc2Vec Artifacts]
+    subgraph Storage["Storage"]
+        DB[(SQLite or PostgreSQL)]
+        FS[Doc2Vec Artifacts]
     end
 
-    subgraph ExternalAI["🤖 External AI"]
-        GITHUB_AI["GitHub AI Inference — openai/gpt-4.1"]
+    subgraph ExtAI["External AI"]
+        GHAI["GitHub AI - GPT-4.1"]
     end
 
-    Frontend -->|HTTP + JWT| API
+    FE -->|HTTP + JWT| API
     API --> Routers
-    Routers --> Services
-    Routers --> Core
-    Services --> ExternalAI
-    Services --> SVC_D2V
-    Core --> DB_MOD
-    DB_MOD --> DB
+    Routers --> AIServices
+    Routers --> CoreLayer
+    AIServices --> GHAI
+    AIServices --> SVC_D2V
+    CoreLayer --> MODELS
+    MODELS --> DB
     SVC_D2V --> FS
 ```
 
@@ -136,23 +121,23 @@ graph TB
 sequenceDiagram
     participant C as Candidate
     participant API as FastAPI
-    participant D2V as Doc2Vec Service
+    participant D2V as Doc2Vec
     participant GPT as GPT-4.1
-    participant DB as SQLite
+    participant DB as Database
 
-    C->>API: POST /resume/upload (PDF/DOCX)
-    API->>D2V: Extract text → infer_embedding_csv()
-    D2V-->>API: 100-dim embedding vector
-    API->>DB: Store Resume + embedding
+    C->>API: POST resume upload PDF or DOCX
+    API->>D2V: Extract text and infer embedding
+    D2V-->>API: 100-dim vector
+    API->>DB: Store resume and embedding
 
-    C->>API: POST /match {resumeID, jobID}
-    API->>DB: Fetch Resume + JD embeddings
-    API->>API: cosine_similarity() → 0-1
+    C->>API: POST match with resumeID and jobID
+    API->>DB: Fetch both embeddings
+    API->>API: Compute cosine similarity
     API->>GPT: Semantic reasoning prompt
-    GPT-->>API: score 0-100
-    API->>API: hybrid = cosine x70% + gpt x30%
-    API->>GPT: ai_skill_recommendations(missing)
-    GPT-->>API: courses + descriptions
+    GPT-->>API: score 0 to 100
+    API->>API: hybrid = cosine 70pct + GPT 30pct
+    API->>GPT: ai_skill_recommendations for missing skills
+    GPT-->>API: courses and descriptions
     API->>DB: Persist SkillRecommendation rows
     API-->>C: hybridScore + tier + skillOverlap + recommendations
 ```
@@ -166,23 +151,24 @@ sequenceDiagram
     participant C as Candidate
     participant API as FastAPI
     participant GPT as GPT-4.1
+    participant DB as Database
 
-    C->>API: POST /interview/start {jobID, experience}
-    API->>GPT: ai_generate_question(jd_context, experience)
+    C->>API: POST interview start with jobID and experience
+    API->>GPT: ai_generate_question with JD context
     GPT-->>API: contextual first question
-    API->>DB: Store session + transcript
-    API-->>C: sessionID + firstQuestion
+    API->>DB: Store session and transcript
+    API-->>C: sessionID and firstQuestion
 
     loop Each answer turn
-        C->>API: POST /interview/answer {sessionID, transcript}
-        API->>GPT: ai_generate_question(prev_questions, answer)
+        C->>API: POST interview answer with transcript
+        API->>GPT: ai_generate_question with history
         GPT-->>API: next contextual question
         API-->>C: nextQuestion
     end
 
-    C->>API: POST /interview/end {sessionID}
-    API->>API: create_evaluation_for_session()
-    API-->>C: evalID + estimatedReady
+    C->>API: POST interview end
+    API->>API: create evaluation for session
+    API-->>C: evalID and estimatedReady
 ```
 
 ---
@@ -191,46 +177,45 @@ sequenceDiagram
 
 ```
 Career-Connect-AI/
-│
-├── src/                            # React + Vite frontend
+├── src/
 │   ├── pages/
-│   │   ├── ResumeMatch.tsx         ✅ Full matching & skill gap UI
+│   │   ├── ResumeMatch.tsx         # Full matching and skill gap UI
 │   │   ├── InterviewSelection.tsx
 │   │   ├── Dashboard.tsx
 │   │   ├── Reports.tsx
 │   │   └── Profile.tsx
-│   ├── context/AuthContext.tsx     # JWT auth state
-│   ├── lib/api.ts                  # apiFetch utility
-│   └── index.css                   # Tailwind + global styles
+│   ├── context/AuthContext.tsx
+│   ├── lib/api.ts
+│   └── index.css
 │
 └── backend/
     ├── app/
-    │   ├── main.py                 # FastAPI app + CORS + router wiring
-    │   ├── models.py               # SQLAlchemy ORM models
-    │   ├── schemas.py              # Pydantic request/response schemas
-    │   ├── db.py                   # DB engine + session factory
-    │   ├── deps.py                 # JWT auth middleware
-    │   ├── security.py             # Password hashing + JWT creation
-    │   ├── ai_service.py           🤖 GPT-4.1 unified service layer
-    │   ├── doc2vec_service.py      # Doc2Vec embed / train / infer
-    │   ├── gemini_service.py       # Shim → ai_service
-    │   ├── utils.py                # TF-IDF, token extraction, hashing
-    │   ├── core/config.py          # Pydantic settings (.env loader)
-    │   ├── artifacts/              # Pretrained doc2vec.model
+    │   ├── main.py
+    │   ├── models.py
+    │   ├── schemas.py
+    │   ├── db.py
+    │   ├── deps.py
+    │   ├── security.py
+    │   ├── ai_service.py           # GPT-4.1 unified service
+    │   ├── doc2vec_service.py
+    │   ├── gemini_service.py
+    │   ├── utils.py
+    │   ├── core/config.py
+    │   ├── artifacts/
     │   └── routers/
     │       ├── auth.py
     │       ├── resume.py
     │       ├── jd.py
-    │       ├── match.py            # Hybrid scoring engine
-    │       ├── interview.py        # GPT-4.1 RAG interview
+    │       ├── match.py
+    │       ├── interview.py
     │       ├── evaluation.py
-    │       ├── recommendations.py  # + /resource-url endpoint
+    │       ├── recommendations.py
     │       ├── report.py
     │       ├── dashboard.py
     │       ├── history.py
     │       └── profile.py
     ├── requirements.txt
-    └── .env                        # Secrets (not committed)
+    └── .env
 ```
 
 ---
@@ -242,9 +227,9 @@ Career-Connect-AI/
 | **Frontend** | React 18, Vite, TypeScript, Tailwind CSS, Lucide Icons |
 | **Backend** | FastAPI, Uvicorn, Python 3.11+ |
 | **Database** | SQLite (dev) / PostgreSQL (prod) via SQLAlchemy |
-| **AI — Primary** | GPT-4.1 via [GitHub AI Inference](https://github.com/marketplace/models) (OpenAI SDK) |
+| **AI — Primary** | GPT-4.1 via [GitHub AI Inference](https://github.com/marketplace/models) |
 | **AI — Embeddings** | Doc2Vec (Gensim) |
-| **AI — Fallback** | TF-IDF cosine similarity (always offline-safe) |
+| **AI — Fallback** | TF-IDF cosine similarity |
 | **Auth** | JWT (python-jose) + bcrypt (passlib) |
 | **File Parsing** | PyPDF2, python-docx |
 
@@ -253,25 +238,28 @@ Career-Connect-AI/
 ## ⚡ Quick Start
 
 ### Prerequisites
+
 - Python 3.11+, Node.js 18+
 - A [GitHub PAT](https://github.com/settings/tokens) with model access
 
 ### 1. Clone
+
 ```bash
 git clone https://github.com/Shreyyy07/Career-Connect-AI---Major-Project1.git
 cd Career-Connect-AI---Major-Project1
 ```
 
 ### 2. Backend
+
 ```bash
 cd backend
 python -m venv venv
 venv\Scripts\activate          # Windows
-# source venv/bin/activate     # Mac/Linux
 pip install -r requirements.txt
 ```
 
 Create `backend/.env`:
+
 ```env
 DATABASE_URL=sqlite+pysqlite:///./career_connect_ai.db
 JWT_SECRET=your-secret-key-here
@@ -283,16 +271,17 @@ GITHUB_AI_MODEL=openai/gpt-4.1
 
 ```bash
 python -m uvicorn app.main:app --reload
-# → http://localhost:8000
-# → Swagger: http://localhost:8000/docs
+# API: http://localhost:8000
+# Swagger: http://localhost:8000/docs
 ```
 
 ### 3. Frontend
+
 ```bash
 cd ..
 npm install
 npm run dev
-# → http://localhost:5173
+# App: http://localhost:5173
 ```
 
 ---
@@ -302,16 +291,16 @@ npm run dev
 | Method | Endpoint | Description |
 |---|---|---|
 | `POST` | `/api/v1/auth/register` | Register user |
-| `POST` | `/api/v1/auth/login` | Login → JWT |
-| `POST` | `/api/v1/resume/upload` | Upload PDF/DOCX |
+| `POST` | `/api/v1/auth/login` | Login and get JWT |
+| `POST` | `/api/v1/resume/upload` | Upload PDF or DOCX |
 | `POST` | `/api/v1/jd/upload` | Create JD (HR only) |
 | `POST` | `/api/v1/match` | Run hybrid AI match |
 | `GET` | `/api/v1/hr/matches` | Recruiter ranked view |
 | `GET` | `/api/v1/recommendations/{id}/resource-url` | GPT article URL |
 | `POST` | `/api/v1/recommendations/{id}/status` | Update learning status |
 | `POST` | `/api/v1/interview/start` | Start AI interview |
-| `POST` | `/api/v1/interview/answer` | Submit answer → next Q |
-| `POST` | `/api/v1/interview/end` | End → trigger evaluation |
+| `POST` | `/api/v1/interview/answer` | Submit answer and get next question |
+| `POST` | `/api/v1/interview/end` | End session and trigger evaluation |
 | `GET` | `/api/v1/health` | Health check |
 
 ---
@@ -322,10 +311,10 @@ All in `backend/app/ai_service.py` with graceful offline fallbacks:
 
 | Function | Purpose | Fallback |
 |---|---|---|
-| `ai_semantic_score()` | Resume–JD match (0–100) | TF-IDF cosine |
-| `ai_generate_question()` | Dynamic interview question | Static question bank |
-| `ai_evaluate_answer()` | Score answer quality | 50.0 |
-| `ai_skill_recommendations()` | Courses + descriptions + time | Empty list |
+| `ai_semantic_score()` | Resume–JD match score 0 to 100 | TF-IDF cosine |
+| `ai_generate_question()` | Dynamic interview question from JD | Static question bank |
+| `ai_evaluate_answer()` | Score answer quality | 50.0 default |
+| `ai_skill_recommendations()` | Courses, descriptions, time estimates | Empty list |
 | `ai_find_resource_url()` | Best tutorial URL for a skill | Google search URL |
 
 ---
@@ -359,11 +348,7 @@ MIT — see [LICENSE](LICENSE) for details.
 
 <div align="center">
 
-<<<<<<< HEAD
 Built with ❤️ by **Shrey** · Powered by **GPT-4.1**, **Doc2Vec** & **FastAPI**
-=======
-Built with ❤️ by **Shreyash** · Powered by **GPT-4.1**, **Doc2Vec** & **FastAPI**
->>>>>>> f06da706347c84a58cc0c2d750d86acddf231d37
 
 ⭐ Star this repo if you find it useful!
 
