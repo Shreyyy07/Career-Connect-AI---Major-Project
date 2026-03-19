@@ -72,6 +72,7 @@ graph TB
         API[REST API :8000]
 
         subgraph Routers["Routers"]
+<<<<<<< HEAD
             R_Auth["/auth"]
             R_Resume["/resume"]
             R_JD["/jd"]
@@ -81,6 +82,17 @@ graph TB
             R_Rec["/recommendations"]
             R_Report["/report"]
             R_HR["/hr"]
+=======
+            R_Auth[/auth]
+            R_Resume[/resume]
+            R_JD[/jd]
+            R_Match[/match]
+            R_Interview[/interview]
+            R_Eval[/evaluation]
+            R_Rec[/recommendations]
+            R_Report[/report]
+            R_HR[/hr]
+>>>>>>> f06da706347c84a58cc0c2d750d86acddf231d37
         end
 
         subgraph Services["AI Services"]
@@ -347,7 +359,11 @@ MIT — see [LICENSE](LICENSE) for details.
 
 <div align="center">
 
+<<<<<<< HEAD
 Built with ❤️ by **Shrey** · Powered by **GPT-4.1**, **Doc2Vec** & **FastAPI**
+=======
+Built with ❤️ by **Shreyash** · Powered by **GPT-4.1**, **Doc2Vec** & **FastAPI**
+>>>>>>> f06da706347c84a58cc0c2d750d86acddf231d37
 
 ⭐ Star this repo if you find it useful!
 
