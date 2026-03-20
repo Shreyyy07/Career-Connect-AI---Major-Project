@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import get_current_user
-from ..models import InterviewSession, InterviewStatus, InterviewType, JobDescription, User
+from ..models import InterviewSession, InterviewStatus, InterviewType, JobDescription, Resume, User
 from ..schemas import (
     InterviewAnswerRequest,
     InterviewAnswerResponse,
@@ -59,6 +59,15 @@ def start(payload: InterviewStartRequest, db: Session = Depends(get_db), user: U
 
     job_title, jd_text = _get_jd_text(db, payload.jobID)
 
+    # Fetch candidate's latest resume for personalised questions
+    latest_resume = (
+        db.query(Resume)
+        .filter(Resume.user_id == user.id)
+        .order_by(Resume.created_at.desc())
+        .first()
+    )
+    resume_text = latest_resume.raw_text if latest_resume else ""
+
     # Generate first question via AI (with fallback)
     first_q = ai_generate_question(
         job_title=job_title or "the role",
@@ -66,6 +75,7 @@ def start(payload: InterviewStartRequest, db: Session = Depends(get_db), user: U
         experience_years=payload.experience,
         previous_questions=[],
         candidate_notes=(payload.description or ""),
+        resume_text=resume_text,
     )
 
     # Store question in transcript
@@ -89,19 +99,29 @@ def answer(payload: InterviewAnswerRequest, db: Session = Depends(get_db), user:
     prev_questions = _get_previous_questions(s.transcript or "")
     job_title, jd_text = _get_jd_text(db, s.job_id)
 
+    # Fetch candidate resume for context
+    latest_resume = (
+        db.query(Resume)
+        .filter(Resume.user_id == user.id)
+        .order_by(Resume.created_at.desc())
+        .first()
+    )
+    resume_text = latest_resume.raw_text if latest_resume else ""
+
     # Append the candidate's answer to transcript
     last_q = prev_questions[-1] if prev_questions else ""
     s.transcript = (s.transcript + f"\nA: {payload.transcript}").strip()
     db.add(s)
     db.commit()
 
-    # Generate next question — AI uses conversation context
+    # Generate next question — AI uses conversation context + resume
     next_q = ai_generate_question(
         job_title=job_title or "the role",
         jd_text=jd_text,
         experience_years=s.experience_years,
         previous_questions=prev_questions,
         candidate_notes=s.candidate_notes or "",
+        resume_text=resume_text,
     )
 
     # Store next question in transcript

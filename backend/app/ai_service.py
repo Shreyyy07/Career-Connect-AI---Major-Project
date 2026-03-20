@@ -91,9 +91,10 @@ def ai_generate_question(
     experience_years: int,
     previous_questions: list[str] | None = None,
     candidate_notes: str = "",
+    resume_text: str = "",
 ) -> str:
     """
-    Generate the next interview question using the JD as RAG context.
+    Generate the next interview question using the JD + resume as RAG context.
     Falls back to a generic prompt template when the GitHub token is missing.
     """
     if not settings.github_token:
@@ -102,7 +103,7 @@ def ai_generate_question(
     prev = "\n".join(f"- {q}" for q in (previous_questions or [])[-5:])
     system_prompt = (
         "You are conducting a professional job interview. "
-        "Generate ONE concise, relevant interview question tailored to the job description. "
+        "Generate ONE concise, relevant interview question tailored to the candidate's resume and job description. "
         "Do NOT repeat any of the previous questions listed. "
         "Do NOT include any preamble — output ONLY the question text."
     )
@@ -110,7 +111,8 @@ def ai_generate_question(
         f"Role: {job_title}\n"
         f"Candidate experience: {experience_years} years\n"
         f"Candidate notes: {candidate_notes or 'N/A'}\n\n"
-        f"Job Description (key excerpt):\n{jd_text[:3000]}\n\n"
+        f"Job Description (key excerpt):\n{jd_text[:2000]}\n\n"
+        + (f"Candidate Resume (key excerpt):\n{resume_text[:2000]}\n\n" if resume_text else "")
         + (f"Previous questions (do NOT repeat):\n{prev}\n" if prev else "")
     )
 
