@@ -348,7 +348,7 @@ MIT — see [LICENSE](LICENSE) for details.
 
 <div align="center">
 
-Built with ❤️ by **Shrey**
+Built with ❤️ by **Shreyyy**
 
 ⭐ Star this repo if you find it useful!
 

@@ -4,13 +4,24 @@ import { apiFetch, setToken, getToken } from '../lib/api';
 interface AuthContextType {
   user: { id: number; email: string; role: string; name: string } | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, fullName: string, role: 'candidate' | 'hr') => Promise<void>;
+  signIn: (email: string, password: string) => Promise<string>;
+  signUp: (email: string, password: string, fullName: string, role: 'candidate' | 'hr') => Promise<string>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Helper to decode JWT payload safely
+const decodeJWT = (token: string) => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/, '/');
+    return JSON.parse(window.atob(base64));
+  } catch (e) {
+    return {};
+  }
+};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthContextType['user']>(null);
@@ -24,8 +35,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
       return;
     }
-    // Minimal user placeholder to unlock app; real profile wiring comes next.
-    setUser({ id: 0, email: 'authenticated', role: 'candidate', name: 'User' });
+    const decoded = decodeJWT(token);
+    setUser({ 
+      id: parseInt(decoded?.sub || '0'), 
+      email: 'authenticated', 
+      role: decoded?.role || 'candidate', 
+      name: 'User' 
+    });
     setLoading(false);
   }, []);
 
@@ -35,7 +51,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       body: JSON.stringify({ email, password }),
     });
     setToken(res.token);
-    setUser({ id: 0, email, role: 'candidate', name: 'User' });
+    const decoded = decodeJWT(res.token);
+    const role = decoded?.role || 'candidate';
+    setUser({ id: parseInt(decoded?.sub || '0'), email, role, name: 'User' });
+    return role;
   };
 
   const signUp = async (email: string, password: string, fullName: string, role: 'candidate' | 'hr') => {
@@ -44,7 +63,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       body: JSON.stringify({ name: fullName, email, password, role }),
     });
     setToken(res.token);
-    setUser({ id: res.userID, email, role, name: fullName });
+    const decoded = decodeJWT(res.token);
+    const actualRole = decoded?.role || role;
+    setUser({ id: res.userID || parseInt(decoded?.sub || '0'), email, role: actualRole, name: fullName });
+    return actualRole;
   };
 
   const signOut = async () => {

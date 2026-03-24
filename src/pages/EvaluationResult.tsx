@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle, Download, RefreshCw, BarChart2, ArrowLeft } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
 
 interface EvalData {
@@ -13,11 +14,7 @@ interface EvalData {
   reportURL?: string;
 }
 
-interface EvaluationResultProps {
-  evalID: number;
-  onRetake: () => void;
-  onDashboard: () => void;
-}
+// Props removed in favor of React Router hooks
 
 const glass = 'bg-white/70 backdrop-blur-sm border border-slate-200/50';
 
@@ -56,7 +53,10 @@ const tierFor = (score: number) => {
   return { label: 'Needs Improvement', color: '#f43f5e', track: '#ffe4e6', text: 'text-rose-700', ring: 'ring-rose-200/60', bg: 'bg-rose-50/70' };
 };
 
-export const EvaluationResult = ({ evalID, onRetake, onDashboard }: EvaluationResultProps) => {
+export const EvaluationResult = () => {
+  const { id } = useParams<{ id: string }>();
+  const evalID = id ? parseInt(id, 10) : 0;
+  const navigate = useNavigate();
   const [data, setData] = useState<EvalData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -89,7 +89,7 @@ export const EvaluationResult = ({ evalID, onRetake, onDashboard }: EvaluationRe
           <h1 className="text-4xl font-bold text-slate-900 tracking-tight mb-2">Interview Results</h1>
           <p className="text-slate-500">Here's how you performed in your AI interview session.</p>
         </div>
-        <button onClick={onDashboard} className="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors">
+        <button onClick={() => navigate('/candidate/dashboard')} className="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors">
           <ArrowLeft size={15} /> Dashboard
         </button>
       </div>
@@ -225,11 +225,11 @@ export const EvaluationResult = ({ evalID, onRetake, onDashboard }: EvaluationRe
                 <Download size={15} /> Download PDF Report
               </a>
             )}
-            <button onClick={onRetake}
+            <button onClick={() => navigate('/candidate/interview')}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-slate-700 border border-slate-200/70 bg-white/60 hover:bg-white/80 transition-all duration-200 shadow-sm">
               <RefreshCw size={15} /> Retake Interview
             </button>
-            <button onClick={onDashboard}
+            <button onClick={() => navigate('/candidate/dashboard')}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-slate-700 border border-slate-200/70 bg-white/60 hover:bg-white/80 transition-all duration-200 shadow-sm">
               <CheckCircle size={15} /> Back to Dashboard
             </button>

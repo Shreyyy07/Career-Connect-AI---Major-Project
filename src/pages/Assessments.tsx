@@ -4,10 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Assessment } from '../types';
 import { apiFetch } from '../lib/api';
 import { TextAssessment } from './TextAssessment';
-
-interface AssessmentsProps {
-  onNavigate?: (page: string, state?: any) => void;
-}
+import { useNavigate } from 'react-router-dom';
 
 type JDItem = { jobID: number; title: string };
 
@@ -16,7 +13,8 @@ const glass = 'bg-white/70 backdrop-blur-sm border border-slate-200/50';
 type AssessTab = 'history' | 'practice';
 type PracticeState = 'setup' | 'session' | 'done';
 
-export const Assessments = ({ onNavigate }: AssessmentsProps) => {
+export const Assessments = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [tab, setTab] = useState<AssessTab>('history');
   const [assessments, setAssessments] = useState<Assessment[]>([]);
@@ -209,8 +207,8 @@ export const Assessments = ({ onNavigate }: AssessmentsProps) => {
               className="px-5 py-2.5 rounded-xl font-bold text-sm bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-sm shadow-indigo-200/50">
               Practice Again
             </button>
-            {onNavigate && (
-              <button onClick={() => onNavigate('interview')}
+            {true && (
+              <button onClick={() => navigate('/candidate/interview')}
                 className="px-5 py-2.5 rounded-xl font-bold text-sm border border-slate-200/70 text-slate-700 bg-white/60 hover:bg-white/80 transition-all shadow-sm">
                 Go to Video Interview →
               </button>

@@ -1,109 +1,51 @@
-import { useState } from 'react';
-import { useAuth } from './context/AuthContext';
-import { Layout } from './components/Layout';
-import { Login } from './pages/Login';
-import { Register } from './pages/Register';
-import { ResetPassword } from './pages/ResetPassword';
-import { Dashboard } from './pages/Dashboard';
-import { InterviewSelection } from './pages/InterviewSelection';
-import { AIInterview } from './pages/AIInterview';
-import { EvaluationResult } from './pages/EvaluationResult';
-import { Assessments } from './pages/Assessments';
-import { Reports } from './pages/Reports';
-import { Profile } from './pages/Profile';
-import { ResumeMatch } from './pages/ResumeMatch';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import Index from "./pages/Index.tsx";
+import Login from "./pages/Login.tsx";
+import Register from "./pages/Register.tsx";
+import CandidateDashboard from "./pages/CandidateDashboard.tsx";
+import HRDashboard from "./pages/HRDashboard.tsx";
+import AIInterview from "./pages/AIInterview.tsx";
+import NotFound from "./pages/NotFound.tsx";
+import { AuthProvider } from "./context/AuthContext";
+import { ResumeMatch } from "./pages/ResumeMatch";
+import { Assessments } from "./pages/Assessments";
+import { EvaluationResult } from "./pages/EvaluationResult";
 
-interface InterviewState {
-  sessionID: string;
-  firstQuestion: string;
-  jobTitle?: string;
-}
+const queryClient = new QueryClient();
 
-function App() {
-  const { user, loading } = useAuth();
-  const [currentPage, setCurrentPage] = useState<string>('login');
-  const [appPage, setAppPage] = useState<string>('dashboard');
-
-  // Interview flow state
-  const [interviewState, setInterviewState] = useState<InterviewState | null>(null);
-  const [evalID, setEvalID] = useState<number | null>(null);
-
-  const navigateTo = (page: string, state?: any) => {
-    if (page === 'ai-interview' && state) {
-      setInterviewState(state as InterviewState);
-    }
-    if (page === 'evaluation' && typeof state === 'number') {
-      setEvalID(state);
-    }
-    setAppPage(page);
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-slate-500">Loading…</div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    if (currentPage === 'register') return <Register onNavigate={setCurrentPage} />;
-    if (currentPage === 'reset-password') return <ResetPassword onNavigate={setCurrentPage} />;
-    return <Login onNavigate={setCurrentPage} />;
-  }
-
-  const renderPage = () => {
-    switch (appPage) {
-      case 'dashboard':
-        return <Dashboard onNavigate={navigateTo} />;
-
-      case 'interview':
-        return <InterviewSelection onNavigate={navigateTo} />;
-
-      case 'ai-interview':
-        if (!interviewState) { navigateTo('interview'); return null; }
-        return (
-          <AIInterview
-            sessionID={interviewState.sessionID}
-            firstQuestion={interviewState.firstQuestion}
-            jobTitle={interviewState.jobTitle}
-            onEnd={(id) => navigateTo('evaluation', id)}
-            onBack={() => navigateTo('interview')}
-          />
-        );
-
-      case 'evaluation':
-        if (!evalID) { navigateTo('interview'); return null; }
-        return (
-          <EvaluationResult
-            evalID={evalID}
-            onRetake={() => navigateTo('interview')}
-            onDashboard={() => navigateTo('dashboard')}
-          />
-        );
-
-      case 'assessments':
-        return <Assessments onNavigate={navigateTo} />;
-
-      case 'resume-match':
-        return <ResumeMatch />;
-
-      case 'reports':
-        return <Reports />;
-
-      case 'profile':
-        return <Profile />;
-
-      default:
-        return <Dashboard onNavigate={navigateTo} />;
-    }
-  };
-
-  return (
-    <Layout currentPage={appPage} onNavigate={navigateTo}>
-      {renderPage()}
-    </Layout>
-  );
-}
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <AuthProvider>
+        <Toaster />
+        <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/candidate/dashboard" element={<CandidateDashboard />} />
+          <Route path="/candidate/resume" element={<ResumeMatch />} />
+          <Route path="/candidate/interview" element={<AIInterview />} />
+          <Route path="/candidate/skills" element={<ResumeMatch />} />
+          <Route path="/candidate/assessments" element={<Assessments />} />
+          <Route path="/candidate/evaluation/:id" element={<EvaluationResult />} />
+          <Route path="/candidate/reports" element={<CandidateDashboard />} />
+          <Route path="/hr/dashboard" element={<HRDashboard />} />
+          <Route path="/hr/jobs" element={<HRDashboard />} />
+          <Route path="/hr/candidates" element={<HRDashboard />} />
+          <Route path="/hr/interviews" element={<HRDashboard />} />
+          <Route path="/hr/anticheat" element={<HRDashboard />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+      </AuthProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;
