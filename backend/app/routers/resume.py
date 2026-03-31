@@ -6,6 +6,8 @@ from ..deps import get_current_user
 from ..models import Resume, User
 from ..schemas import ResumeUploadResponse
 from ..doc2vec_service import ensure_model, infer_embedding_csv
+from ..ai_service import ai_extract_resume_details
+import json
 
 
 router = APIRouter(prefix="/api/v1/resume", tags=["resume"])
@@ -65,11 +67,15 @@ def upload_resume(
     data = _read_limited(file)
     raw_text = _extract_text(file.content_type, data)
 
+    parsed_dict = ai_extract_resume_details(raw_text)
+    parsed_json_str = json.dumps(parsed_dict) if parsed_dict else "{}"
+
     resume = Resume(
         user_id=user.id,
         filename=file.filename,
         content_type=file.content_type,
         raw_text=raw_text,
+        parsed_json=parsed_json_str,
     )
     db.add(resume)
     db.commit()
@@ -89,7 +95,7 @@ def upload_resume(
         "filename": resume.filename,
         "contentType": resume.content_type,
         "textLength": len(raw_text),
-        "note": "v1 parser stores raw text; structured NLP parsing comes next.",
+        "ai_extracted": parsed_dict,
     }
     return ResumeUploadResponse(resumeID=resume.id, parsedData=parsed)
 

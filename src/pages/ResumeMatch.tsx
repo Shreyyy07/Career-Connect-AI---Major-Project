@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import {
   FileUp, Briefcase, Sparkles, RefreshCw, Users,
   BookOpen, FileText, Award, ChevronDown, ChevronUp,
-  Zap, CheckCircle, ArrowRight, TrendingUp, ExternalLink, Loader2
+  Zap, CheckCircle, ArrowRight, TrendingUp, ExternalLink, Loader2,
+  GraduationCap, Mail, Phone, Code, User as UserIcon
 } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import DashboardSidebar from '@/components/DashboardSidebar';
 
 type ResumeListItem = { resumeID: number; filename: string; created_at: string };
 type JDListItem = { jobID: number; title: string; status: string; skills?: string };
@@ -21,8 +23,8 @@ type RecruiterMatchRow = {
   candidateName?: string;
 };
 
-// ─── Shared glass class ───────────────────────────────────────────────────────
-const glass = 'bg-white/70 backdrop-blur-sm border border-slate-200/50 shadow-sm';
+// ─── Shared glass class (dark theme) ─────────────────────────────────────────
+const glass = 'bg-card/60 backdrop-blur-sm border border-border/50 shadow-lg';
 
 // ─── SVG Circular Progress Ring ───────────────────────────────────────────────
 const CircleRing = ({ pct, size = 120, stroke = 9, color = '#6366f1', trackColor = '#e2e8f0', label, sublabel }:
@@ -34,14 +36,14 @@ const CircleRing = ({ pct, size = 120, stroke = 9, color = '#6366f1', trackColor
   return (
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={cx} cy={cx} r={r} fill="none" stroke={trackColor} strokeWidth={stroke} />
+        <circle cx={cx} cy={cx} r={r} fill="none" stroke="hsl(240 8% 18%)" strokeWidth={stroke} />
         <circle cx={cx} cy={cx} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round"
           strokeDasharray={circ} strokeDashoffset={offset}
           style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)' }} />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        {label && <span className="text-2xl font-bold text-slate-900 leading-none">{label}</span>}
-        {sublabel && <span className="text-sm text-slate-400 mt-0.5">{sublabel}</span>}
+        {label && <span className="text-2xl font-bold text-foreground leading-none">{label}</span>}
+        {sublabel && <span className="text-sm text-muted-foreground mt-0.5">{sublabel}</span>}
       </div>
     </div>
   );
@@ -49,8 +51,8 @@ const CircleRing = ({ pct, size = 120, stroke = 9, color = '#6366f1', trackColor
 
 // ─── Shimmer skeleton ─────────────────────────────────────────────────────────
 const Shimmer = ({ className = '' }: { className?: string }) => (
-  <div className={`relative overflow-hidden rounded-xl bg-slate-200/60 ${className}`}>
-    <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.4s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+  <div className={`relative overflow-hidden rounded-xl bg-secondary/50 ${className}`}>
+    <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.4s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
   </div>
 );
 const MatchSkeleton = () => (
@@ -91,14 +93,14 @@ const ResourceIcon = ({ type, size = 14 }: { type: string; size?: number }) => {
 // ─── Status pill ──────────────────────────────────────────────────────────────
 const StatusPill = ({ status }: { status: string }) => {
   const cfg: Record<string, string> = {
-    completed:   'bg-emerald-50 text-emerald-700 border-emerald-200',
-    in_progress: 'bg-amber-50 text-amber-700 border-amber-200',
-    pending:     'bg-slate-100 text-slate-500 border-slate-200',
+    completed:   'bg-emerald-900/30 text-emerald-400 border-emerald-700/40',
+    in_progress: 'bg-amber-900/30 text-amber-400 border-amber-700/40',
+    pending:     'bg-secondary text-muted-foreground border-border',
   };
   const labels: Record<string, string> = { completed: 'Completed', in_progress: 'In Progress', pending: 'Not Started' };
   return (
     <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${cfg[status] ?? cfg.pending}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${status === 'completed' ? 'bg-emerald-500' : status === 'in_progress' ? 'bg-amber-400' : 'bg-slate-400'}`} />
+      <span className={`w-1.5 h-1.5 rounded-full ${status === 'completed' ? 'bg-emerald-400' : status === 'in_progress' ? 'bg-amber-400' : 'bg-muted-foreground'}`} />
       {labels[status] ?? 'Not Started'}
     </span>
   );
@@ -157,18 +159,18 @@ const RecCard = ({ r, onUpdate, onError }: { r: any; onUpdate: (rec: any) => voi
             <div className={`p-2 rounded-xl ${isHigh ? 'bg-indigo-50/80' : 'bg-slate-50/80'}`}>
               <ResourceIcon type={r.resourceType} size={16} />
             </div>
-            <span className="text-base font-bold text-slate-800">{r.skill}</span>
+            <span className="text-base font-bold text-foreground">{r.skill}</span>
           </div>
           {isHigh
-            ? <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-indigo-600 text-white shadow-sm shadow-indigo-300/40 shrink-0"><Zap size={10} />HIGH</span>
-            : <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide shrink-0">Medium</span>}
+            ? <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-primary/20 text-primary border border-primary/30 shrink-0"><Zap size={10} />HIGH</span>
+            : <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide shrink-0">Medium</span>}
         </div>
 
         {/* ── Section: Topic Description ── */}
         {r.topicDescription && (
           <div>
             <SectionLabel>What you'll learn</SectionLabel>
-            <p className="text-sm text-slate-600 leading-relaxed">{r.topicDescription}</p>
+            <p className="text-sm text-muted-foreground leading-relaxed">{r.topicDescription}</p>
           </div>
         )}
 
@@ -178,8 +180,8 @@ const RecCard = ({ r, onUpdate, onError }: { r: any; onUpdate: (rec: any) => voi
             <SectionLabel>Recommended Courses</SectionLabel>
             <div className="flex flex-col gap-1.5">
               {r.courseNames.map((c: string, i: number) => (
-                <div key={i} className="flex items-center gap-2 text-sm text-indigo-700 bg-indigo-50/80 border border-indigo-100/80 px-3 py-1.5 rounded-lg font-medium">
-                  <BookOpen size={13} className="shrink-0 text-indigo-400" />{c}
+                <div key={i} className="flex items-center gap-2 text-sm text-primary bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-lg font-medium">
+                  <BookOpen size={13} className="shrink-0 text-primary/70" />{c}
                 </div>
               ))}
             </div>
@@ -258,8 +260,8 @@ const Avatar = ({ name, id }: { name?: string; id: number }) => {
 };
 
 const TierBadge = ({ score, tier }: { score: number; tier: string }) => {
-  const styles = { green: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200', amber: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200', red: 'bg-red-50 text-red-700 ring-1 ring-red-200' }[tier] ?? 'bg-slate-100 text-slate-600';
-  const dot = tier === 'green' ? 'bg-emerald-500' : tier === 'amber' ? 'bg-amber-500' : 'bg-red-500';
+  const styles = { green: 'bg-emerald-900/30 text-emerald-400 ring-1 ring-emerald-700/40', amber: 'bg-amber-900/30 text-amber-400 ring-1 ring-amber-700/40', red: 'bg-red-900/30 text-red-400 ring-1 ring-red-700/40' }[tier] ?? 'bg-secondary text-muted-foreground';
+  const dot = tier === 'green' ? 'bg-emerald-400' : tier === 'amber' ? 'bg-amber-400' : 'bg-red-400';
   return <span className={`inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1 rounded-full ${styles}`}><span className={`w-2 h-2 rounded-full ${dot}`} />{Math.round(score)}%</span>;
 };
 
@@ -342,19 +344,24 @@ export const ResumeMatch = () => {
   ] as const;
 
   return (
-    <>
+    <div className="flex min-h-screen bg-background">
+      <DashboardSidebar role={isHr ? 'hr' : 'candidate'} />
+      <main className="flex-1 overflow-auto">
       <style>{`@keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(200%)} }`}</style>
-      <div className="min-h-screen px-4 py-10 max-w-6xl mx-auto">
+      <div className="p-8 w-full">
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-slate-900 tracking-tight mb-2">Resume &amp; Job Matching</h1>
-          <p className="text-slate-500">Upload resumes, manage job descriptions, and compute AI-powered match scores.</p>
+          <h1 className="text-4xl font-bold text-foreground tracking-tight mb-2">Resume &amp; Job Matching</h1>
+          <p className="text-muted-foreground">Upload resumes, manage job descriptions, and compute AI-powered match scores.</p>
         </div>
 
         {/* Status */}
         {message && (
-          <div className={`mb-6 px-5 py-3.5 rounded-xl text-base border backdrop-blur-sm ${message.toLowerCase().includes('fail') || message.toLowerCase().includes('error') ? 'bg-rose-50/80 border-rose-200/60 text-rose-700' : 'bg-emerald-50/80 border-emerald-200/60 text-emerald-700'}`}>
+          <div className={`mb-6 px-5 py-3.5 rounded-xl text-base border backdrop-blur-sm ${
+            message.toLowerCase().includes('fail') || message.toLowerCase().includes('error')
+              ? 'bg-destructive/10 border-destructive/30 text-destructive'
+              : 'bg-emerald-900/20 border-emerald-700/30 text-emerald-400'}`}>
             {message}
           </div>
         )}
@@ -364,13 +371,16 @@ export const ResumeMatch = () => {
           <div className={`flex ${glass} rounded-xl p-1 gap-1`}>
             {TABS.map(({ key, label, icon: Icon }) => (
               <button key={key} onClick={() => setTab(key)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${tab === key ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200/50' : 'text-slate-500 hover:text-slate-700 hover:bg-white/60'}`}>
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                  tab === key
+                    ? 'bg-primary text-primary-foreground shadow-sm glow-primary'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}`}>
                 <Icon size={16} />{label}
               </button>
             ))}
           </div>
           <button onClick={refreshLists} disabled={busy}
-            className={`ml-auto flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold ${glass} text-slate-600 hover:bg-white/80 disabled:opacity-40 transition-all duration-200`}>
+            className={`ml-auto flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold ${glass} text-muted-foreground hover:text-foreground disabled:opacity-40 transition-all duration-200`}>
             <RefreshCw size={15} className={busy ? 'animate-spin' : ''} />Refresh
           </button>
         </div>
@@ -380,31 +390,33 @@ export const ResumeMatch = () => {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             <div className={`lg:col-span-2 ${glass} rounded-2xl p-6`}>
               <div className="flex items-center gap-3 mb-5">
-                <div className="p-2 bg-indigo-50/80 rounded-xl"><FileUp size={20} className="text-indigo-600" /></div>
-                <h2 className="text-xl font-bold text-slate-800">Upload Resume</h2>
+                <div className="p-2 bg-primary/10 rounded-xl"><FileUp size={20} className="text-primary" /></div>
+                <h2 className="text-xl font-bold text-foreground">Upload Resume</h2>
               </div>
               <label className="block w-full cursor-pointer">
-                <div className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${resumeFile ? 'border-indigo-400/70 bg-indigo-50/60' : 'border-slate-200/70 hover:border-indigo-300/70 hover:bg-slate-50/60'}`}>
-                  <FileUp size={30} className={`mx-auto mb-2 ${resumeFile ? 'text-indigo-500' : 'text-slate-300'}`} />
-                  {resumeFile ? <p className="font-semibold text-indigo-700">{resumeFile.name}</p>
-                    : <><p className="font-semibold text-slate-600">Drop PDF or DOCX here</p><p className="text-sm text-slate-400 mt-1">Max 5 MB</p></>}
+                <div className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
+                  resumeFile ? 'border-primary/50 bg-primary/5' : 'border-border hover:border-primary/40 hover:bg-secondary/30'}`}>
+                  <FileUp size={30} className={`mx-auto mb-2 ${resumeFile ? 'text-primary' : 'text-muted-foreground/40'}`} />
+                  {resumeFile
+                    ? <p className="font-semibold text-primary">{resumeFile.name}</p>
+                    : <><p className="font-semibold text-foreground">Drop PDF or DOCX here</p><p className="text-sm text-muted-foreground mt-1">Max 5 MB</p></>}
                 </div>
                 <input type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                   onChange={e => setResumeFile(e.target.files?.[0] || null)} className="hidden" />
               </label>
               <button onClick={uploadResume} disabled={busy || !resumeFile}
-                className="mt-4 w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all duration-200 disabled:opacity-40 shadow-sm shadow-indigo-200/50">
+                className="mt-4 w-full bg-primary text-primary-foreground py-3 rounded-xl font-bold hover:bg-primary/90 transition-all duration-200 disabled:opacity-40 glow-primary">
                 {busy ? 'Uploading…' : 'Upload Resume'}
               </button>
             </div>
             <div className={`lg:col-span-3 ${glass} rounded-2xl p-6`}>
-              <h3 className="text-lg font-bold text-slate-700 mb-4">Your Resumes</h3>
+              <h3 className="text-lg font-bold text-foreground mb-4">Your Resumes</h3>
               {resumes.length === 0
-                ? <div className="flex flex-col items-center justify-center py-14 text-slate-400"><FileUp size={36} className="mb-2 opacity-30" /><p>No resumes uploaded yet</p></div>
+                ? <div className="flex flex-col items-center justify-center py-14 text-muted-foreground"><FileUp size={36} className="mb-2 opacity-30" /><p>No resumes uploaded yet</p></div>
                 : <ul className="space-y-2">{resumes.map(r => (
-                    <li key={r.resumeID} className="flex items-center justify-between p-4 bg-white/50 rounded-xl border border-slate-100/80 hover:border-indigo-200/60 transition-all duration-150">
-                      <div className="flex items-center gap-3"><div className="p-2 bg-indigo-100/80 rounded-lg"><FileText size={15} className="text-indigo-600" /></div><span className="font-semibold text-slate-700">{r.filename}</span></div>
-                      <span className="text-sm text-slate-400">{new Date(r.created_at).toLocaleDateString()}</span>
+                    <li key={r.resumeID} className="flex items-center justify-between p-4 bg-secondary/40 rounded-xl border border-border/60 hover:border-primary/30 transition-all duration-150">
+                      <div className="flex items-center gap-3"><div className="p-2 bg-primary/10 rounded-lg"><FileText size={15} className="text-primary" /></div><span className="font-semibold text-foreground">{r.filename}</span></div>
+                      <span className="text-sm text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
                     </li>
                   ))}</ul>}
             </div>
@@ -416,34 +428,34 @@ export const ResumeMatch = () => {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             <div className={`lg:col-span-2 ${glass} rounded-2xl p-6`}>
               <div className="flex items-center gap-3 mb-5">
-                <div className="p-2 bg-violet-50/80 rounded-xl"><Briefcase size={20} className="text-violet-600" /></div>
-                <div><h2 className="text-xl font-bold text-slate-800">Create JD</h2>{!isHr && <p className="text-sm text-slate-400">HR accounts only</p>}</div>
+                <div className="p-2 bg-accent/10 rounded-xl"><Briefcase size={20} className="text-accent" /></div>
+                <div><h2 className="text-xl font-bold text-foreground">Create JD</h2>{!isHr && <p className="text-sm text-muted-foreground">HR accounts only</p>}</div>
               </div>
               <div className="space-y-3">
                 {[{ value: jdTitle, set: setJdTitle, ph: 'Job Title (e.g. Backend Engineer)' },
                   { value: jdSkills, set: setJdSkills, ph: 'Skills: python, fastapi, sql' }].map((f, i) => (
                   <input key={i} value={f.value} onChange={e => f.set(e.target.value)} placeholder={f.ph}
-                    className="w-full px-4 py-3 text-base border border-slate-200/70 bg-white/60 backdrop-blur-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300/60 transition-all" />
+                    className="w-full px-4 py-3 text-base rounded-xl transition-all" />
                 ))}
                 <textarea value={jdDesc} onChange={e => setJdDesc(e.target.value)} placeholder="Describe the role…" rows={4}
-                  className="w-full px-4 py-3 text-base border border-slate-200/70 bg-white/60 backdrop-blur-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300/60 transition-all resize-none" />
+                  className="w-full px-4 py-3 text-base rounded-xl transition-all resize-none" />
               </div>
               <button onClick={uploadJD} disabled={busy}
-                className="mt-4 w-full bg-violet-600 text-white py-3 rounded-xl font-bold hover:bg-violet-700 transition-all duration-200 disabled:opacity-40 shadow-sm shadow-violet-200/50">
+                className="mt-4 w-full bg-accent text-accent-foreground py-3 rounded-xl font-bold hover:bg-accent/90 transition-all duration-200 disabled:opacity-40">
                 {busy ? 'Saving…' : 'Create Job Description'}
               </button>
             </div>
             <div className={`lg:col-span-3 ${glass} rounded-2xl p-6`}>
-              <h3 className="text-lg font-bold text-slate-700 mb-4">Active Job Descriptions</h3>
+              <h3 className="text-lg font-bold text-foreground mb-4">Active Job Descriptions</h3>
               {jds.length === 0
-                ? <div className="flex flex-col items-center justify-center py-14 text-slate-400"><Briefcase size={36} className="mb-2 opacity-30" /><p>No active JDs yet</p></div>
+                ? <div className="flex flex-col items-center justify-center py-14 text-muted-foreground"><Briefcase size={36} className="mb-2 opacity-30" /><p>No active JDs yet</p></div>
                 : <ul className="space-y-2">{jds.map(j => (
-                    <li key={j.jobID} className="p-4 bg-white/50 rounded-xl border border-slate-100/80 hover:border-violet-200/60 transition-all duration-150">
+                    <li key={j.jobID} className="p-4 bg-secondary/40 rounded-xl border border-border/60 hover:border-accent/30 transition-all duration-150">
                       <div className="flex justify-between items-start mb-2">
-                        <span className="font-bold text-slate-800">{j.title}</span>
-                        <span className="text-xs font-semibold bg-violet-50/80 text-violet-700 px-2 py-0.5 rounded-full border border-violet-100/80">{j.status}</span>
+                        <span className="font-bold text-foreground">{j.title}</span>
+                        <span className="text-xs font-semibold bg-accent/10 text-accent px-2 py-0.5 rounded-full border border-accent/20">{j.status}</span>
                       </div>
-                      {j.skills && <div className="flex flex-wrap gap-1.5">{j.skills.split(',').slice(0, 6).map((s, i) => <span key={i} className="text-sm text-slate-500 bg-white/70 border border-slate-200/70 px-2 py-0.5 rounded-md">{s.trim()}</span>)}</div>}
+                      {j.skills && <div className="flex flex-wrap gap-1.5">{j.skills.split(',').slice(0, 6).map((s, i) => <span key={i} className="text-sm text-muted-foreground bg-secondary border border-border/60 px-2 py-0.5 rounded-md">{s.trim()}</span>)}</div>}
                     </li>
                   ))}</ul>}
             </div>
@@ -459,22 +471,22 @@ export const ResumeMatch = () => {
               <div className={`${glass} rounded-2xl p-6`}>
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-cyan-50/80 rounded-xl"><Users size={18} className="text-cyan-600" /></div>
-                    <div><h3 className="text-lg font-bold text-slate-800">Recruiter View</h3><p className="text-sm text-slate-400">All applicants ranked for selected JD</p></div>
+                    <div className="p-2 bg-primary/10 rounded-xl"><Users size={18} className="text-primary" /></div>
+                    <div><h3 className="text-lg font-bold text-foreground">Recruiter View</h3><p className="text-sm text-muted-foreground">All applicants ranked for selected JD</p></div>
                   </div>
                   <button onClick={async () => { if (!selectedJobID) return; setRecruiterLoading(true); try { const rows = await apiFetch<RecruiterMatchRow[]>(`/api/v1/hr/matches?jobID=${selectedJobID}`); setRecruiterRows(rows || []); } catch (e: any) { setMessage(e?.message || 'Failed'); } finally { setRecruiterLoading(false); } }}
                     disabled={!selectedJobID || recruiterLoading}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm bg-cyan-600 text-white hover:bg-cyan-700 disabled:opacity-40 transition-all duration-200 shadow-sm">
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 transition-all duration-200 glow-primary">
                     {recruiterLoading ? <RefreshCw size={14} className="animate-spin" /> : <TrendingUp size={14} />}{recruiterLoading ? 'Loading…' : 'Load Rankings'}
                   </button>
                 </div>
                 {recruiterRows.length > 0 && (
                   <>
-                    <div className="flex flex-wrap gap-3 mb-5 p-4 bg-white/50 backdrop-blur-sm rounded-xl border border-slate-100/80">
+                    <div className="flex flex-wrap gap-3 mb-5 p-4 bg-secondary/40 backdrop-blur-sm rounded-xl border border-border/60">
                       <div>
                         <SectionLabel>Sort by</SectionLabel>
                         <select value={recruiterSort} onChange={e => setRecruiterSort(e.target.value as any)}
-                          className="text-sm px-3 py-2 border border-slate-200/70 bg-white/70 backdrop-blur-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300/60">
+                          className="text-sm px-3 py-2 rounded-lg">
                           <option value="hybrid">Hybrid Score</option><option value="cosine">Doc2Vec Cosine</option>
                         </select>
                       </div>
@@ -482,7 +494,10 @@ export const ResumeMatch = () => {
                         <SectionLabel>Tier filter</SectionLabel>
                         <div className="flex gap-1.5">{(['all','green','amber','red'] as const).map(t => (
                           <button key={t} onClick={() => setRecruiterTierFilter(t)}
-                            className={`text-sm px-3 py-1.5 rounded-lg font-semibold border transition-all duration-150 ${recruiterTierFilter === t ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white/60 text-slate-600 border-slate-200/70 hover:border-slate-300'}`}>
+                            className={`text-sm px-3 py-1.5 rounded-lg font-semibold border transition-all duration-150 ${
+                              recruiterTierFilter === t
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'bg-secondary/60 text-muted-foreground border-border hover:border-primary/40'}`}>
                             {t.charAt(0).toUpperCase()+t.slice(1)}
                           </button>
                         ))}</div>
@@ -492,7 +507,7 @@ export const ResumeMatch = () => {
                       {recruiterRows.filter(r => recruiterTierFilter === 'all' || r.tier === recruiterTierFilter)
                         .sort((a, b) => recruiterSort === 'cosine' ? b.cosineScore - a.cosineScore : b.hybridScore - a.hybridScore)
                         .slice(0, 10).map((r, idx) => (
-                          <div key={`${r.resumeID}_${idx}`} className="flex items-center gap-4 p-4 bg-white/50 backdrop-blur-sm rounded-xl border border-slate-100/80 hover:border-indigo-200/60 hover:bg-white/70 transition-all duration-200">
+                          <div key={`${r.resumeID}_${idx}`} className="flex items-center gap-4 p-4 bg-secondary/40 backdrop-blur-sm rounded-xl border border-border/60 hover:border-primary/30 hover:bg-secondary/60 transition-all duration-200">
                             <span className="text-xl font-bold text-slate-300 w-8 text-center shrink-0">{idx+1}</span>
                             <Avatar name={r.candidateName} id={r.candidateUserID} />
                             <div className="flex-1 min-w-0">
@@ -509,15 +524,15 @@ export const ResumeMatch = () => {
                     </div>
                   </>
                 )}
-                {recruiterRows.length === 0 && !recruiterLoading && <p className="text-slate-400 text-center py-8">Select a JD and click "Load Rankings".</p>}
+                {recruiterRows.length === 0 && !recruiterLoading && <p className="text-muted-foreground text-center py-8">Select a JD and click "Load Rankings".</p>}
               </div>
             )}
 
             {/* Match selectors */}
             <div className={`${glass} rounded-2xl p-6`}>
               <div className="flex items-center gap-3 mb-5">
-                <div className="p-2 bg-indigo-50/80 rounded-xl"><Sparkles size={18} className="text-indigo-600" /></div>
-                <h2 className="text-xl font-bold text-slate-800">Compute Match Score</h2>
+                <div className="p-2 bg-primary/10 rounded-xl"><Sparkles size={18} className="text-primary" /></div>
+                <h2 className="text-xl font-bold text-foreground">Compute Match Score</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
                 {[{ label: 'Resume', val: selectedResumeID, set: (v: string) => setSelectedResumeID(v ? Number(v) : ''), opts: resumes.map(r => ({ v: r.resumeID, l: `#${r.resumeID} — ${r.filename}` })) },
@@ -564,6 +579,47 @@ export const ResumeMatch = () => {
                     </div>
                   </div>
                 </div>
+
+                {matchResult.details?.parsedProfile && Object.keys(matchResult.details.parsedProfile).length > 0 && (
+                  <div className={`${glass} rounded-2xl p-6`}>
+                    <h3 className="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
+                      <FileText size={18} className="text-indigo-500" />
+                      Extracted Resume Profile
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {matchResult.details.parsedProfile.name && (
+                        <div className="flex items-start gap-3 p-3 rounded-lg bg-secondary/30 border border-border/30">
+                          <UserIcon size={16} className="text-indigo-500 mt-0.5" />
+                          <div><p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Candidate Name</p><p className="text-sm font-semibold text-foreground">{matchResult.details.parsedProfile.name}</p></div>
+                        </div>
+                      )}
+                      {(matchResult.details.parsedProfile.email || matchResult.details.parsedProfile.phone) && (
+                        <div className="flex items-start gap-3 p-3 rounded-lg bg-secondary/30 border border-border/30">
+                          <Mail size={16} className="text-violet-500 mt-0.5" />
+                          <div><p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Contact</p><p className="text-sm font-semibold text-foreground">{matchResult.details.parsedProfile.email}{matchResult.details.parsedProfile.phone && ` • ${matchResult.details.parsedProfile.phone}`}</p></div>
+                        </div>
+                      )}
+                      {matchResult.details.parsedProfile.experience && matchResult.details.parsedProfile.experience.length > 0 && (
+                        <div className="flex items-start gap-3 p-3 rounded-lg bg-secondary/30 border border-border/30">
+                          <Briefcase size={16} className="text-emerald-500 mt-0.5" />
+                          <div><p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Recent Experience</p><p className="text-sm font-semibold text-foreground">{matchResult.details.parsedProfile.experience[0].role} @ {matchResult.details.parsedProfile.experience[0].company}</p></div>
+                        </div>
+                      )}
+                      {matchResult.details.parsedProfile.education && matchResult.details.parsedProfile.education.length > 0 && (
+                        <div className="flex items-start gap-3 p-3 rounded-lg bg-secondary/30 border border-border/30">
+                          <GraduationCap size={16} className="text-amber-500 mt-0.5" />
+                          <div><p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Education</p><p className="text-sm font-semibold text-foreground">{matchResult.details.parsedProfile.education[0].degree}</p></div>
+                        </div>
+                      )}
+                      {matchResult.details.parsedProfile.skills && matchResult.details.parsedProfile.skills.length > 0 && (
+                        <div className="col-span-full flex items-start gap-3 p-3 rounded-lg bg-secondary/30 border border-border/30">
+                          <Code size={16} className="text-sky-500 mt-0.5" />
+                          <div><p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Extracted Skills ({matchResult.details.parsedProfile.skills.length})</p><p className="text-sm font-semibold text-foreground">{(Array.isArray(matchResult.details.parsedProfile.skills) ? matchResult.details.parsedProfile.skills : []).slice(0,10).join(', ')}{Array.isArray(matchResult.details.parsedProfile.skills) && matchResult.details.parsedProfile.skills.length > 10 ? '...' : ''}</p></div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Skill overlap */}
                 <div className={`${glass} rounded-2xl p-6`}>
@@ -614,6 +670,7 @@ export const ResumeMatch = () => {
           </div>
         )}
       </div>
-    </>
+      </main>
+    </div>
   );
 };

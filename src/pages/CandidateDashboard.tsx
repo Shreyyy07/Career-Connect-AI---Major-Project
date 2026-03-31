@@ -1,15 +1,16 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, FileText, Target, Mic, Calendar,
   Clock, CheckCircle2, AlertCircle, ArrowRight,
-  Activity, BookOpen, Play, ChevronRight, Flame
+  Activity, BookOpen, Play, ChevronRight, Flame,
+  LogOut, User, Settings
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import StatCard from "@/components/StatCard";
 import ScoreGauge from "@/components/ScoreGauge";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { apiFetch } from "../lib/api";
 import {
@@ -82,9 +83,28 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function CandidateDashboard() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState({ avg: 0, done: 0, pending: 0, total: 0 });
   const [history, setHistory] = useState<any[]>([]);
+  const [avatarOpen, setAvatarOpen] = useState(false);
+  const avatarRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) {
+        setAvatarOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -110,15 +130,79 @@ export default function CandidateDashboard() {
       <DashboardSidebar role="candidate" />
 
       <main className="flex-1 overflow-auto">
-        <div className="p-8 max-w-[1400px]">
+        <div className="p-8 w-full">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
+            className="mb-8 flex items-center justify-between"
           >
-            <h1 className="font-display font-bold text-2xl text-foreground">Welcome back, Shrey 👋</h1>
-            <p className="text-sm text-muted-foreground mt-1">Here's your recruitment journey overview.</p>
+            <div>
+              <h1 className="font-display font-bold text-3xl text-foreground">
+                Welcome back, {user?.name?.split(' ')[0] || 'User'} 👋
+              </h1>
+              <p className="text-base text-muted-foreground mt-1 mb-3">Here's your recruitment journey overview.</p>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 w-[200px] h-2 rounded-full bg-secondary/50 overflow-hidden border border-border/50">
+                  <div className="h-full bg-emerald-500 rounded-full w-[80%]" />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground">80% Profile</span>
+                <span className="text-[10px] uppercase font-bold tracking-widest bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">Resume Uploaded</span>
+              </div>
+            </div>
+            {/* User avatar dropdown */}
+            <div className="relative" ref={avatarRef}>
+              <button
+                onClick={() => setAvatarOpen(!avatarOpen)}
+                className="w-11 h-11 rounded-full bg-primary/20 border-2 border-primary/40 glow-primary flex items-center justify-center font-display font-bold text-primary text-lg cursor-pointer hover:bg-primary/30 transition-all select-none"
+                title={user?.name || 'User'}
+              >
+                {(user?.name || 'U').charAt(0).toUpperCase()}
+              </button>
+
+              <AnimatePresence>
+                {avatarOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-14 z-50 w-64 glass-strong rounded-xl border border-border/60 shadow-2xl overflow-hidden"
+                  >
+                    {/* User info */}
+                    <div className="px-4 py-3 border-b border-border/50">
+                      <p className="font-semibold text-foreground text-sm truncate">{user?.name || 'User'}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user?.email || ''}</p>
+                      <span className="mt-1 inline-block text-[10px] uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
+                        {user?.role || 'candidate'}
+                      </span>
+                    </div>
+                    {/* Actions */}
+                    <div className="p-2 space-y-0.5">
+                      <button
+                        onClick={() => { setAvatarOpen(false); navigate('/candidate/profile'); }}
+                        className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all"
+                      >
+                        <User className="w-4 h-4" /> Edit Profile
+                      </button>
+                      <button
+                        onClick={() => { setAvatarOpen(false); navigate('/candidate/profile'); }}
+                        className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all"
+                      >
+                        <Settings className="w-4 h-4" /> Settings
+                      </button>
+                      <div className="border-t border-border/40 my-1" />
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-all"
+                      >
+                        <LogOut className="w-4 h-4" /> Logout
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </motion.div>
 
           {/* Stats */}

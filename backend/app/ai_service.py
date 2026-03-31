@@ -227,6 +227,37 @@ def ai_find_resource_url(skill: str, job_title: str, resource_type: str = "") ->
     return fallback
 
 
+def ai_extract_resume_details(raw_text: str) -> dict:
+    """
+    Extract structured candidate details (Name, Email, Phone, Skills, Experience, Education)
+    from raw resume text using GitHub AI.
+    Returns a dictionary matching the schema or an empty dict on failure/fallback.
+    """
+    if not settings.github_token or not raw_text:
+        return {}
+
+    system_prompt = (
+        "You are an expert HR Resume Parser. Extract structured information from the provided resume text. "
+        "Reply ONLY with a JSON object matching this schema exactly: "
+        "{\"name\": \"\", \"email\": \"\", \"phone\": \"\", \"skills\": [\"\"], \"experience\": [{\"role\": \"\", \"company\": \"\", \"duration\": \"\"}], \"education\": [{\"degree\": \"\", \"institution\": \"\", \"year\": \"\"}]} "
+        "If a field is missing, leave it as an empty string or empty array. Provide NO other text."
+    )
+    user_prompt = f"Resume Text:\n{raw_text[:6000]}"
+
+    try:
+        import json
+        text = _chat(system_prompt, user_prompt, temperature=0.1, max_tokens=1000)
+        # Clean potential markdown fences
+        text = text.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
+        parsed = json.loads(text)
+        if isinstance(parsed, dict):
+            return parsed
+    except Exception:
+        pass
+
+    return {}
+
+
 # ───────────────────────────────────────────────
 # Internal fallback helpers
 # ───────────────────────────────────────────────

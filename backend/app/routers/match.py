@@ -8,8 +8,11 @@ from ..schemas import MatchRequest, MatchResponse
 from ..doc2vec_service import ensure_model, infer_embedding_csv, parse_embedding_csv
 from ..gemini_service import gemini_semantic_reasoning_score
 from ..ai_service import ai_skill_recommendations
-from ..utils import extract_tokens
+from ..gemini_service import gemini_semantic_reasoning_score
+from ..ai_service import ai_skill_recommendations
+from ..utils import extract_tokens, levenshtein_distance
 from datetime import datetime
+import json
 
 
 def _cosine_similarity(a: list[float], b: list[float]) -> float:
@@ -46,6 +49,23 @@ def _recommendations(missing: list[str], jd_title: str, base_status: str | None 
             }
         )
     return recs
+
+
+def _is_fuzzy_match(skill: str, text: str) -> bool:
+    if skill in text:
+        return True
+    
+    skill_tokens = skill.split()
+    text_tokens = text.split()
+    n = len(skill_tokens)
+    if n == 0 or len(text_tokens) < n:
+        return False
+        
+    for i in range(len(text_tokens) - n + 1):
+        window = " ".join(text_tokens[i:i+n])
+        if levenshtein_distance(skill, window) <= 2:
+            return True
+    return False
 
 
 router = APIRouter(prefix="/api/v1", tags=["match"])
@@ -88,8 +108,8 @@ def match(payload: MatchRequest, db: Session = Depends(get_db), user: User = Dep
     required_skills = [s.strip().lower() for s in (jd.skills_csv or "").split(",") if s.strip()]
     resume_text_lower = (resume.raw_text or "").lower()
 
-    matched = [s for s in required_skills if s in resume_text_lower]
-    missing = [s for s in required_skills if s not in resume_text_lower]
+    matched = [s for s in required_skills if _is_fuzzy_match(s, resume_text_lower)]
+    missing = [s for s in required_skills if s not in matched]
 
     resume_tokens = extract_tokens(resume.raw_text)
     extra = sorted((resume_tokens - set(required_skills)) & set(list(resume_tokens)[:500]))[:15]
@@ -117,7 +137,7 @@ def match(payload: MatchRequest, db: Session = Depends(get_db), user: User = Dep
 
     jd_text = (jd.description or "") + " " + (jd.skills_csv or "")
     gemini = gemini_semantic_reasoning_score(resume.raw_text or "", jd_text)
-    hybrid = round((cosine * 100.0) * 0.7 + gemini * 0.3, 2)
+    hybrid = round((cosine * 100.0) * 0.6 + gemini * 0.4, 2)
     tier = "green" if hybrid >= 70 else "amber" if hybrid >= 40 else "red"
 
     # Persist & return skill-gap recommendations (FR-5.4 tracking)
@@ -185,6 +205,7 @@ def match(payload: MatchRequest, db: Session = Depends(get_db), user: User = Dep
             "percentile": percentile,
             "tier": tier,
             "recommendations": details_recs,
+            "parsedProfile": json.loads(resume.parsed_json) if getattr(resume, "parsed_json", None) else {},
         },
     )
 
@@ -222,12 +243,12 @@ def hr_matches(jobID: int, db: Session = Depends(get_db), user: User = Depends(g
         cosine = max(0.0, min(1.0, (cos_raw + 1.0) / 2.0))
 
         gemini = gemini_semantic_reasoning_score(r.raw_text or "", jd_text)
-        hybrid = round((cosine * 100.0) * 0.7 + gemini * 0.3, 2)
+        hybrid = round((cosine * 100.0) * 0.6 + gemini * 0.4, 2)
         tier = "green" if hybrid >= 70 else "amber" if hybrid >= 40 else "red"
 
         resume_text_lower = (r.raw_text or "").lower()
-        matched = [s for s in required_skills if s in resume_text_lower]
-        missing = [s for s in required_skills if s not in resume_text_lower]
+        matched = [s for s in required_skills if _is_fuzzy_match(s, resume_text_lower)]
+        missing = [s for s in required_skills if s not in matched]
 
         jd_text_lower = jd_text.lower()
         missing = sorted(missing, key=lambda s: jd_text_lower.count(s), reverse=True)

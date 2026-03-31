@@ -9,7 +9,7 @@ export default function Footer() {
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
-                <Brain className="w-4 h-4 text-primary" />
+                <img src="/logo.png" alt="Logo" className="w-5 h-5 object-contain rounded-sm" />
               </div>
               <span className="font-display font-bold text-foreground">
                 Career<span className="text-primary">Connect</span> AI

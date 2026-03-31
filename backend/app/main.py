@@ -18,6 +18,8 @@ try:
             cols = {c["name"] for c in insp.get_columns("resumes")}
             if "embedding_csv" not in cols:
                 conn.execute(text("ALTER TABLE resumes ADD COLUMN embedding_csv TEXT DEFAULT ''"))
+            if "parsed_json" not in cols:
+                conn.execute(text("ALTER TABLE resumes ADD COLUMN parsed_json TEXT DEFAULT '{}'"))
         if "job_descriptions" in insp.get_table_names():
             cols = {c["name"] for c in insp.get_columns("job_descriptions")}
             if "embedding_csv" not in cols:
@@ -30,7 +32,7 @@ app = FastAPI(title="Career Connect AI API", version="1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

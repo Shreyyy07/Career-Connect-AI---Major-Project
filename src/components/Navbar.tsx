@@ -29,7 +29,7 @@ export default function Navbar() {
       <div className="container mx-auto px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
           <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center glow-primary">
-            <Brain className="w-5 h-5 text-primary" />
+            <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain rounded-sm" />
           </div>
           <span className="font-display font-bold text-lg text-foreground">
             Career<span className="text-primary">Connect</span> AI

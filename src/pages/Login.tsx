@@ -41,7 +41,7 @@ export default function Login() {
           className="relative z-10 text-center px-12"
         >
           <div className="w-20 h-20 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center mx-auto mb-8 glow-primary">
-            <Brain className="w-10 h-10 text-primary" />
+            <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain rounded-xl" />
           </div>
           <h2 className="font-display font-bold text-3xl text-foreground mb-4">
             Welcome Back
@@ -62,7 +62,7 @@ export default function Login() {
         >
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
-              <Brain className="w-5 h-5 text-primary" />
+              <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain rounded-md" />
             </div>
             <span className="font-display font-bold text-lg">Career<span className="text-primary">Connect</span> AI</span>
           </div>
@@ -90,7 +90,7 @@ export default function Login() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-sm text-foreground font-medium">Password</label>
-                <button type="button" className="text-xs text-primary hover:underline">Forgot password?</button>
+                <Link to="/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
               </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

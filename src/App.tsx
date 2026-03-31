@@ -14,6 +14,9 @@ import { AuthProvider } from "./context/AuthContext";
 import { ResumeMatch } from "./pages/ResumeMatch";
 import { Assessments } from "./pages/Assessments";
 import { EvaluationResult } from "./pages/EvaluationResult";
+import ForgotPassword from "./pages/ForgotPassword.tsx";
+import VerifyEmail from "./pages/VerifyEmail.tsx";
+import CandidateProfile from "./pages/CandidateProfile.tsx";
 
 const queryClient = new QueryClient();
 
@@ -28,7 +31,10 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/candidate/dashboard" element={<CandidateDashboard />} />
+          <Route path="/candidate/profile" element={<CandidateProfile />} />
           <Route path="/candidate/resume" element={<ResumeMatch />} />
           <Route path="/candidate/interview" element={<AIInterview />} />
           <Route path="/candidate/skills" element={<ResumeMatch />} />

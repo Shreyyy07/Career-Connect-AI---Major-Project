@@ -19,10 +19,10 @@ def verify_password(password: str, password_hash: str) -> bool:
     return pwd_context.verify(password, password_hash)
 
 
-def create_access_token(*, sub: str, role: str) -> str:
+def create_access_token(*, sub: str, role: str, name: str = "") -> str:
     now = datetime.now(timezone.utc)
     exp = now + timedelta(minutes=settings.access_token_exp_minutes)
-    payload = {"sub": sub, "role": role, "iat": int(now.timestamp()), "exp": exp}
+    payload = {"sub": sub, "role": role, "name": name, "iat": int(now.timestamp()), "exp": exp}
     return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
 

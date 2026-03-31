@@ -1,48 +1,70 @@
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { apiFetch, setToken, getToken } from '../lib/api';
 
+interface UserProfile {
+  id: number;
+  email: string;
+  role: string;
+  name: string;
+}
+
 interface AuthContextType {
-  user: { id: number; email: string; role: string; name: string } | null;
+  user: UserProfile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<string>;
   signUp: (email: string, password: string, fullName: string, role: 'candidate' | 'hr') => Promise<string>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<{ dev_otp?: string }>;
+  confirmResetPassword: (email: string, otp: string, newPassword: string) => Promise<void>;
+  updateProfile: (name: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Helper to decode JWT payload safely
+// Decode JWT payload safely
 const decodeJWT = (token: string) => {
   try {
     const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/, '/');
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     return JSON.parse(window.atob(base64));
-  } catch (e) {
+  } catch {
     return {};
   }
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<AuthContextType['user']>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Fetch real user profile from /auth/me
+  const fetchMe = async () => {
+    try {
+      const profile = await apiFetch<UserProfile>('/api/v1/auth/me');
+      setUser(profile);
+    } catch {
+      setToken(null);
+      setUser(null);
+    }
+  };
+
   useEffect(() => {
-    // v1: token presence => "authenticated"; profile endpoint will be added next.
     const token = getToken();
     if (!token) {
       setUser(null);
       setLoading(false);
       return;
     }
+    // Optimistically set from JWT claims while /me loads
     const decoded = decodeJWT(token);
-    setUser({ 
-      id: parseInt(decoded?.sub || '0'), 
-      email: 'authenticated', 
-      role: decoded?.role || 'candidate', 
-      name: 'User' 
-    });
-    setLoading(false);
+    if (decoded?.sub) {
+      setUser({
+        id: parseInt(decoded.sub || '0'),
+        email: decoded.email || '',
+        role: decoded.role || 'candidate',
+        name: decoded.name || 'User',
+      });
+    }
+    fetchMe().finally(() => setLoading(false));
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -53,7 +75,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(res.token);
     const decoded = decodeJWT(res.token);
     const role = decoded?.role || 'candidate';
-    setUser({ id: parseInt(decoded?.sub || '0'), email, role, name: 'User' });
+    // Optimistic update; then fetch real profile
+    setUser({ id: parseInt(decoded?.sub || '0'), email, role, name: decoded?.name || 'User' });
+    // Fetch real profile in background
+    fetchMe();
     return role;
   };
 
@@ -74,24 +99,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
   };
 
+  /**
+   * Step 1 of password reset: request OTP.
+   * Returns { dev_otp } in development mode so the UI can show it.
+   */
   const resetPassword = async (email: string) => {
-    // PRD specifies OTP reset; backend endpoint will be added later.
-    // For now, keep UX consistent.
-    await Promise.resolve(email);
-    throw new Error('Password reset is not implemented yet. We will add OTP flow next.');
+    const res = await apiFetch<{ message: string; dev_otp?: string }>('/api/v1/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+    return res;
   };
 
-  return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, resetPassword }}>
-      {children}
-    </AuthContext.Provider>
+  /**
+   * Step 2 of password reset: verify OTP + set new password.
+   */
+  const confirmResetPassword = async (email: string, otp: string, newPassword: string) => {
+    await apiFetch('/api/v1/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp, new_password: newPassword }),
+    });
+  };
+
+  /**
+   * Update the authenticated user's display name.
+   */
+  const updateProfile = async (name: string) => {
+    const updated = await apiFetch<UserProfile>('/api/v1/auth/me', {
+      method: 'PATCH',
+      body: JSON.stringify({ name }),
+    });
+    setUser(updated);
+  };
+
+  const value = useMemo(
+    () => ({ user, loading, signIn, signUp, signOut, resetPassword, confirmResetPassword, updateProfile }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user, loading]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 };

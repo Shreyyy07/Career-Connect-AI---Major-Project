@@ -37,6 +37,7 @@ class Resume(Base):
     filename: Mapped[str] = mapped_column(String(500))
     content_type: Mapped[str] = mapped_column(String(100))
     raw_text: Mapped[str] = mapped_column(Text, default="")
+    parsed_json: Mapped[str] = mapped_column(Text, default="{}")
     embedding_csv: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
 

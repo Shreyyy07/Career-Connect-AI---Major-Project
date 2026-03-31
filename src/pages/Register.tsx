@@ -1,30 +1,96 @@
-import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-import { Brain, Mail, Lock, User, ArrowRight, Briefcase, GraduationCap } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Link, useNavigate } from "react-router-dom";
+import { Brain, Mail, Lock, User, ArrowRight, Eye, EyeOff, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+// PRD §2.1: Password must be 8+ chars, ≥1 uppercase, ≥1 number, ≥1 special char
+const validatePassword = (pw: string) => ({
+  length: pw.length >= 8,
+  uppercase: /[A-Z]/.test(pw),
+  number: /[0-9]/.test(pw),
+  special: /[^A-Za-z0-9]/.test(pw),
+});
+
+// PRD §2.1: Name must be 2-50 chars, letters and spaces only
+const validateName = (n: string) => /^[A-Za-z\s]{2,50}$/.test(n.trim());
+
+function PasswordStrengthBar({ password }: { password: string }) {
+  const r = validatePassword(password);
+  const score = Object.values(r).filter(Boolean).length; // 0-4
+  const colors = ["", "bg-red-500", "bg-orange-400", "bg-yellow-400", "bg-emerald-500"];
+  const labels = ["", "Weak", "Fair", "Good", "Strong"];
+  if (!password) return null;
+  return (
+    <div className="mt-2 space-y-2">
+      <div className="flex gap-1">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className={`h-1.5 flex-1 rounded-full transition-all ${i <= score ? colors[score] : "bg-border"}`} />
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+        {[
+          { ok: r.length, label: "8+ characters" },
+          { ok: r.uppercase, label: "Uppercase letter" },
+          { ok: r.number, label: "Number" },
+          { ok: r.special, label: "Special character" },
+        ].map(({ ok, label }) => (
+          <p key={label} className={`text-[11px] flex items-center gap-1 ${ok ? "text-emerald-400" : "text-muted-foreground"}`}>
+            {ok ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+            {label}
+          </p>
+        ))}
+      </div>
+      <p className={`text-xs font-medium ${colors[score].replace("bg-", "text-")}`}>{labels[score]}</p>
+    </div>
+  );
+}
+
 export default function Register() {
-  const [role, setRole] = useState<"candidate" | "hr">("candidate");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [globalErr, setGlobalErr] = useState("");
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
+  const validate = () => {
+    const errs: Record<string, string> = {};
+    if (!validateName(name)) errs.name = "Name must be 2–50 characters with letters only.";
+    if (!email.includes("@")) errs.email = "Invalid email address.";
+    const pw = validatePassword(password);
+    if (!pw.length || !pw.uppercase || !pw.number || !pw.special)
+      errs.password = "Password must be 8+ chars with uppercase, number, and special character.";
+    if (password !== confirmPassword) errs.confirm = "Passwords do not match.";
+    return errs;
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true); setErr("");
+    const errs = validate();
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+
+    setLoading(true);
+    setGlobalErr("");
     try {
-      await signUp(email, password, name, role);
-      navigate(role === "candidate" ? "/candidate/dashboard" : "/hr/dashboard");
+      // PRD §1.1: Candidates register with role="candidate" always
+      await signUp(email, password, name, "candidate");
+      // PRD §2.2: After register → show "check your inbox" screen
+      navigate(`/verify-email?email=${encodeURIComponent(email)}`);
     } catch (e: any) {
-      setErr(e.message || "Failed to register account");
+      const msg = e.message || "";
+      if (msg.toLowerCase().includes("already registered") || msg.includes("409")) {
+        setFieldErrors({ email: "This email is already registered." });
+      } else {
+        setGlobalErr(msg || "Failed to create account. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -42,19 +108,29 @@ export default function Register() {
           className="relative z-10 text-center px-12"
         >
           <div className="w-20 h-20 rounded-2xl bg-accent/10 border border-accent/30 flex items-center justify-center mx-auto mb-8 glow-accent">
-            <Brain className="w-10 h-10 text-accent" />
+            <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain rounded-xl" />
           </div>
-          <h2 className="font-display font-bold text-3xl text-foreground mb-4">
-            Join the Future
-          </h2>
+          <h2 className="font-display font-bold text-3xl text-foreground mb-4">Join Career Connect AI</h2>
           <p className="text-muted-foreground max-w-sm">
-            Create your account and experience AI-driven recruitment — whether you're hiring or getting hired.
+            AI-powered resume matching, live interviews with emotion analysis, and personalised skill gap coaching.
           </p>
+          <div className="mt-8 grid grid-cols-3 gap-4 text-center">
+            {[
+              { val: "95%", label: "Match Accuracy" },
+              { val: "10s", label: "Avg. Match Time" },
+              { val: "5★", label: "Candidate Rating" },
+            ].map((s) => (
+              <div key={s.label} className="glass rounded-xl p-3">
+                <p className="text-primary font-display font-bold text-xl">{s.val}</p>
+                <p className="text-muted-foreground text-xs mt-0.5">{s.label}</p>
+              </div>
+            ))}
+          </div>
         </motion.div>
       </div>
 
       {/* Form */}
-      <div className="flex-1 flex items-center justify-center px-6">
+      <div className="flex-1 flex items-center justify-center px-6 py-12">
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -62,70 +138,112 @@ export default function Register() {
         >
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
-              <Brain className="w-5 h-5 text-primary" />
+              <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain rounded-md" />
             </div>
             <span className="font-display font-bold text-lg">Career<span className="text-primary">Connect</span> AI</span>
           </div>
 
-          <h1 className="font-display font-bold text-2xl text-foreground mb-2">Create Account</h1>
-          <p className="text-sm text-muted-foreground mb-6">Choose your role and get started</p>
+          <h1 className="font-display font-bold text-2xl text-foreground mb-1">Create Your Account</h1>
+          <p className="text-sm text-muted-foreground mb-7">Start your AI-powered job search journey</p>
 
-          {/* Role selector */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            {[
-              { key: "candidate" as const, icon: GraduationCap, label: "Candidate", desc: "Looking for jobs" },
-              { key: "hr" as const, icon: Briefcase, label: "Recruiter", desc: "Hiring talent" },
-            ].map((r) => (
-              <button
-                key={r.key}
-                onClick={() => setRole(r.key)}
-                className={`p-4 rounded-xl border text-left transition-all ${
-                  role === r.key
-                    ? "border-primary/50 bg-primary/5 glow-primary"
-                    : "border-border/50 bg-secondary/30 hover:border-border"
-                }`}
-              >
-                <r.icon className={`w-5 h-5 mb-2 ${role === r.key ? "text-primary" : "text-muted-foreground"}`} />
-                <p className={`font-display font-semibold text-sm ${role === r.key ? "text-primary" : "text-foreground"}`}>{r.label}</p>
-                <p className="text-xs text-muted-foreground">{r.desc}</p>
-              </button>
-            ))}
-          </div>
+          <form className="space-y-5" onSubmit={handleRegister}>
+            {globalErr && (
+              <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-xl">
+                {globalErr}
+              </div>
+            )}
 
-          <form className="space-y-4" onSubmit={handleRegister}>
-            {err && <div className="p-3 text-sm text-rose-600 bg-rose-50 border border-rose-200 rounded-xl">{err}</div>}
+            {/* Full Name */}
             <div>
               <label className="text-sm text-foreground font-medium mb-1.5 block">Full Name</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input value={name} onChange={(e) => setName(e.target.value)} required placeholder="John Doe" className="pl-10 bg-secondary/50 border-border/60 focus:border-primary h-11" />
+                <Input
+                  value={name}
+                  onChange={(e) => { setName(e.target.value); setFieldErrors((p) => ({ ...p, name: "" })); }}
+                  placeholder="John Doe"
+                  className={`pl-10 bg-secondary/50 border-border/60 focus:border-primary h-11 ${fieldErrors.name ? "border-destructive" : ""}`}
+                  required
+                />
               </div>
+              {fieldErrors.name && <p className="text-xs text-destructive mt-1">{fieldErrors.name}</p>}
             </div>
 
+            {/* Email */}
             <div>
-              <label className="text-sm text-foreground font-medium mb-1.5 block">Email</label>
+              <label className="text-sm text-foreground font-medium mb-1.5 block">Email Address</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input value={email} onChange={(e) => setEmail(e.target.value)} required type="email" placeholder="you@example.com" className="pl-10 bg-secondary/50 border-border/60 focus:border-primary h-11" />
+                <Input
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setFieldErrors((p) => ({ ...p, email: "" })); }}
+                  type="email"
+                  placeholder="you@example.com"
+                  className={`pl-10 bg-secondary/50 border-border/60 focus:border-primary h-11 ${fieldErrors.email ? "border-destructive" : ""}`}
+                  required
+                />
               </div>
+              {fieldErrors.email && <p className="text-xs text-destructive mt-1">{fieldErrors.email}</p>}
             </div>
 
+            {/* Password */}
             <div>
               <label className="text-sm text-foreground font-medium mb-1.5 block">Password</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input value={password} onChange={(e) => setPassword(e.target.value)} required type="password" placeholder="Min. 8 characters" className="pl-10 bg-secondary/50 border-border/60 focus:border-primary h-11" />
+                <Input
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setFieldErrors((p) => ({ ...p, password: "" })); }}
+                  type={showPw ? "text" : "password"}
+                  placeholder="Min. 8 characters"
+                  className={`pl-10 pr-10 bg-secondary/50 border-border/60 focus:border-primary h-11 ${fieldErrors.password ? "border-destructive" : ""}`}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
+              {fieldErrors.password && <p className="text-xs text-destructive mt-1">{fieldErrors.password}</p>}
+              <PasswordStrengthBar password={password} />
             </div>
 
-            <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 glow-primary font-display font-semibold h-11 mt-2">
-              {loading ? "Creating Account..." : "Create Account"} <ArrowRight className="ml-2 w-4 h-4" />
+            {/* Confirm Password */}
+            <div>
+              <label className="text-sm text-foreground font-medium mb-1.5 block">Confirm Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={confirmPassword}
+                  onChange={(e) => { setConfirmPassword(e.target.value); setFieldErrors((p) => ({ ...p, confirm: "" })); }}
+                  type="password"
+                  placeholder="Re-enter password"
+                  className={`pl-10 bg-secondary/50 border-border/60 focus:border-primary h-11 ${fieldErrors.confirm ? "border-destructive" : ""}`}
+                  required
+                />
+              </div>
+              {fieldErrors.confirm && <p className="text-xs text-destructive mt-1">{fieldErrors.confirm}</p>}
+            </div>
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 glow-primary font-display font-semibold h-11 mt-2"
+            >
+              {loading ? "Creating Account…" : "Create Account"} <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
           </form>
 
           <p className="text-sm text-muted-foreground mt-6 text-center">
             Already have an account?{" "}
             <Link to="/login" className="text-primary hover:underline font-medium">Sign in</Link>
+          </p>
+          <p className="text-xs text-muted-foreground mt-3 text-center">
+            Are you a recruiter?{" "}
+            <Link to="/login" className="text-accent hover:underline">Sign in as HR</Link>
           </p>
         </motion.div>
       </div>

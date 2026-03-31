@@ -90,7 +90,7 @@ export default function HRDashboard() {
       <DashboardSidebar role="hr" />
 
       <main className="flex-1 overflow-auto">
-        <div className="p-8 max-w-[1400px]">
+        <div className="p-8 w-full">
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-8 flex items-center justify-between">
             <div>
               <h1 className="font-display font-bold text-2xl text-foreground">Recruiter Dashboard</h1>
