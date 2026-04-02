@@ -15,7 +15,7 @@ export default function TextReveal({
   splitBy = "word",
 }: TextRevealProps) {
   const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, amount: 0.2 });
+  const inView = useInView(ref, { once: true, margin: "-10%" });
 
   const units =
     splitBy === "char"

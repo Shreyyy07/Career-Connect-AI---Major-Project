@@ -162,7 +162,7 @@ const RecCard = ({ r, onUpdate, onError }: { r: any; onUpdate: (rec: any) => voi
             <span className="text-base font-bold text-foreground">{r.skill}</span>
           </div>
           {isHigh
-            ? <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-primary/20 text-primary border border-primary/30 shrink-0"><Zap size={10} />HIGH</span>
+            ? <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#00e5ff]/20 text-[#00e5ff] border border-[#00e5ff]/30 shrink-0"><Zap size={10} />HIGH</span>
             : <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide shrink-0">Medium</span>}
         </div>
 
@@ -180,8 +180,8 @@ const RecCard = ({ r, onUpdate, onError }: { r: any; onUpdate: (rec: any) => voi
             <SectionLabel>Recommended Courses</SectionLabel>
             <div className="flex flex-col gap-1.5">
               {r.courseNames.map((c: string, i: number) => (
-                <div key={i} className="flex items-center gap-2 text-sm text-primary bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-lg font-medium">
-                  <BookOpen size={13} className="shrink-0 text-primary/70" />{c}
+                <div key={i} className="flex items-center gap-2 text-sm text-[#00e5ff] bg-[#00e5ff]/10 border border-[#00e5ff]/20 px-3 py-1.5 rounded-lg font-medium">
+                  <BookOpen size={13} className="shrink-0 text-[#00e5ff]/70" />{c}
                 </div>
               ))}
             </div>
@@ -373,7 +373,7 @@ export const ResumeMatch = () => {
               <button key={key} onClick={() => setTab(key)}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
                   tab === key
-                    ? 'bg-primary text-primary-foreground shadow-sm glow-primary'
+                    ? 'bg-[#00e5ff] text-black shadow-sm glow-primary'
                     : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}`}>
                 <Icon size={16} />{label}
               </button>
@@ -390,22 +390,22 @@ export const ResumeMatch = () => {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             <div className={`lg:col-span-2 ${glass} rounded-2xl p-6`}>
               <div className="flex items-center gap-3 mb-5">
-                <div className="p-2 bg-primary/10 rounded-xl"><FileUp size={20} className="text-primary" /></div>
+                <div className="p-2 bg-[#00e5ff]/10 rounded-xl"><FileUp size={20} className="text-[#00e5ff]" /></div>
                 <h2 className="text-xl font-bold text-foreground">Upload Resume</h2>
               </div>
               <label className="block w-full cursor-pointer">
                 <div className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
-                  resumeFile ? 'border-primary/50 bg-primary/5' : 'border-border hover:border-primary/40 hover:bg-secondary/30'}`}>
-                  <FileUp size={30} className={`mx-auto mb-2 ${resumeFile ? 'text-primary' : 'text-muted-foreground/40'}`} />
+                  resumeFile ? 'border-[#00e5ff]/50 bg-[#00e5ff]/5' : 'border-border hover:border-[#00e5ff]/40 hover:bg-secondary/30'}`}>
+                  <FileUp size={30} className={`mx-auto mb-2 ${resumeFile ? 'text-[#00e5ff]' : 'text-muted-foreground/40'}`} />
                   {resumeFile
-                    ? <p className="font-semibold text-primary">{resumeFile.name}</p>
+                    ? <p className="font-semibold text-[#00e5ff]">{resumeFile.name}</p>
                     : <><p className="font-semibold text-foreground">Drop PDF or DOCX here</p><p className="text-sm text-muted-foreground mt-1">Max 5 MB</p></>}
                 </div>
                 <input type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                   onChange={e => setResumeFile(e.target.files?.[0] || null)} className="hidden" />
               </label>
               <button onClick={uploadResume} disabled={busy || !resumeFile}
-                className="mt-4 w-full bg-primary text-primary-foreground py-3 rounded-xl font-bold hover:bg-primary/90 transition-all duration-200 disabled:opacity-40 glow-primary">
+                className="mt-4 w-full bg-[#00e5ff] text-black py-3 rounded-xl font-bold hover:bg-[#00e5ff]/90 transition-all duration-200 disabled:opacity-40 glow-primary">
                 {busy ? 'Uploading…' : 'Upload Resume'}
               </button>
             </div>
@@ -414,8 +414,8 @@ export const ResumeMatch = () => {
               {resumes.length === 0
                 ? <div className="flex flex-col items-center justify-center py-14 text-muted-foreground"><FileUp size={36} className="mb-2 opacity-30" /><p>No resumes uploaded yet</p></div>
                 : <ul className="space-y-2">{resumes.map(r => (
-                    <li key={r.resumeID} className="flex items-center justify-between p-4 bg-secondary/40 rounded-xl border border-border/60 hover:border-primary/30 transition-all duration-150">
-                      <div className="flex items-center gap-3"><div className="p-2 bg-primary/10 rounded-lg"><FileText size={15} className="text-primary" /></div><span className="font-semibold text-foreground">{r.filename}</span></div>
+                    <li key={r.resumeID} className="flex items-center justify-between p-4 bg-secondary/40 rounded-xl border border-border/60 hover:border-[#00e5ff]/30 transition-all duration-150">
+                      <div className="flex items-center gap-3"><div className="p-2 bg-[#00e5ff]/10 rounded-lg"><FileText size={15} className="text-[#00e5ff]" /></div><span className="font-semibold text-foreground">{r.filename}</span></div>
                       <span className="text-sm text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
                     </li>
                   ))}</ul>}
@@ -471,12 +471,12 @@ export const ResumeMatch = () => {
               <div className={`${glass} rounded-2xl p-6`}>
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-xl"><Users size={18} className="text-primary" /></div>
+                    <div className="p-2 bg-[#00e5ff]/10 rounded-xl"><Users size={18} className="text-[#00e5ff]" /></div>
                     <div><h3 className="text-lg font-bold text-foreground">Recruiter View</h3><p className="text-sm text-muted-foreground">All applicants ranked for selected JD</p></div>
                   </div>
                   <button onClick={async () => { if (!selectedJobID) return; setRecruiterLoading(true); try { const rows = await apiFetch<RecruiterMatchRow[]>(`/api/v1/hr/matches?jobID=${selectedJobID}`); setRecruiterRows(rows || []); } catch (e: any) { setMessage(e?.message || 'Failed'); } finally { setRecruiterLoading(false); } }}
                     disabled={!selectedJobID || recruiterLoading}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 transition-all duration-200 glow-primary">
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm bg-[#00e5ff] text-black hover:bg-[#00e5ff]/90 disabled:opacity-40 transition-all duration-200 glow-primary">
                     {recruiterLoading ? <RefreshCw size={14} className="animate-spin" /> : <TrendingUp size={14} />}{recruiterLoading ? 'Loading…' : 'Load Rankings'}
                   </button>
                 </div>
@@ -496,8 +496,8 @@ export const ResumeMatch = () => {
                           <button key={t} onClick={() => setRecruiterTierFilter(t)}
                             className={`text-sm px-3 py-1.5 rounded-lg font-semibold border transition-all duration-150 ${
                               recruiterTierFilter === t
-                                ? 'bg-primary text-primary-foreground border-primary'
-                                : 'bg-secondary/60 text-muted-foreground border-border hover:border-primary/40'}`}>
+                                ? 'bg-[#00e5ff] text-black border-[#00e5ff]'
+                                : 'bg-secondary/60 text-muted-foreground border-border hover:border-[#00e5ff]/40'}`}>
                             {t.charAt(0).toUpperCase()+t.slice(1)}
                           </button>
                         ))}</div>
@@ -507,7 +507,7 @@ export const ResumeMatch = () => {
                       {recruiterRows.filter(r => recruiterTierFilter === 'all' || r.tier === recruiterTierFilter)
                         .sort((a, b) => recruiterSort === 'cosine' ? b.cosineScore - a.cosineScore : b.hybridScore - a.hybridScore)
                         .slice(0, 10).map((r, idx) => (
-                          <div key={`${r.resumeID}_${idx}`} className="flex items-center gap-4 p-4 bg-secondary/40 backdrop-blur-sm rounded-xl border border-border/60 hover:border-primary/30 hover:bg-secondary/60 transition-all duration-200">
+                          <div key={`${r.resumeID}_${idx}`} className="flex items-center gap-4 p-4 bg-secondary/40 backdrop-blur-sm rounded-xl border border-border/60 hover:border-[#00e5ff]/30 hover:bg-secondary/60 transition-all duration-200">
                             <span className="text-xl font-bold text-slate-300 w-8 text-center shrink-0">{idx+1}</span>
                             <Avatar name={r.candidateName} id={r.candidateUserID} />
                             <div className="flex-1 min-w-0">
@@ -531,7 +531,7 @@ export const ResumeMatch = () => {
             {/* Match selectors */}
             <div className={`${glass} rounded-2xl p-6`}>
               <div className="flex items-center gap-3 mb-5">
-                <div className="p-2 bg-primary/10 rounded-xl"><Sparkles size={18} className="text-primary" /></div>
+                <div className="p-2 bg-[#00e5ff]/10 rounded-xl"><Sparkles size={18} className="text-[#00e5ff]" /></div>
                 <h2 className="text-xl font-bold text-foreground">Compute Match Score</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">

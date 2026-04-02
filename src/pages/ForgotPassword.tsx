@@ -58,10 +58,10 @@ export default function ForgotPassword() {
       <div className="w-full max-w-md">
         {/* Brand */}
         <div className="flex items-center justify-center gap-2 mb-10">
-          <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-lg bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center">
             <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain rounded-md" />
           </div>
-          <span className="font-display font-bold text-lg">Career<span className="text-primary">Connect</span> AI</span>
+          <span className="font-display font-bold text-lg">Career<span className="text-[#00e5ff]">Connect</span> AI</span>
         </div>
 
         {/* Step indicator */}
@@ -69,7 +69,7 @@ export default function ForgotPassword() {
           {(["email", "otp", "done"] as Step[]).map((s, i) => (
             <div key={s} className="flex items-center gap-2">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                step === s ? "bg-primary text-primary-foreground glow-primary" :
+                step === s ? "bg-[#00e5ff] text-black glow-primary" :
                 (i < (step === "otp" ? 1 : step === "done" ? 2 : 0)) ? "bg-emerald-500 text-white" : "bg-secondary text-muted-foreground"
               }`}>
                 {i < (step === "otp" ? 1 : step === "done" ? 2 : 0) ? "✓" : i + 1}
@@ -99,17 +99,17 @@ export default function ForgotPassword() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@example.com"
-                      className="pl-10 bg-secondary/50 border-border/60 focus:border-primary h-11"
+                      className="pl-10 bg-secondary/50 border-border/60 focus:border-[#00e5ff] h-11"
                       required
                     />
                   </div>
                 </div>
-                <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground glow-primary h-11">
+                <Button type="submit" disabled={loading} className="w-full bg-[#00e5ff] text-black glow-primary h-11">
                   {loading ? "Sending OTP…" : "Send OTP"} <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </form>
               <p className="text-sm text-muted-foreground mt-6 text-center">
-                <Link to="/login" className="text-primary hover:underline inline-flex items-center gap-1">
+                <Link to="/login" className="text-[#00e5ff] hover:underline inline-flex items-center gap-1">
                   <ArrowLeft className="w-3 h-3" /> Back to Sign In
                 </Link>
               </p>
@@ -143,7 +143,7 @@ export default function ForgotPassword() {
                       value={otp}
                       onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                       placeholder="000000"
-                      className="pl-10 bg-secondary/50 border-border/60 focus:border-primary h-11 text-2xl tracking-[0.5em] font-mono text-center"
+                      className="pl-10 bg-secondary/50 border-border/60 focus:border-[#00e5ff] h-11 text-2xl tracking-[0.5em] font-mono text-center"
                       maxLength={6}
                       required
                     />
@@ -158,7 +158,7 @@ export default function ForgotPassword() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Min. 8 characters"
-                      className="pl-10 pr-10 bg-secondary/50 border-border/60 focus:border-primary h-11"
+                      className="pl-10 pr-10 bg-secondary/50 border-border/60 focus:border-[#00e5ff] h-11"
                       required
                     />
                     <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
@@ -166,12 +166,12 @@ export default function ForgotPassword() {
                     </button>
                   </div>
                 </div>
-                <Button type="submit" disabled={loading || otp.length !== 6} className="w-full bg-primary text-primary-foreground glow-primary h-11">
+                <Button type="submit" disabled={loading || otp.length !== 6} className="w-full bg-[#00e5ff] text-black glow-primary h-11">
                   {loading ? "Resetting…" : "Reset Password"} <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </form>
               <p className="text-sm text-muted-foreground mt-4 text-center">
-                <button onClick={() => { setStep("email"); setOtp(""); setErr(""); }} className="text-primary hover:underline inline-flex items-center gap-1">
+                <button onClick={() => { setStep("email"); setOtp(""); setErr(""); }} className="text-[#00e5ff] hover:underline inline-flex items-center gap-1">
                   <ArrowLeft className="w-3 h-3" /> Try a different email
                 </button>
               </p>
@@ -186,7 +186,7 @@ export default function ForgotPassword() {
               </div>
               <h1 className="font-display font-bold text-2xl text-foreground mb-3">Password Reset!</h1>
               <p className="text-muted-foreground mb-8">Your password has been updated successfully. You can now sign in with your new password.</p>
-              <Button onClick={() => navigate("/login")} className="w-full bg-primary text-primary-foreground glow-primary h-11">
+              <Button onClick={() => navigate("/login")} className="w-full bg-[#00e5ff] text-black glow-primary h-11">
                 Go to Sign In <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </motion.div>

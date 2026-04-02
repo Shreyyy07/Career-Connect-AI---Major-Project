@@ -1,102 +1,104 @@
-import { useEffect, useRef } from "react";
+import { useRef, useMemo } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Float, Sparkles } from "@react-three/drei";
+import * as THREE from "three";
 
-export default function NeuralNetwork3D() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+function NeuralNodes() {
+  const groupRef = useRef<THREE.Group>(null);
+  const linesRef = useRef<THREE.LineSegments>(null);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let width = window.innerWidth;
-    let height = window.innerHeight;
-    canvas.width = width;
-    canvas.height = height;
-
-    const nodes: { x: number; y: number; vx: number; vy: number; radius: number; opacity: number }[] = [];
-    const numNodes = 80;
-    const maxDistance = 150;
-
-    for (let i = 0; i < numNodes; i++) {
-      nodes.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 1.5,
-        vy: (Math.random() - 0.5) * 1.5,
-        radius: Math.random() * 2 + 1,
-        opacity: Math.random() * 0.5 + 0.3,
-      });
+  const { positions, connections } = useMemo(() => {
+    const nodeCount = 60;
+    const pos: THREE.Vector3[] = [];
+    for (let i = 0; i < nodeCount; i++) {
+      pos.push(
+        new THREE.Vector3(
+          (Math.random() - 0.5) * 8,
+          (Math.random() - 0.5) * 6,
+          (Math.random() - 0.5) * 6
+        )
+      );
     }
 
-    let animationFrameId: number;
-
-    const render = () => {
-      ctx.clearRect(0, 0, width, height);
-      
-      // Update positions
-      nodes.forEach(node => {
-        node.x += node.vx;
-        node.y += node.vy;
-        
-        if (node.x <= 0 || node.x >= width) node.vx *= -1;
-        if (node.y <= 0 || node.y >= height) node.vy *= -1;
-      });
-
-      // Draw lines
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const dx = nodes[i].x - nodes[j].x;
-          const dy = nodes[i].y - nodes[j].y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-
-          if (distance < maxDistance) {
-            ctx.beginPath();
-            ctx.strokeStyle = `rgba(0, 229, 255, ${0.2 * (1 - distance / maxDistance)})`;
-            ctx.lineWidth = 1;
-            ctx.moveTo(nodes[i].x, nodes[i].y);
-            ctx.lineTo(nodes[j].x, nodes[j].y);
-            ctx.stroke();
-          }
+    const conns: number[] = [];
+    for (let i = 0; i < nodeCount; i++) {
+      for (let j = i + 1; j < nodeCount; j++) {
+        if (pos[i].distanceTo(pos[j]) < 2.5) {
+          conns.push(
+            pos[i].x, pos[i].y, pos[i].z,
+            pos[j].x, pos[j].y, pos[j].z
+          );
         }
       }
+    }
 
-      // Draw nodes
-      nodes.forEach(node => {
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(0, 229, 255, ${node.opacity})`;
-        ctx.fill();
-        
-        // Glow effect
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "#00e5ff";
-      });
-      ctx.shadowBlur = 0;
-
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    render();
-
-    const handleResize = () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = width;
-      canvas.height = height;
-    };
-
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      cancelAnimationFrame(animationFrameId);
-    };
+    return { positions: pos, connections: new Float32Array(conns) };
   }, []);
 
+  useFrame((state) => {
+    if (groupRef.current) {
+      groupRef.current.rotation.y = state.clock.elapsedTime * 0.05;
+      groupRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.03) * 0.1;
+    }
+  });
+
+  const lineGeometry = useMemo(() => {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(connections, 3));
+    return geo;
+  }, [connections]);
+
   return (
-    <div className="absolute inset-0 opacity-70 pointer-events-none z-0">
-      <canvas ref={canvasRef} className="w-full h-full" />
+    <group ref={groupRef}>
+      {positions.map((pos, i) => (
+        <mesh key={i} position={pos}>
+          <sphereGeometry args={[0.04 + Math.random() * 0.03, 16, 16]} />
+          <meshBasicMaterial color="#00e5ff" transparent opacity={0.6 + Math.random() * 0.4} />
+        </mesh>
+      ))}
+      <lineSegments ref={linesRef} geometry={lineGeometry}>
+        <lineBasicMaterial color="#00e5ff" transparent opacity={0.12} />
+      </lineSegments>
+    </group>
+  );
+}
+
+function GlowingSphere() {
+  const meshRef = useRef<THREE.Mesh>(null);
+
+  useFrame((state) => {
+    if (meshRef.current) {
+      meshRef.current.scale.setScalar(1 + Math.sin(state.clock.elapsedTime * 0.5) * 0.05);
+    }
+  });
+
+  return (
+    <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.5}>
+      <mesh ref={meshRef}>
+        <sphereGeometry args={[1.2, 64, 64]} />
+        <meshBasicMaterial color="#00e5ff" transparent opacity={0.03} />
+      </mesh>
+      <mesh>
+        <sphereGeometry args={[1.25, 64, 64]} />
+        <meshBasicMaterial color="#00e5ff" wireframe transparent opacity={0.06} />
+      </mesh>
+    </Float>
+  );
+}
+
+export default function NeuralNetwork3D() {
+  return (
+    <div className="absolute inset-0 opacity-70">
+      <Canvas
+        camera={{ position: [0, 0, 7], fov: 60 }}
+        gl={{ antialias: true, alpha: true }}
+        style={{ background: "transparent" }}
+      >
+        <ambientLight intensity={0.5} />
+        <NeuralNodes />
+        <GlowingSphere />
+        <Sparkles count={80} scale={10} size={1.5} speed={0.3} color="#00e5ff" opacity={0.3} />
+      </Canvas>
     </div>
   );
 }

@@ -33,14 +33,14 @@ export default function Login() {
       {/* Left panel */}
       <div className="hidden lg:flex flex-1 items-center justify-center relative overflow-hidden bg-card/30">
         <div className="absolute inset-0 bg-grid opacity-30" />
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full bg-primary/10 blur-[100px]" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full bg-[#00e5ff]/10 blur-[100px]" />
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8 }}
           className="relative z-10 text-center px-12"
         >
-          <div className="w-20 h-20 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center mx-auto mb-8 glow-primary">
+          <div className="w-20 h-20 rounded-2xl bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center mx-auto mb-8 glow-primary">
             <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain rounded-xl" />
           </div>
           <h2 className="font-display font-bold text-3xl text-foreground mb-4">
@@ -61,10 +61,10 @@ export default function Login() {
           className="w-full max-w-md"
         >
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center">
               <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain rounded-md" />
             </div>
-            <span className="font-display font-bold text-lg">Career<span className="text-primary">Connect</span> AI</span>
+            <span className="font-display font-bold text-lg">Career<span className="text-[#00e5ff]">Connect</span> AI</span>
           </div>
 
           <h1 className="font-display font-bold text-2xl text-foreground mb-2">Sign in</h1>
@@ -81,7 +81,7 @@ export default function Login() {
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 bg-secondary/50 border-border/60 focus:border-primary h-11"
+                  className="pl-10 bg-secondary/50 border-border/60 focus:border-[#00e5ff] h-11"
                   required
                 />
               </div>
@@ -90,7 +90,7 @@ export default function Login() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-sm text-foreground font-medium">Password</label>
-                <Link to="/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
+                <Link to="/forgot-password" className="text-xs text-[#00e5ff] hover:underline">Forgot password?</Link>
               </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -99,20 +99,20 @@ export default function Login() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 bg-secondary/50 border-border/60 focus:border-primary h-11"
+                  className="pl-10 bg-secondary/50 border-border/60 focus:border-[#00e5ff] h-11"
                   required
                 />
               </div>
             </div>
 
-            <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 glow-primary font-display font-semibold h-11 mt-2">
+            <Button type="submit" disabled={loading} className="w-full bg-[#00e5ff] text-black hover:bg-[#00e5ff]/90 glow-primary font-display font-semibold h-11 mt-2">
               {loading ? "Signing in..." : "Sign In"} <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
           </form>
 
           <p className="text-sm text-muted-foreground mt-6 text-center">
             Don't have an account?{" "}
-            <Link to="/register" className="text-primary hover:underline font-medium">Create one</Link>
+            <Link to="/register" className="text-[#00e5ff] hover:underline font-medium">Create one</Link>
           </p>
         </motion.div>
       </div>

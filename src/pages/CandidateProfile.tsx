@@ -96,17 +96,17 @@ export default function CandidateProfile() {
             >
               {/* Avatar */}
               <div className="relative mb-5">
-                <div className="w-24 h-24 rounded-full bg-primary/20 border-4 border-primary/40 glow-primary flex items-center justify-center font-display font-bold text-primary text-4xl select-none">
+                <div className="w-24 h-24 rounded-full bg-[#00e5ff]/20 border-4 border-[#00e5ff]/40 glow-primary flex items-center justify-center font-display font-bold text-[#00e5ff] text-4xl select-none">
                   {initials}
                 </div>
-                <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary border-2 border-background flex items-center justify-center text-primary-foreground hover:bg-primary/80 transition-all">
+                <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#00e5ff] border-2 border-background flex items-center justify-center text-black hover:bg-[#00e5ff]/80 transition-all">
                   <Camera className="w-3.5 h-3.5" />
                 </button>
               </div>
 
               <h2 className="font-display font-bold text-xl text-foreground">{user?.name || "User"}</h2>
               <p className="text-sm text-muted-foreground mb-1">{user?.email}</p>
-              <span className="inline-block text-[11px] uppercase tracking-wider text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20 mt-1">
+              <span className="inline-block text-[11px] uppercase tracking-wider text-[#00e5ff] bg-[#00e5ff]/10 px-3 py-1 rounded-full border border-[#00e5ff]/20 mt-1">
                 {user?.role || "candidate"}
               </span>
 
@@ -114,7 +114,7 @@ export default function CandidateProfile() {
               <div className="w-full mt-6 space-y-3 text-left">
                 {[
                   { icon: FileText, label: "Resume", value: "Uploaded", color: "text-emerald-400" },
-                  { icon: Mic, label: "Interviews", value: "Track on Dashboard", color: "text-primary" },
+                  { icon: Mic, label: "Interviews", value: "Track on Dashboard", color: "text-[#00e5ff]" },
                   { icon: TrendingUp, label: "Latest Score", value: "View Reports", color: "text-accent" },
                 ].map(({ icon: Icon, label, value, color }) => (
                   <div key={label} className="flex items-center gap-3 p-3 bg-secondary/40 rounded-lg border border-border/40">
@@ -136,8 +136,8 @@ export default function CandidateProfile() {
                 className="glass rounded-2xl p-6"
               >
                 <div className="flex items-center gap-3 mb-5">
-                  <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <User className="w-4 h-4 text-primary" />
+                  <div className="w-9 h-9 rounded-lg bg-[#00e5ff]/10 flex items-center justify-center">
+                    <User className="w-4 h-4 text-[#00e5ff]" />
                   </div>
                   <div>
                     <h3 className="font-display font-semibold text-foreground">Display Name</h3>
@@ -152,7 +152,7 @@ export default function CandidateProfile() {
                     <Input
                       value={nameEdit}
                       onChange={(e) => setNameEdit(e.target.value)}
-                      className="bg-secondary/50 border-border/60 focus:border-primary h-11"
+                      className="bg-secondary/50 border-border/60 focus:border-[#00e5ff] h-11"
                       placeholder="Your full name"
                       required
                     />
@@ -169,7 +169,7 @@ export default function CandidateProfile() {
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">Email address cannot be changed.</p>
                   </div>
-                  <Button type="submit" disabled={nameSaving} className="bg-primary text-primary-foreground hover:bg-primary/90 glow-primary">
+                  <Button type="submit" disabled={nameSaving} className="bg-[#00e5ff] text-black hover:bg-[#00e5ff]/90 glow-primary">
                     <Save className="w-4 h-4 mr-2" />
                     {nameSaving ? "Saving…" : "Save Changes"}
                   </Button>
@@ -201,7 +201,7 @@ export default function CandidateProfile() {
                         value={currentPw}
                         onChange={(e) => setCurrentPw(e.target.value)}
                         placeholder="••••••••"
-                        className="pl-10 pr-10 bg-secondary/50 border-border/60 focus:border-primary h-11"
+                        className="pl-10 pr-10 bg-secondary/50 border-border/60 focus:border-[#00e5ff] h-11"
                         required
                       />
                       <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
@@ -217,7 +217,7 @@ export default function CandidateProfile() {
                         value={newPw}
                         onChange={(e) => setNewPw(e.target.value)}
                         placeholder="Min. 8 characters"
-                        className="bg-secondary/50 border-border/60 focus:border-primary h-11"
+                        className="bg-secondary/50 border-border/60 focus:border-[#00e5ff] h-11"
                         required
                       />
                     </div>
@@ -228,7 +228,7 @@ export default function CandidateProfile() {
                         value={confirmPw}
                         onChange={(e) => setConfirmPw(e.target.value)}
                         placeholder="Re-enter new password"
-                        className="bg-secondary/50 border-border/60 focus:border-primary h-11"
+                        className="bg-secondary/50 border-border/60 focus:border-[#00e5ff] h-11"
                         required
                       />
                     </div>

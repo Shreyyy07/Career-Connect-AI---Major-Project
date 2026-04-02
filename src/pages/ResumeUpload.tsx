@@ -35,11 +35,11 @@ export default function ResumeUpload() {
             className="glass rounded-2xl p-12 max-w-2xl mx-auto text-center"
           >
             <div
-              className="border-2 border-dashed border-border/60 rounded-xl p-12 hover:border-primary/40 transition-all cursor-pointer"
+              className="border-2 border-dashed border-border/60 rounded-xl p-12 hover:border-[#00e5ff]/40 transition-all cursor-pointer"
               onClick={() => setUploaded(true)}
             >
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center mx-auto mb-6">
-                <Upload className="w-8 h-8 text-primary" />
+              <div className="w-16 h-16 rounded-2xl bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center mx-auto mb-6">
+                <Upload className="w-8 h-8 text-[#00e5ff]" />
               </div>
               <h3 className="font-display font-semibold text-lg text-foreground mb-2">
                 Drop your resume here
@@ -47,7 +47,7 @@ export default function ResumeUpload() {
               <p className="text-sm text-muted-foreground mb-4">
                 Supports PDF and DOCX files up to 5MB
               </p>
-              <Button className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 font-display">
+              <Button className="bg-[#00e5ff]/10 text-[#00e5ff] border border-[#00e5ff]/20 hover:bg-[#00e5ff]/20 font-display">
                 Browse Files
               </Button>
             </div>
@@ -112,7 +112,7 @@ export default function ResumeUpload() {
                     { icon: Star, label: "Projects", value: "5 featured projects detected" },
                   ].map((item, i) => (
                     <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-secondary/30 border border-border/30">
-                      <item.icon className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <item.icon className="w-4 h-4 text-[#00e5ff] mt-0.5 flex-shrink-0" />
                       <div>
                         <p className="text-[10px] uppercase text-muted-foreground">{item.label}</p>
                         <p className="text-sm text-foreground">{item.value}</p>
@@ -170,7 +170,7 @@ export default function ResumeUpload() {
               transition={{ delay: 0.4 }}
               className="flex gap-3"
             >
-              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 glow-primary font-display font-semibold">
+              <Button className="bg-[#00e5ff] text-black hover:bg-[#00e5ff]/90 glow-primary font-display font-semibold">
                 Start AI Interview <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
               <Button variant="outline" className="border-border/60 text-foreground hover:bg-secondary font-display">

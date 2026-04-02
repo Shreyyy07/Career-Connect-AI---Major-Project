@@ -14,6 +14,10 @@ Base.metadata.create_all(bind=engine)
 try:
     insp = inspect(engine)
     with engine.begin() as conn:
+        if "users" in insp.get_table_names():
+            cols = {c["name"] for c in insp.get_columns("users")}
+            if "is_verified" not in cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT 0"))
         if "resumes" in insp.get_table_names():
             cols = {c["name"] for c in insp.get_columns("resumes")}
             if "embedding_csv" not in cols:

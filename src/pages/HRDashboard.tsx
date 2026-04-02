@@ -101,7 +101,7 @@ export default function HRDashboard() {
                 <Bell className="w-4 h-4 text-muted-foreground" />
                 <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive rounded-full text-[9px] font-bold text-destructive-foreground flex items-center justify-center">4</span>
               </Button>
-              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 font-display text-sm h-9 glow-primary">
+              <Button className="bg-[#00e5ff] text-black hover:bg-[#00e5ff]/90 font-display text-sm h-9 glow-primary">
                 <Plus className="w-4 h-4 mr-1" /> Post New Job
               </Button>
             </div>
@@ -176,7 +176,7 @@ export default function HRDashboard() {
                   <h3 className="font-display font-semibold text-foreground">Job Descriptions</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">Create, edit, and archive JDs</p>
                 </div>
-                <Button size="sm" className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 text-xs h-8">
+                <Button size="sm" className="bg-[#00e5ff]/10 text-[#00e5ff] border border-[#00e5ff]/20 hover:bg-[#00e5ff]/20 text-xs h-8">
                   <Plus className="w-3 h-3 mr-1" /> New JD
                 </Button>
               </div>
@@ -189,7 +189,7 @@ export default function HRDashboard() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.25 + i * 0.06 }}
-                    className="p-3.5 rounded-lg bg-secondary/20 border border-border/30 hover:border-primary/20 transition-all"
+                    className="p-3.5 rounded-lg bg-secondary/20 border border-border/30 hover:border-[#00e5ff]/20 transition-all"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-sm font-medium text-foreground">{job.title}</p>
@@ -299,7 +299,7 @@ export default function HRDashboard() {
                       <td className="py-3 text-xs text-muted-foreground font-display font-bold">{i + 1}</td>
                       <td className="py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                          <div className="w-8 h-8 rounded-full bg-[#00e5ff]/10 border border-[#00e5ff]/20 flex items-center justify-center text-xs font-bold text-[#00e5ff]">
                             {c.avatar}
                           </div>
                           <div>

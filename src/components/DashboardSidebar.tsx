@@ -50,7 +50,7 @@ export default function DashboardSidebar({ role }: SidebarProps) {
       {/* Collapse toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3.5 top-6 z-20 w-7 h-7 rounded-full bg-card border border-border/60 flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/40 transition-all shadow-md"
+        className="absolute -right-3.5 top-6 z-20 w-7 h-7 rounded-full bg-card border border-border/60 flex items-center justify-center text-muted-foreground hover:text-[#00e5ff] hover:border-[#00e5ff]/40 transition-all shadow-md"
       >
         {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
       </button>
@@ -58,12 +58,12 @@ export default function DashboardSidebar({ role }: SidebarProps) {
       {/* Logo — flex-shrink-0 so it never compresses */}
       <div className={cn("flex-shrink-0 border-b border-border/50 flex items-center", collapsed ? "p-4 justify-center" : "p-5")}>
         <Link to="/" className="flex items-center gap-2 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center flex-shrink-0">
             <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain rounded-md" />
           </div>
           {!collapsed && (
             <span className="font-display font-bold text-sm text-foreground truncate">
-              Career<span className="text-primary">Connect</span> AI
+              Career<span className="text-[#00e5ff]">Connect</span> AI
             </span>
           )}
         </Link>
@@ -87,7 +87,7 @@ export default function DashboardSidebar({ role }: SidebarProps) {
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all",
                 collapsed && "justify-center px-2",
                 active
-                  ? "bg-primary/10 text-primary border border-primary/20 glow-primary"
+                  ? "bg-[#00e5ff]/10 text-[#00e5ff] border border-[#00e5ff]/20 glow-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
               )}
             >

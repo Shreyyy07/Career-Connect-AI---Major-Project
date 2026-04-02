@@ -9,8 +9,12 @@ from ..db import get_db
 from ..models import User
 from ..schemas import (
     RegisterRequest, AuthResponse, LoginRequest, LoginResponse,
-    ProfileResponse, ProfileUpdateRequest
+    ProfileResponse, ProfileUpdateRequest, VerifyEmailRequest, ResendVerificationRequest
 )
+import smtplib
+from email.message import EmailMessage
+import os
+from ..core.config import settings
 from ..security import hash_password, verify_password, create_access_token, decode_token
 from ..deps import get_current_user
 
@@ -39,13 +43,181 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
         full_name=payload.name.strip(),
         role=payload.role.value,
         password_hash=hash_password(payload.password),
+        is_verified=False
     )
     db.add(user)
     db.commit()
     db.refresh(user)
 
+    otp = _gen_otp()
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
+    _otp_store[user.email] = {"otp": otp, "expires_at": expires_at, "used": False}
+
+    success = _send_otp_email(user.email, otp)
+    if not success:
+        # If email fails, rollback so they can try again and let them know.
+        db.delete(user)
+        db.commit()
+        raise HTTPException(status_code=500, detail="Failed to dispatch verification email. Please check SMTP App Password.")
+
+    # Return empty token so frontend knows it must verify email next
+    return AuthResponse(userID=user.id, token="")
+
+def _send_otp_email(to_email: str, otp: str):
+    smtp_user = settings.smtp_email
+    smtp_pass = settings.smtp_password
+    if not smtp_user or not smtp_pass:
+        print(f"[DEV] Missing SMTP config. OTP for {to_email} is {otp}")
+        return True # Dev fallback allows registration to succeed so testing continues
+
+    try:
+        msg = EmailMessage()
+        msg["Subject"] = "Verify your email - Career Connect AI"
+        msg["From"] = f"Career Connect AI <{smtp_user}>"
+        msg["To"] = to_email
+        
+        # Set plaintext fallback
+        msg.set_content(f"Hello,\n\nYour Career Connect AI verification code is: {otp}\n\nThis code will expire in 15 minutes.\n\nThank you!")
+
+        # Add Beautiful HTML version matching Loveable screenshot style
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                    background-color: #fafbfc;
+                    margin: 0;
+                    padding: 50px 20px;
+                }}
+                .logo-header {{
+                    text-align: center;
+                    font-size: 26px;
+                    font-weight: 800;
+                    color: #000000;
+                    margin-bottom: 25px;
+                    letter-spacing: -0.5px;
+                }}
+                .highlight {{
+                    color: #00e5ff;
+                }}
+                .container {{
+                    max-width: 480px;
+                    margin: 0 auto;
+                    background-color: #ffffff;
+                    border: 1px solid #e1e4e8;
+                    border-radius: 16px;
+                    padding: 45px 40px;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+                }}
+                h1 {{
+                    font-size: 22px;
+                    color: #1f2328;
+                    margin-bottom: 12px;
+                    margin-top: 0;
+                    font-weight: 700;
+                    letter-spacing: -0.3px;
+                }}
+                p {{
+                    font-size: 15px;
+                    line-height: 1.6;
+                    color: #424a53;
+                    margin-bottom: 30px;
+                }}
+                .otp-box {{
+                    text-align: center;
+                    margin-bottom: 20px;
+                }}
+                .otp-button {{
+                    display: inline-block;
+                    background-color: #00e5ff;
+                    color: #000000;
+                    font-size: 28px;
+                    font-weight: 700;
+                    letter-spacing: 8px;
+                    padding: 16px 32px;
+                    border-radius: 12px;
+                    text-decoration: none;
+                    margin: 0 auto;
+                    box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+                }}
+                .footer {{
+                    text-align: center;
+                    margin-top: 35px;
+                    font-size: 13px;
+                    color: #8c959f;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="logo-header">Career<span class="highlight">Connect</span> AI</div>
+            <div class="container">
+                <h1>Verify your <b>Career<span class="highlight">Connect</span></b> email</h1>
+                <p>Welcome to CareerConnect. Please use the verification code below to securely verify your email address and activate your sign in.</p>
+                
+                <div class="otp-box">
+                    <div class="otp-button">{otp}</div>
+                </div>
+                
+                <p style="font-size: 13px; color: #6e7781; margin-bottom: 0; margin-top: 30px;">
+                    This code will expire in 15 minutes. If you did not request this, you can safely ignore this email.
+                </p>
+            </div>
+            <div class="footer">Recruitment. Redesigned.</div>
+        </body>
+        </html>
+        """
+        msg.add_alternative(html_content, subtype='html')
+
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+        print(f"[DEV] Real HTML email sent to {to_email}")
+        return True
+    except Exception as e:
+        print(f"[ERROR] Failed to send email to {to_email}: {e}")
+        return False
+
+@router.post("/verify-email", response_model=AuthResponse)
+def verify_email(payload: VerifyEmailRequest, db: Session = Depends(get_db)):
+    email = payload.email.lower().strip()
+    otp = payload.otp.strip()
+
+    record = _otp_store.get(email)
+    if not record or record.get("used"):
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+
+    if datetime.now(timezone.utc) > record["expires_at"]:
+        raise HTTPException(status_code=410, detail="OTP has expired")
+
+    if record["otp"] != otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP code")
+
+    user = db.query(User).filter(User.email == email).one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.is_verified = True
+    record["used"] = True
+    db.commit()
+
     token = create_access_token(sub=str(user.id), role=user.role.value, name=user.full_name)
     return AuthResponse(userID=user.id, token=token)
+
+@router.post("/resend-verification")
+def resend_verification(payload: ResendVerificationRequest, db: Session = Depends(get_db)):
+    email = payload.email.lower().strip()
+    user = db.query(User).filter(User.email == email).one_or_none()
+    if not user or user.is_verified:
+        return {"message": "If unverified, an email was sent"}
+        
+    otp = _gen_otp()
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
+    _otp_store[email] = {"otp": otp, "expires_at": expires_at, "used": False}
+    _send_otp_email(email, otp)
+    return {"message": "Verification email resent"}
 
 
 # ──────────────────────────────────────────────────────────────────
@@ -56,6 +228,9 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email.lower()).one_or_none()
     if not user or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    if not user.is_verified:
+        raise HTTPException(status_code=403, detail="Please verify your email to log in.")
 
     token = create_access_token(sub=str(user.id), role=user.role.value, name=user.full_name)
     return LoginResponse(token=token, refreshToken=None)

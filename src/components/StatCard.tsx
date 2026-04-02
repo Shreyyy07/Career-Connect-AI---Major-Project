@@ -14,11 +14,11 @@ export default function StatCard({ icon: Icon, label, value, change, positive }:
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass rounded-xl p-5 hover:border-primary/30 transition-all group"
+      className="glass rounded-xl p-5 hover:border-[#00e5ff]/30 transition-all group"
     >
       <div className="flex items-start justify-between mb-3">
-        <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:glow-primary transition-shadow">
-          <Icon className="w-5 h-5 text-primary" />
+        <div className="w-10 h-10 rounded-lg bg-[#00e5ff]/10 border border-[#00e5ff]/20 flex items-center justify-center group-hover:glow-primary transition-shadow">
+          <Icon className="w-5 h-5 text-[#00e5ff]" />
         </div>
         {change && (
           <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${positive ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>

@@ -121,7 +121,7 @@ export default function Register() {
               { val: "5★", label: "Candidate Rating" },
             ].map((s) => (
               <div key={s.label} className="glass rounded-xl p-3">
-                <p className="text-primary font-display font-bold text-xl">{s.val}</p>
+                <p className="text-[#00e5ff] font-display font-bold text-xl">{s.val}</p>
                 <p className="text-muted-foreground text-xs mt-0.5">{s.label}</p>
               </div>
             ))}
@@ -137,10 +137,10 @@ export default function Register() {
           className="w-full max-w-md"
         >
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center">
               <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain rounded-md" />
             </div>
-            <span className="font-display font-bold text-lg">Career<span className="text-primary">Connect</span> AI</span>
+            <span className="font-display font-bold text-lg">Career<span className="text-[#00e5ff]">Connect</span> AI</span>
           </div>
 
           <h1 className="font-display font-bold text-2xl text-foreground mb-1">Create Your Account</h1>
@@ -162,7 +162,7 @@ export default function Register() {
                   value={name}
                   onChange={(e) => { setName(e.target.value); setFieldErrors((p) => ({ ...p, name: "" })); }}
                   placeholder="John Doe"
-                  className={`pl-10 bg-secondary/50 border-border/60 focus:border-primary h-11 ${fieldErrors.name ? "border-destructive" : ""}`}
+                  className={`pl-10 bg-secondary/50 border-border/60 focus:border-[#00e5ff] h-11 ${fieldErrors.name ? "border-destructive" : ""}`}
                   required
                 />
               </div>
@@ -179,7 +179,7 @@ export default function Register() {
                   onChange={(e) => { setEmail(e.target.value); setFieldErrors((p) => ({ ...p, email: "" })); }}
                   type="email"
                   placeholder="you@example.com"
-                  className={`pl-10 bg-secondary/50 border-border/60 focus:border-primary h-11 ${fieldErrors.email ? "border-destructive" : ""}`}
+                  className={`pl-10 bg-secondary/50 border-border/60 focus:border-[#00e5ff] h-11 ${fieldErrors.email ? "border-destructive" : ""}`}
                   required
                 />
               </div>
@@ -196,7 +196,7 @@ export default function Register() {
                   onChange={(e) => { setPassword(e.target.value); setFieldErrors((p) => ({ ...p, password: "" })); }}
                   type={showPw ? "text" : "password"}
                   placeholder="Min. 8 characters"
-                  className={`pl-10 pr-10 bg-secondary/50 border-border/60 focus:border-primary h-11 ${fieldErrors.password ? "border-destructive" : ""}`}
+                  className={`pl-10 pr-10 bg-secondary/50 border-border/60 focus:border-[#00e5ff] h-11 ${fieldErrors.password ? "border-destructive" : ""}`}
                   required
                 />
                 <button
@@ -221,7 +221,7 @@ export default function Register() {
                   onChange={(e) => { setConfirmPassword(e.target.value); setFieldErrors((p) => ({ ...p, confirm: "" })); }}
                   type="password"
                   placeholder="Re-enter password"
-                  className={`pl-10 bg-secondary/50 border-border/60 focus:border-primary h-11 ${fieldErrors.confirm ? "border-destructive" : ""}`}
+                  className={`pl-10 bg-secondary/50 border-border/60 focus:border-[#00e5ff] h-11 ${fieldErrors.confirm ? "border-destructive" : ""}`}
                   required
                 />
               </div>
@@ -231,7 +231,7 @@ export default function Register() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 glow-primary font-display font-semibold h-11 mt-2"
+              className="w-full bg-[#00e5ff] text-black hover:bg-[#00e5ff]/90 glow-primary font-display font-semibold h-11 mt-2"
             >
               {loading ? "Creating Account…" : "Create Account"} <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
@@ -239,7 +239,7 @@ export default function Register() {
 
           <p className="text-sm text-muted-foreground mt-6 text-center">
             Already have an account?{" "}
-            <Link to="/login" className="text-primary hover:underline font-medium">Sign in</Link>
+            <Link to="/login" className="text-[#00e5ff] hover:underline font-medium">Sign in</Link>
           </p>
           <p className="text-xs text-muted-foreground mt-3 text-center">
             Are you a recruiter?{" "}

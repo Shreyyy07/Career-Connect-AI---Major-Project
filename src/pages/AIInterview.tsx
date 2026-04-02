@@ -197,7 +197,7 @@ export default function AIInterview() {
             animate={{ opacity: 1, scale: 1 }}
             className="glass rounded-2xl p-10 max-w-lg w-full text-center"
           >
-            <div className="w-20 h-20 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center mx-auto mb-6 glow-primary animate-glow-pulse">
+            <div className="w-20 h-20 rounded-2xl bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center mx-auto mb-6 glow-primary animate-glow-pulse">
               <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain rounded-xl" />
             </div>
             <h1 className="font-display font-bold text-2xl text-foreground mb-3">AI Interview Session</h1>
@@ -213,7 +213,7 @@ export default function AIInterview() {
                 { icon: Brain, text: "AI evaluates semantic accuracy & behavior" },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 border border-border/30">
-                  <item.icon className="w-4 h-4 text-primary flex-shrink-0" />
+                  <item.icon className="w-4 h-4 text-[#00e5ff] flex-shrink-0" />
                   <p className="text-sm text-muted-foreground">{item.text}</p>
                 </div>
               ))}
@@ -233,7 +233,7 @@ export default function AIInterview() {
                   <select 
                     value={selectedJD} 
                     onChange={e => setSelectedJD(e.target.value ? Number(e.target.value) : '')}
-                    className="w-full h-11 rounded-lg bg-secondary/50 border border-border/60 text-foreground px-3 text-sm focus:outline-none focus:border-primary transition-colors">
+                    className="w-full h-11 rounded-lg bg-secondary/50 border border-border/60 text-foreground px-3 text-sm focus:outline-none focus:border-[#00e5ff] transition-colors">
                     {jds.length === 0 && <option value="">Loading job descriptions...</option>}
                     {jds.map(j => <option key={j.jobID} value={j.jobID}>{j.title}</option>)}
                   </select>
@@ -243,7 +243,7 @@ export default function AIInterview() {
                   <select 
                     value={experience} 
                     onChange={e => setExperience(Number(e.target.value))}
-                    className="w-full h-11 rounded-lg bg-secondary/50 border border-border/60 text-foreground px-3 text-sm focus:outline-none focus:border-primary transition-colors">
+                    className="w-full h-11 rounded-lg bg-secondary/50 border border-border/60 text-foreground px-3 text-sm focus:outline-none focus:border-[#00e5ff] transition-colors">
                     <option value={1}>0-1 years</option>
                     <option value={3}>2-4 years</option>
                     <option value={5}>5+ years</option>
@@ -255,7 +255,7 @@ export default function AIInterview() {
             <Button
               onClick={requestPermissionsAndStart}
               disabled={starting || (!selectedJD && !location.state?.sessionID)}
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 glow-primary font-display font-semibold h-12 text-base mt-6"
+              className="w-full bg-[#00e5ff] text-black hover:bg-[#00e5ff]/90 glow-primary font-display font-semibold h-12 text-base mt-6"
             >
               {starting ? <Loader2 className="animate-spin w-5 h-5 mx-auto" /> : <><Video className="mr-2 w-4 h-4" /> Start Interview</>}
             </Button>
@@ -358,7 +358,7 @@ export default function AIInterview() {
           {/* Question Panel */}
           <div className="border-l border-border/50 flex flex-col bg-card/30">
             <div className="p-6 border-b border-border/50">
-              <p className="text-[10px] uppercase tracking-widest text-primary font-medium mb-2">QUESTION {currentQ + 1} OF {TOTAL_QUESTIONS}</p>
+              <p className="text-[10px] uppercase tracking-widest text-[#00e5ff] font-medium mb-2">QUESTION {currentQ + 1} OF {TOTAL_QUESTIONS}</p>
               <h3 className="font-display font-semibold text-foreground leading-relaxed text-lg">
                 {questions[currentQ] || 'Listening...'}
               </h3>
@@ -386,7 +386,7 @@ export default function AIInterview() {
             <div className="p-5 border-t border-border/50 bg-secondary/10">
               <Button 
                 onClick={handleNextQuestion} 
-                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 glow-primary font-display font-semibold h-12 text-base"
+                className="w-full bg-[#00e5ff] text-black hover:bg-[#00e5ff]/90 glow-primary font-display font-semibold h-12 text-base"
                 disabled={ending}
               >
                 {ending ? <Loader2 className="animate-spin w-5 h-5" /> : (currentQ + 1 >= TOTAL_QUESTIONS ? "Finish Interview" : "Next Question")}

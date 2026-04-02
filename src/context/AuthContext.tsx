@@ -17,6 +17,7 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<{ dev_otp?: string }>;
   confirmResetPassword: (email: string, otp: string, newPassword: string) => Promise<void>;
   updateProfile: (name: string) => Promise<void>;
+  verifyEmail: (email: string, otp: string) => Promise<string>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -83,14 +84,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signUp = async (email: string, password: string, fullName: string, role: 'candidate' | 'hr') => {
-    const res = await apiFetch<{ token: string; userID: number }>('/api/v1/auth/register', {
+    await apiFetch<{ token: string; userID: number }>('/api/v1/auth/register', {
       method: 'POST',
       body: JSON.stringify({ name: fullName, email, password, role }),
     });
+    return role;
+  };
+
+  const verifyEmail = async (email: string, otp: string) => {
+    const res = await apiFetch<{ token: string }>('/api/v1/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp }),
+    });
     setToken(res.token);
     const decoded = decodeJWT(res.token);
-    const actualRole = decoded?.role || role;
-    setUser({ id: res.userID || parseInt(decoded?.sub || '0'), email, role: actualRole, name: fullName });
+    const actualRole = decoded?.role;
+    setUser({ id: parseInt(decoded?.sub || '0'), email, role: actualRole, name: decoded?.name });
     return actualRole;
   };
 
@@ -133,7 +142,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const value = useMemo(
-    () => ({ user, loading, signIn, signUp, signOut, resetPassword, confirmResetPassword, updateProfile }),
+    () => ({ user, loading, signIn, signUp, signOut, resetPassword, confirmResetPassword, updateProfile, verifyEmail }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [user, loading]
   );

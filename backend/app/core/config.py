@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     github_ai_endpoint: str = "https://models.github.ai/inference"
     github_ai_model: str = "openai/gpt-4.1"
 
+    # --- SMTP Config ---
+    smtp_email: str = ""
+    smtp_password: str = ""
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

@@ -13,7 +13,8 @@ import ScrollSection from "@/components/landing/ScrollSection";
 import Marquee from "@/components/landing/Marquee";
 import SectionCounter from "@/components/landing/SectionCounter";
 import FadeInView from "@/components/landing/FadeInView";
-
+import { useAuth } from "../context/AuthContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 const NeuralNetwork3D = lazy(() => import("@/components/NeuralNetwork3D"));
 
 const features = [
@@ -73,6 +74,11 @@ export default function Index() {
   const heroOpacity = useTransform(heroScroll, [0, 0.6], [1, 0]);
   const heroScale = useTransform(heroScroll, [0, 0.6], [1, 0.9]);
 
+  const { user } = useAuth();
+  const dashboardLink = user?.role === "hr" || user?.role === "admin" 
+    ? "/hr/dashboard" 
+    : "/candidate/dashboard";
+
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       <Navbar />
@@ -81,11 +87,13 @@ export default function Index() {
       {/* ═══ SECTION 01 — Hero ═══ */}
       <section ref={heroRef} className="relative min-h-[110vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-grid opacity-40" />
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-primary/5 blur-[150px]" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-[#00e5ff]/5 blur-[150px]" />
 
-        <Suspense fallback={null}>
-          <NeuralNetwork3D />
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={null}>
+            <NeuralNetwork3D />
+          </Suspense>
+        </ErrorBoundary>
 
         <motion.div
           style={{ y: heroY, opacity: heroOpacity, scale: heroScale }}
@@ -95,7 +103,7 @@ export default function Index() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-xs text-primary font-medium mb-8"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-xs text-[#00e5ff] font-medium mb-8"
           >
             <Sparkles className="w-3.5 h-3.5" />
             AI-Powered Recruitment Platform
@@ -125,17 +133,28 @@ export default function Index() {
             transition={{ duration: 0.6, delay: 1.2 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Link to="/register">
-              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 glow-primary font-display font-semibold px-8 h-13 text-base group">
-                Start Free
-                <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
-            <Link to="/login">
-              <Button size="lg" variant="outline" className="border-border/60 text-foreground hover:bg-secondary font-display px-8 h-13 text-base">
-                Sign In
-              </Button>
-            </Link>
+            {user ? (
+               <Link to={dashboardLink}>
+                 <Button size="lg" className="bg-[#00e5ff] text-black hover:text-black hover:bg-[#00e5ff]/90 shadow-[0_0_20px_rgba(0,229,255,0.4)] font-display font-semibold transition-all duration-300 px-8 h-13 text-base rounded-full group">
+                   Go to Dashboard
+                   <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                 </Button>
+               </Link>
+            ) : (
+              <>
+                <Link to="/register">
+                  <Button size="lg" className="bg-[#00e5ff] text-black hover:text-black hover:bg-[#00e5ff]/90 shadow-[0_0_20px_rgba(0,229,255,0.4)] font-display font-semibold transition-all duration-300 px-8 h-13 text-base rounded-full group">
+                    Start Free
+                    <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+                <Link to="/login">
+                  <Button size="lg" variant="outline" className="border-border/60 text-white hover:text-white hover:bg-white/10 font-display px-8 h-13 text-base rounded-full transition-all duration-300">
+                    Sign In
+                  </Button>
+                </Link>
+              </>
+            )}
           </motion.div>
 
           {/* Scroll indicator */}
@@ -150,7 +169,7 @@ export default function Index() {
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
               className="w-6 h-10 rounded-full border-2 border-muted-foreground/30 mx-auto flex justify-center pt-2"
             >
-              <motion.div className="w-1 h-2 rounded-full bg-primary" />
+              <motion.div className="w-1 h-2 rounded-full bg-[#00e5ff]" />
             </motion.div>
           </motion.div>
         </motion.div>
@@ -162,7 +181,7 @@ export default function Index() {
           <div className="flex items-center gap-16 px-8">
             {[...stats, ...stats].map((stat, i) => (
               <div key={i} className="flex items-center gap-4 min-w-fit">
-                <span className="font-display font-bold text-3xl sm:text-4xl text-primary">{stat.value}</span>
+                <span className="font-display font-bold text-3xl sm:text-4xl text-[#00e5ff]">{stat.value}</span>
                 <span className="text-sm text-muted-foreground uppercase tracking-widest font-display">{stat.label}</span>
                 <span className="text-border/60 text-2xl">✦</span>
               </div>
@@ -178,7 +197,7 @@ export default function Index() {
           <ScrollSection parallaxOffset={40} scaleIn>
             <div className="max-w-5xl mx-auto text-center">
               <FadeInView>
-                <p className="text-xs text-primary font-display font-medium tracking-[0.3em] uppercase mb-8">
+                <p className="text-xs text-[#00e5ff] font-display font-medium tracking-[0.3em] uppercase mb-8">
                   The Future of Hiring
                 </p>
               </FadeInView>
@@ -201,11 +220,11 @@ export default function Index() {
       </section>
 
       {/* ═══ SECTION 04 — Features ═══ */}
-      <section className="py-24 sm:py-32 relative">
+      <section id="capabilities" className="py-24 sm:py-32 relative">
         <div className="container mx-auto px-6 relative">
           <ScrollSection parallaxOffset={30}>
             <FadeInView>
-              <p className="text-xs text-primary font-display font-medium tracking-[0.3em] uppercase mb-3">
+              <p className="text-xs text-[#00e5ff] font-display font-medium tracking-[0.3em] uppercase mb-3">
                 Capabilities
               </p>
               <h2 className="font-display font-bold text-3xl sm:text-4xl md:text-5xl text-foreground mb-16">
@@ -218,15 +237,15 @@ export default function Index() {
             {features.map((f, i) => (
               <FadeInView key={f.title} delay={i * 0.1}>
                 <motion.div
-                  className="glass rounded-2xl p-8 h-full hover:border-primary/30 transition-all duration-500 group cursor-default relative overflow-hidden"
+                  className="glass rounded-2xl p-8 h-full hover:border-[#00e5ff]/30 transition-all duration-500 group cursor-default relative overflow-hidden"
                   whileHover={{ y: -4, transition: { duration: 0.3 } }}
                 >
                   {/* Hover glow */}
-                  <div className="absolute inset-0 bg-primary/[0.03] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <div className="absolute inset-0 bg-[#00e5ff]/[0.03] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
                   <div className="relative z-10">
-                    <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-6 group-hover:glow-primary transition-shadow duration-500">
-                      <f.icon className="w-6 h-6 text-primary" />
+                    <div className="w-14 h-14 rounded-2xl bg-[#00e5ff]/10 border border-[#00e5ff]/20 flex items-center justify-center mb-6 group-hover:glow-primary transition-shadow duration-500">
+                      <f.icon className="w-6 h-6 text-[#00e5ff]" />
                     </div>
                     <h3 className="font-display font-semibold text-foreground text-xl mb-3">{f.title}</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
@@ -239,13 +258,13 @@ export default function Index() {
       </section>
 
       {/* ═══ SECTION 05 — How it Works ═══ */}
-      <section className="py-24 sm:py-32 bg-card/30 relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-[500px] h-[500px] rounded-full bg-primary/3 blur-[200px]" />
+      <section id="workflow" className="py-24 sm:py-32 bg-card/30 relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-[500px] h-[500px] rounded-full bg-[#00e5ff]/3 blur-[200px]" />
         <div className="container mx-auto px-6 relative">
           <ScrollSection parallaxOffset={30}>
             <div className="text-center mb-20">
               <FadeInView>
-                <p className="text-xs text-primary font-display font-medium tracking-[0.3em] uppercase mb-3">
+                <p className="text-xs text-[#00e5ff] font-display font-medium tracking-[0.3em] uppercase mb-3">
                   Workflow
                 </p>
               </FadeInView>
@@ -259,8 +278,8 @@ export default function Index() {
             {steps.map((step, i) => (
               <FadeInView key={step.num} delay={i * 0.15} direction="up">
                 <div className="relative group">
-                  <div className="glass rounded-2xl p-8 h-full transition-all duration-500 group-hover:border-primary/30">
-                    <span className="font-display font-bold text-7xl text-primary/10 group-hover:text-primary/20 transition-colors duration-500 leading-none">
+                  <div className="glass rounded-2xl p-8 h-full transition-all duration-500 group-hover:border-[#00e5ff]/30">
+                    <span className="font-display font-bold text-7xl text-[#00e5ff]/10 group-hover:text-[#00e5ff]/20 transition-colors duration-500 leading-none">
                       {step.num}
                     </span>
                     <h3 className="font-display font-semibold text-foreground text-xl mt-4 mb-3">
@@ -270,7 +289,7 @@ export default function Index() {
                   </div>
 
                   {i < 3 && (
-                    <div className="hidden lg:block absolute top-1/2 -right-4 w-8 text-primary/20">
+                    <div className="hidden lg:block absolute top-1/2 -right-4 w-8 text-[#00e5ff]/20">
                       <ArrowRight className="w-6 h-6" />
                     </div>
                   )}
@@ -284,11 +303,11 @@ export default function Index() {
       {/* ═══ SECTION 06 — CTA ═══ */}
       <section className="py-32 sm:py-44 relative overflow-hidden">
         <div className="absolute inset-0 bg-grid opacity-15" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-primary/5 blur-[200px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-[#00e5ff]/5 blur-[200px]" />
         <div className="container mx-auto px-6 relative text-center">
           <ScrollSection parallaxOffset={50} scaleIn>
             <FadeInView>
-              <p className="text-xs text-primary font-display font-medium tracking-[0.3em] uppercase mb-6">
+              <p className="text-xs text-[#00e5ff] font-display font-medium tracking-[0.3em] uppercase mb-6">
                 Get Started
               </p>
             </FadeInView>
@@ -304,17 +323,28 @@ export default function Index() {
             </FadeInView>
             <FadeInView delay={0.8}>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link to="/register">
-                  <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 glow-primary font-display font-semibold px-10 h-13 text-base group">
-                    Get Started Free
-                    <ArrowUpRight className="ml-2 w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                  </Button>
-                </Link>
-                <Link to="/register?role=hr">
-                  <Button size="lg" variant="outline" className="border-border/60 text-foreground hover:bg-secondary font-display px-10 h-13 text-base">
-                    I'm a Recruiter
-                  </Button>
-                </Link>
+                {user ? (
+                   <Link to={dashboardLink}>
+                     <Button size="lg" className="bg-[#00e5ff] text-black hover:text-black hover:bg-[#00e5ff]/90 shadow-[0_0_20px_rgba(0,229,255,0.4)] font-display font-semibold transition-all duration-300 px-10 h-13 text-base rounded-full group">
+                       Go to Dashboard
+                       <ArrowUpRight className="ml-2 w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                     </Button>
+                   </Link>
+                ) : (
+                  <>
+                    <Link to="/register">
+                      <Button size="lg" className="bg-[#00e5ff] text-black hover:text-black hover:bg-[#00e5ff]/90 shadow-[0_0_20px_rgba(0,229,255,0.4)] font-display font-semibold transition-all duration-300 px-10 h-13 text-base rounded-full group">
+                        Get Started Free
+                        <ArrowUpRight className="ml-2 w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                      </Button>
+                    </Link>
+                    <Link to="/register?role=hr">
+                      <Button size="lg" variant="outline" className="border-border/60 text-white hover:text-white hover:bg-white/10 font-display px-10 h-13 text-base rounded-full transition-all duration-300">
+                        I'm a Recruiter
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </FadeInView>
           </ScrollSection>

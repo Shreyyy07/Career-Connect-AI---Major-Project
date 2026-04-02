@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import String, DateTime, Enum as SAEnum, Text, ForeignKey, Integer, Float, UniqueConstraint
+from sqlalchemy import String, DateTime, Enum as SAEnum, Text, ForeignKey, Integer, Float, UniqueConstraint, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
@@ -23,6 +23,7 @@ class User(Base):
     full_name: Mapped[str] = mapped_column(String(200), default="")
     role: Mapped[UserRole] = mapped_column(SAEnum(UserRole), index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
 
     resumes: Mapped[list["Resume"]] = relationship(back_populates="user")

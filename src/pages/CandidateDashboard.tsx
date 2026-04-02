@@ -154,7 +154,7 @@ export default function CandidateDashboard() {
             <div className="relative" ref={avatarRef}>
               <button
                 onClick={() => setAvatarOpen(!avatarOpen)}
-                className="w-11 h-11 rounded-full bg-primary/20 border-2 border-primary/40 glow-primary flex items-center justify-center font-display font-bold text-primary text-lg cursor-pointer hover:bg-primary/30 transition-all select-none"
+                className="w-11 h-11 rounded-full bg-[#00e5ff]/20 border-2 border-[#00e5ff]/40 glow-primary flex items-center justify-center font-display font-bold text-[#00e5ff] text-lg cursor-pointer hover:bg-[#00e5ff]/30 transition-all select-none"
                 title={user?.name || 'User'}
               >
                 {(user?.name || 'U').charAt(0).toUpperCase()}
@@ -173,7 +173,7 @@ export default function CandidateDashboard() {
                     <div className="px-4 py-3 border-b border-border/50">
                       <p className="font-semibold text-foreground text-sm truncate">{user?.name || 'User'}</p>
                       <p className="text-xs text-muted-foreground truncate">{user?.email || ''}</p>
-                      <span className="mt-1 inline-block text-[10px] uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
+                      <span className="mt-1 inline-block text-[10px] uppercase tracking-wider text-[#00e5ff] bg-[#00e5ff]/10 px-2 py-0.5 rounded-full border border-[#00e5ff]/20">
                         {user?.role || 'candidate'}
                       </span>
                     </div>
@@ -228,7 +228,7 @@ export default function CandidateDashboard() {
                   <p className="text-xs text-muted-foreground mt-0.5">Score progression across sessions</p>
                 </div>
                 <div className="flex items-center gap-3 text-[10px]">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary" />Composite</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#00e5ff]" />Composite</span>
                   <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: "hsl(160,84%,45%)" }} />Semantic</span>
                   <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: "hsl(270,80%,65%)" }} />JD Match</span>
                 </div>
@@ -301,7 +301,7 @@ export default function CandidateDashboard() {
                 </BarChart>
               </ResponsiveContainer>
               <div className="flex items-center gap-4 mt-3 text-[10px] text-muted-foreground">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary" />Interview Sessions</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#00e5ff]" />Interview Sessions</span>
                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-accent" />Skills Completed</span>
               </div>
             </motion.div>
@@ -325,7 +325,7 @@ export default function CandidateDashboard() {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 + i * 0.1 }}
-                    className="flex items-center justify-between p-4 rounded-lg bg-secondary/30 border border-border/30 hover:border-primary/20 transition-all group"
+                    className="flex items-center justify-between p-4 rounded-lg bg-secondary/30 border border-border/30 hover:border-[#00e5ff]/20 transition-all group"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center">
@@ -337,7 +337,7 @@ export default function CandidateDashboard() {
                       </div>
                     </div>
                     <Link to="/candidate/interview">
-                      <Button size="sm" variant="ghost" className="h-8 text-primary text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button size="sm" variant="ghost" className="h-8 text-[#00e5ff] text-xs opacity-0 group-hover:opacity-100 transition-opacity">
                         <Play className="w-3 h-3 mr-1" /> Join
                       </Button>
                     </Link>
@@ -345,9 +345,9 @@ export default function CandidateDashboard() {
                 ))}
               </div>
 
-              <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/10 text-center">
+              <div className="mt-4 p-3 rounded-lg bg-[#00e5ff]/5 border border-[#00e5ff]/10 text-center">
                 <p className="text-xs text-muted-foreground">Next interview in</p>
-                <p className="font-display font-bold text-primary text-lg">2d 14h 30m</p>
+                <p className="font-display font-bold text-[#00e5ff] text-lg">2d 14h 30m</p>
               </div>
             </motion.div>
           </div>
@@ -362,7 +362,7 @@ export default function CandidateDashboard() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-display font-semibold text-foreground">Interview History</h3>
               <Link to="/candidate/reports">
-                <Button variant="ghost" size="sm" className="text-primary text-xs">
+                <Button variant="ghost" size="sm" className="text-[#00e5ff] text-xs">
                   View All Reports <ArrowRight className="ml-1 w-3 h-3" />
                 </Button>
               </Link>
@@ -375,7 +375,7 @@ export default function CandidateDashboard() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.35 + i * 0.08 }}
-                  className="p-4 rounded-lg bg-secondary/20 border border-border/30 hover:border-primary/20 transition-all"
+                  className="p-4 rounded-lg bg-secondary/20 border border-border/30 hover:border-[#00e5ff]/20 transition-all"
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div>
@@ -403,7 +403,7 @@ export default function CandidateDashboard() {
             </div>
 
             <Link to="/candidate/interview" className="block mt-4">
-              <Button className="w-full bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 font-display">
+              <Button className="w-full bg-[#00e5ff]/10 text-[#00e5ff] border border-[#00e5ff]/20 hover:bg-[#00e5ff]/20 font-display">
                 <Mic className="mr-2 w-4 h-4" /> Start New Interview
               </Button>
             </Link>
@@ -424,7 +424,7 @@ export default function CandidateDashboard() {
                   <p className="text-xs text-muted-foreground mt-0.5">Training progress for identified gaps</p>
                 </div>
                 <Link to="/candidate/skills">
-                  <Button variant="ghost" size="sm" className="text-primary text-xs">
+                  <Button variant="ghost" size="sm" className="text-[#00e5ff] text-xs">
                     View Details <ArrowRight className="ml-1 w-3 h-3" />
                   </Button>
                 </Link>
@@ -459,7 +459,7 @@ export default function CandidateDashboard() {
                           initial={{ width: 0 }}
                           animate={{ width: `${gap.progress}%` }}
                           transition={{ duration: 1, delay: 0.5 + i * 0.1 }}
-                          className="h-full rounded-full bg-primary"
+                          className="h-full rounded-full bg-[#00e5ff]"
                         />
                       </div>
                       <span className="text-xs font-display font-bold text-foreground w-10 text-right">{gap.progress}%</span>
@@ -477,7 +477,7 @@ export default function CandidateDashboard() {
               className="lg:col-span-1 glass rounded-xl p-6"
             >
               <div className="flex items-center gap-2 mb-4">
-                <BookOpen className="w-4 h-4 text-primary" />
+                <BookOpen className="w-4 h-4 text-[#00e5ff]" />
                 <h3 className="font-display font-semibold text-foreground">Recommended Training</h3>
               </div>
 
@@ -488,22 +488,22 @@ export default function CandidateDashboard() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.45 + i * 0.1 }}
-                    className="p-3 rounded-lg bg-secondary/20 border border-border/30 hover:border-primary/20 transition-all cursor-pointer group"
+                    className="p-3 rounded-lg bg-secondary/20 border border-border/30 hover:border-[#00e5ff]/20 transition-all cursor-pointer group"
                   >
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-sm font-medium text-foreground">{rec.title}</p>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-[#00e5ff] transition-colors" />
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <span>{rec.provider}</span>
                       <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{rec.duration}</span>
-                      <span className="text-primary font-medium">{rec.match}% match</span>
+                      <span className="text-[#00e5ff] font-medium">{rec.match}% match</span>
                     </div>
                   </motion.div>
                 ))}
               </div>
 
-              <Button variant="ghost" className="w-full mt-3 text-primary text-xs border border-primary/10 hover:bg-primary/10">
+              <Button variant="ghost" className="w-full mt-3 text-[#00e5ff] text-xs border border-[#00e5ff]/10 hover:bg-[#00e5ff]/10">
                 Browse All Courses <ArrowRight className="ml-1 w-3 h-3" />
               </Button>
             </motion.div>
