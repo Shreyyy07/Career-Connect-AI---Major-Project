@@ -14,7 +14,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<string>;
   signUp: (email: string, password: string, fullName: string, role: 'candidate' | 'hr') => Promise<string>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ dev_otp?: string }>;
+  resetPassword: (email: string) => Promise<{ message: string }>;
   confirmResetPassword: (email: string, otp: string, newPassword: string) => Promise<void>;
   updateProfile: (name: string) => Promise<void>;
   verifyEmail: (email: string, otp: string) => Promise<string>;
@@ -113,7 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
    * Returns { dev_otp } in development mode so the UI can show it.
    */
   const resetPassword = async (email: string) => {
-    const res = await apiFetch<{ message: string; dev_otp?: string }>('/api/v1/auth/forgot-password', {
+    const res = await apiFetch<{ message: string }>('/api/v1/auth/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });

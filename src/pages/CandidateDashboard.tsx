@@ -87,6 +87,7 @@ export default function CandidateDashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState({ avg: 0, done: 0, pending: 0, total: 0 });
   const [history, setHistory] = useState<any[]>([]);
+  const [recProgress, setRecProgress] = useState<{ total: number; done: number; inProgress: number; skills: { skill: string; status: string }[] }>({ total: 0, done: 0, inProgress: 0, skills: [] });
   const [avatarOpen, setAvatarOpen] = useState(false);
   const avatarRef = useRef<HTMLDivElement>(null);
 
@@ -121,6 +122,27 @@ export default function CandidateDashboard() {
       } catch (e) {
         console.error("Failed to load history", e);
       }
+      // Load skill recommendations progress
+      try {
+        // Fetch latest resume + job to get rec list
+        const resumes = await apiFetch<any[]>('/api/v1/resume/list');
+        const jobs = await apiFetch<any[]>('/api/v1/jd/active');
+        if (resumes?.length && jobs?.length) {
+          const recs = await apiFetch<any[]>(
+            `/api/v1/recommendations?resumeID=${resumes[0].resumeID}&jobID=${jobs[0].jobID}`
+          );
+          if (recs && recs.length) {
+            const done = recs.filter((r: any) => r.status === 'completed').length;
+            const inProg = recs.filter((r: any) => r.status === 'in_progress').length;
+            setRecProgress({
+              total: recs.length,
+              done,
+              inProgress: inProg,
+              skills: recs.slice(0, 8).map((r: any) => ({ skill: r.skill, status: r.status })),
+            });
+          }
+        }
+      } catch (_) { /* non-critical */ }
     };
     load();
   }, [user]);
@@ -212,6 +234,66 @@ export default function CandidateDashboard() {
             <StatCard icon={Target} label="Pending Assessments" value={String(stats.pending)} />
             <StatCard icon={Mic} label="Interviews Done" value={String(stats.done)} change="Live" positive />
           </div>
+
+          {/* Skill Progress Tracker — shown when rec data loaded */}
+          {recProgress.total > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              className="glass rounded-xl p-5 mb-6"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-[#00e5ff]" />
+                  <h3 className="font-display font-semibold text-foreground text-sm">Skill Progress</h3>
+                  <span className="text-xs text-muted-foreground">
+                    {recProgress.done} of {recProgress.total} skills completed
+                    {recProgress.inProgress > 0 && ` · ${recProgress.inProgress} in progress`}
+                  </span>
+                </div>
+                <Link
+                  to="/candidate/resume-match"
+                  className="text-xs text-[#00e5ff] hover:underline flex items-center gap-1"
+                >
+                  View All <ChevronRight className="w-3 h-3" />
+                </Link>
+              </div>
+              {/* Progress bar */}
+              <div className="w-full h-2 rounded-full bg-secondary/50 overflow-hidden border border-border/30 mb-4">
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{
+                    width: `${recProgress.total ? Math.round((recProgress.done / recProgress.total) * 100) : 0}%`,
+                    background: recProgress.done === recProgress.total
+                      ? 'hsl(160,84%,40%)'
+                      : 'linear-gradient(90deg, #00e5ff, #8b5cf6)',
+                  }}
+                />
+              </div>
+              {/* Per-skill status pills */}
+              <div className="flex flex-wrap gap-2">
+                {recProgress.skills.map((s, i) => (
+                  <span
+                    key={i}
+                    className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${
+                      s.status === 'completed'
+                        ? 'bg-emerald-900/30 text-emerald-400 border-emerald-700/40'
+                        : s.status === 'in_progress'
+                        ? 'bg-amber-900/30 text-amber-400 border-amber-700/40'
+                        : 'bg-secondary text-muted-foreground border-border'
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      s.status === 'completed' ? 'bg-emerald-400' :
+                      s.status === 'in_progress' ? 'bg-amber-400' : 'bg-muted-foreground'
+                    }`} />
+                    {s.skill}
+                  </span>
+                ))}
+              </div>
+            </motion.div>
+          )}
 
           {/* Row 1: Performance Trend + Score Breakdown */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">

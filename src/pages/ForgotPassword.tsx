@@ -19,7 +19,6 @@ export default function ForgotPassword() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
-  const [devOtp, setDevOtp] = useState<string | undefined>();
 
   // ── Step 1: request OTP ─────────────────────────────────────────
   const handleRequestOtp = async (e: React.FormEvent) => {
@@ -27,8 +26,7 @@ export default function ForgotPassword() {
     if (!email) return;
     setLoading(true); setErr("");
     try {
-      const res = await resetPassword(email);
-      setDevOtp(res.dev_otp); // Show in UI for development
+      await resetPassword(email);
       setStep("otp");
     } catch (e: any) {
       setErr(e.message || "Failed to send OTP. Please try again.");
@@ -124,14 +122,6 @@ export default function ForgotPassword() {
                 A 6-digit code was sent to <span className="text-foreground font-medium">{email}</span>
               </p>
               <p className="text-xs text-muted-foreground mb-7">Valid for 10 minutes.</p>
-
-              {/* Dev helper: show OTP in UI */}
-              {devOtp && (
-                <div className="mb-5 p-3 rounded-xl bg-amber-900/20 border border-amber-700/40 text-amber-400 text-sm">
-                  <span className="font-bold">🔑 Dev Mode OTP:</span> {devOtp}
-                  <br /><span className="text-xs opacity-70">(Remove in production — email service handles this)</span>
-                </div>
-              )}
 
               <form onSubmit={handleReset} className="space-y-4">
                 {err && <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-xl">{err}</div>}

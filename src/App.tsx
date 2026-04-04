@@ -11,12 +11,14 @@ import HRDashboard from "./pages/HRDashboard.tsx";
 import AIInterview from "./pages/AIInterview.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { AuthProvider } from "./context/AuthContext";
-import { ResumeMatch } from "./pages/ResumeMatch";
+import ResumeMatch from "./pages/ResumeMatch";
 import { Assessments } from "./pages/Assessments";
 import { EvaluationResult } from "./pages/EvaluationResult";
 import ForgotPassword from "./pages/ForgotPassword.tsx";
 import VerifyEmail from "./pages/VerifyEmail.tsx";
 import CandidateProfile from "./pages/CandidateProfile.tsx";
+import CandidateReports from "./pages/CandidateReports.tsx";
+import CandidateSkills from "./pages/CandidateSkills.tsx";
 
 const queryClient = new QueryClient();
 
@@ -37,10 +39,10 @@ const App = () => (
           <Route path="/candidate/profile" element={<CandidateProfile />} />
           <Route path="/candidate/resume" element={<ResumeMatch />} />
           <Route path="/candidate/interview" element={<AIInterview />} />
-          <Route path="/candidate/skills" element={<ResumeMatch />} />
+          <Route path="/candidate/skills" element={<CandidateSkills />} />
           <Route path="/candidate/assessments" element={<Assessments />} />
           <Route path="/candidate/evaluation/:id" element={<EvaluationResult />} />
-          <Route path="/candidate/reports" element={<CandidateDashboard />} />
+          <Route path="/candidate/reports" element={<CandidateReports />} />
           <Route path="/hr/dashboard" element={<HRDashboard />} />
           <Route path="/hr/jobs" element={<HRDashboard />} />
           <Route path="/hr/candidates" element={<HRDashboard />} />

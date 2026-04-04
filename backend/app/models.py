@@ -157,3 +157,35 @@ class SkillRecommendationEvent(Base):
     to_status: Mapped[RecommendationStatus] = mapped_column(SAEnum(RecommendationStatus))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
 
+
+class EmotionLog(Base):
+    """
+    One row per video frame captured during an interview.
+    emotions_json stores the full probability dict, e.g.
+    {"happy": 0.12, "neutral": 0.74, "sad": 0.05, ...}
+    """
+    __tablename__ = "emotion_logs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    session_id: Mapped[str] = mapped_column(String(64), index=True)
+    timestamp_sec: Mapped[int] = mapped_column(Integer, default=0)
+    dominant_emotion: Mapped[str] = mapped_column(String(32), default="neutral")
+    emotions_json: Mapped[str] = mapped_column(Text, default="{}")  # JSON string
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+
+class SpeechFeatures(Base):
+    """
+    One row per completed interview session.
+    Stores WPM, filler word count, and derived communication score.
+    """
+    __tablename__ = "speech_features"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    session_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    word_count: Mapped[int] = mapped_column(Integer, default=0)
+    filler_count: Mapped[int] = mapped_column(Integer, default=0)
+    filler_percentage: Mapped[float] = mapped_column(Float, default=0.0)
+    wpm: Mapped[float] = mapped_column(Float, default=0.0)
+    communication_score: Mapped[float] = mapped_column(Float, default=0.0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)

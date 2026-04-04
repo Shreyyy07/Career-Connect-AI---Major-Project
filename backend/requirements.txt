@@ -14,3 +14,8 @@ reportlab==4.2.5
 gensim==4.4.0
 numpy==2.2.3
 openai>=1.40.0
+# ─── Multimodal analysis dependencies ───────────────────────────────────────
+deepface>=0.0.93
+opencv-python-headless>=4.9.0
+Pillow>=10.0.0
+tf-keras>=2.16.0

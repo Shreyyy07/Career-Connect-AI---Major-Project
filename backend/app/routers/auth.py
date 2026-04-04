@@ -287,10 +287,11 @@ def forgot_password(payload: dict, db: Session = Depends(get_db)):
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
     _otp_store[email] = {"otp": otp, "expires_at": expires_at, "used": False}
 
-    # Log OTP to console in dev (replace with email send in production)
-    print(f"[DEV] Password reset OTP for {email}: {otp}  (valid 10 min)")
+    success = _send_otp_email(email, otp)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to dispatch verification email. Please check SMTP App Password.")
 
-    return {"message": "If that account exists, an OTP has been sent.", "dev_otp": otp}
+    return {"message": "If that account exists, an OTP has been sent."}
 
 
 # ──────────────────────────────────────────────────────────────────

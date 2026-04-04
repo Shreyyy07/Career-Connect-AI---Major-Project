@@ -47,3 +47,36 @@ export async function healthCheck() {
   return apiFetch<{ ok: boolean }>('/api/v1/health');
 }
 
+export async function downloadAuthorizedFile(path: string, defaultFilename: string = "download.pdf"): Promise<void> {
+  const token = getToken();
+  const headers = new Headers();
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+
+  const res = await fetch(`${API_BASE}${path}`, { headers });
+  if (!res.ok) throw await parseError(res);
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  
+  // Try to extract filename from response headers, otherwise use default
+  let filename = defaultFilename;
+  const contentDisp = res.headers.get('Content-Disposition');
+  if (contentDisp && contentDisp.includes('filename=')) {
+    const parts = contentDisp.split('filename=');
+    if (parts.length > 1) {
+      filename = parts[1].replace(/['"]/g, '');
+    }
+  }
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  
+  // cleanup
+  setTimeout(() => {
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  }, 100);
+}

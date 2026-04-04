@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Brain, Mail, Lock, User, ArrowRight, Eye, EyeOff, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +49,9 @@ function PasswordStrengthBar({ password }: { password: string }) {
 }
 
 export default function Register() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedRole = searchParams.get("role") === "hr" ? "hr" : "candidate";
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -59,6 +62,10 @@ export default function Register() {
   const [globalErr, setGlobalErr] = useState("");
   const { signUp } = useAuth();
   const navigate = useNavigate();
+
+  const handleRoleToggle = (newRole: "hr" | "candidate") => {
+    setSearchParams({ role: newRole });
+  };
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -80,9 +87,7 @@ export default function Register() {
     setLoading(true);
     setGlobalErr("");
     try {
-      // PRD §1.1: Candidates register with role="candidate" always
-      await signUp(email, password, name, "candidate");
-      // PRD §2.2: After register → show "check your inbox" screen
+      await signUp(email, password, name, selectedRole);
       navigate(`/verify-email?email=${encodeURIComponent(email)}`);
     } catch (e: any) {
       const msg = e.message || "";
@@ -96,29 +101,36 @@ export default function Register() {
     }
   };
 
+  const isHr = selectedRole === "hr";
+
   return (
     <div className="min-h-screen bg-background flex">
       {/* Left panel */}
       <div className="hidden lg:flex flex-1 items-center justify-center relative overflow-hidden bg-card/30">
         <div className="absolute inset-0 bg-dots opacity-30" />
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full bg-accent/10 blur-[100px]" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full bg-[#00e5ff]/5 blur-[200px]" />
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          key={selectedRole}
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="relative z-10 text-center px-12"
         >
-          <div className="w-20 h-20 rounded-2xl bg-accent/10 border border-accent/30 flex items-center justify-center mx-auto mb-8 glow-accent">
+          <div className="w-20 h-20 rounded-2xl bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center mx-auto mb-8 glow-primary">
             <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain rounded-xl" />
           </div>
-          <h2 className="font-display font-bold text-3xl text-foreground mb-4">Join Career Connect AI</h2>
+          <h2 className="font-display font-bold text-3xl text-foreground mb-4">
+            {isHr ? "Hire Top Talent" : "Join Career Connect AI"}
+          </h2>
           <p className="text-muted-foreground max-w-sm">
-            AI-powered resume matching, live interviews with emotion analysis, and personalised skill gap coaching.
+            {isHr 
+               ? "Post AI-driven job applications, track candidates instantly, and eliminate subjective bias."
+               : "Access AI-powered resume matching, live interviews with emotion analysis, and personalised skill gap coaching."}
           </p>
           <div className="mt-8 grid grid-cols-3 gap-4 text-center">
             {[
               { val: "95%", label: "Match Accuracy" },
               { val: "10s", label: "Avg. Match Time" },
-              { val: "5★", label: "Candidate Rating" },
+              { val: "5★", label: "Automated Checks" },
             ].map((s) => (
               <div key={s.label} className="glass rounded-xl p-3">
                 <p className="text-[#00e5ff] font-display font-bold text-xl">{s.val}</p>
@@ -143,8 +155,30 @@ export default function Register() {
             <span className="font-display font-bold text-lg">Career<span className="text-[#00e5ff]">Connect</span> AI</span>
           </div>
 
-          <h1 className="font-display font-bold text-2xl text-foreground mb-1">Create Your Account</h1>
-          <p className="text-sm text-muted-foreground mb-7">Start your AI-powered job search journey</p>
+          <h1 className="font-display font-bold text-2xl text-foreground mb-2">Create an account</h1>
+          <p className="text-sm text-muted-foreground mb-6">Start your journey with us today.</p>
+
+          {/* Role Toggle Tabs */}
+          <div className="flex p-1 bg-secondary/50 rounded-lg mb-6 border border-border/50">
+            <button
+              type="button"
+              onClick={() => handleRoleToggle("candidate")}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                !isHr ? "bg-background text-foreground shadow-sm border border-white/5" : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+              }`}
+            >
+              For Candidates
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRoleToggle("hr")}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                isHr ? "bg-[#00e5ff]/10 text-[#00e5ff] shadow-[0_0_15px_rgba(0,229,255,0.15)] border border-[#00e5ff]/20" : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+              }`}
+            >
+              For Recruiters
+            </button>
+          </div>
 
           <form className="space-y-5" onSubmit={handleRegister}>
             {globalErr && (
