@@ -1,0 +1,2548 @@
+Career Connect AI — Product Requirements Document
+
+Confidential  |  v1.0
+
+
+
+PRODUCT REQUIREMENTS DOCUMENT
+
+Career Connect AI
+
+Intelligent Job Screening & Resume Enhancement Platform
+
+
+
+Version
+
+1.0 — Initial Release
+
+Project
+
+Career Connect AI
+
+Team
+
+Shrey Joshi, Shatakshi Singh
+
+Mentor
+
+Dr. S. Girirajan, Asst. Professor, CTECH
+
+Institution
+
+SRM Institute of Science and Technology, Kattankulathur
+
+Date
+
+March 2025
+
+Status
+
+APPROVED FOR IMPLEMENTATION
+
+
+
+
+
+
+1.  Executive Summary
+
+Career Connect AI is an end-to-end AI-powered recruitment automation platform that eliminates the inefficiencies of traditional hiring workflows. By unifying resume screening, semantic job-matching, skill gap analysis, live AI-conducted interviews, and multimodal candidate evaluation into a single platform, it delivers objective, data-driven hiring decisions at scale.
+
+
+
+The system serves two primary user groups — job candidates who seek personalized coaching and fair evaluation, and HR recruiters who need fast, bias-reduced shortlisting tools. The platform is academically grounded in published research on LLMs, Doc2Vec embeddings, and multimodal AI, and is designed for real-world deployment as a cloud-based, microservices-driven SaaS product.
+
+
+
+1.1  Problem Statement
+
+Modern organizations receive thousands of applications per job opening. The current toolchain suffers from five critical failure modes:
+
+Manual resume screening is slow — average HR team spends 6–8 seconds per resume, missing qualified candidates.
+
+Keyword-based ATS systems strip semantic context, penalizing qualified candidates who phrase skills differently.
+
+Interviews are subjective — different interviewers ask different questions, creating inconsistent, legally risky evaluations.
+
+Candidates receive no actionable feedback — they do not know what skill gaps cost them the role.
+
+Remote interviews lack integrity mechanisms — impersonation and cheating are undetected without dedicated tooling.
+
+
+
+1.2  Proposed Solution
+
+Career Connect AI addresses all five failure modes through a single unified platform with the following capability pillars:
+
+Semantic Resume-JD Matching (Doc2Vec + Cosine Similarity) — evaluates meaning, not just keywords.
+
+Skill Gap Engine — identifies exactly what is missing and recommends specific training resources.
+
+Live AI Interview (Gemini LLM + RAG) — context-aware, role-specific questions generated from the actual JD.
+
+Multimodal Behavioral Analysis (DeepFace + Speech Model) — captures emotion, tone, and communication quality.
+
+Anti-Cheat & Identity Verification (YOLOv8, YOLOv11, Haarcascade) — ensures interview integrity.
+
+Weighted Scoring Engine — produces a single, explainable final score with component breakdowns.
+
+Bi-directional Dashboards — real-time insights for both candidates and recruiters.
+
+
+
+1.3  Success Metrics (KPIs)
+
+KPI
+
+Target
+
+Measurement Method
+
+Resume matching accuracy
+
+≥ 85% precision vs. HR baseline
+
+A/B testing with HR team
+
+Time-to-shortlist reduction
+
+≥ 60% reduction
+
+Benchmarked against manual flow
+
+Interview consistency score
+
+≤ 5% variance across same candidate
+
+Repeat-interview correlation
+
+Anti-cheat detection rate
+
+≥ 95% anomaly detection
+
+Controlled test scenarios
+
+Candidate satisfaction (CSAT)
+
+≥ 4.0 / 5.0
+
+Post-session survey
+
+Report generation time
+
+< 30 seconds post-interview
+
+Server-side timing logs
+
+
+
+
+
+
+2.  Scope & Constraints
+
+2.1  In Scope
+
+User registration, authentication, and role-based access (Candidate, HR User, Admin, Data Analyst, Moderator).
+
+Resume upload (PDF / DOCX), NLP-based parsing, and structured storage of candidate profiles.
+
+HR job description upload, parsing, and skill extraction.
+
+Doc2Vec semantic embedding generation for both resumes and JDs, cosine similarity scoring.
+
+Skill gap detection and personalized training recommendation engine.
+
+Two interview modes: HR Interview (structured AI interview) and PIA Smart Interview (adaptive assessment).
+
+Live WebRTC audio-video interview session with real-time recording.
+
+Gemini LLM RAG pipeline for dynamic, JD-contextualised question generation and answer evaluation.
+
+DeepFace-based facial emotion recognition and identity verification during interviews.
+
+Speech analysis module (RAVDESS-trained) for audio feature extraction.
+
+Anti-cheat monitoring using YOLOv8, YOLOv11, and Haarcascade algorithms.
+
+Weighted composite scoring engine (semantic, JD similarity, emotion, audio).
+
+Automated PDF report generation per candidate using ReportLab.
+
+Candidate dashboard: interview history, scores, skill recommendations, weekly summary.
+
+HR recruiter dashboard: ranked candidate list, evaluation cards, interview slot management.
+
+Admin panel: user management, system configuration, monitoring.
+
+Event-driven microservices architecture with RabbitMQ/Kafka message broker.
+
+
+
+2.2  Out of Scope (v1.0)
+
+Mobile native application (iOS / Android) — web responsive only in v1.0.
+
+Multilingual interview support — English only in v1.0.
+
+Blockchain-based credential verification — planned for v2.0.
+
+Sentence-BERT or advanced transformer embeddings to replace Doc2Vec — v2.0 upgrade.
+
+Reinforcement-learning adaptive follow-up questioning — v2.0 feature.
+
+Integration with third-party HRIS/ATS systems (Workday, SAP SuccessFactors) — post-v1.0.
+
+Video emotion analysis for asynchronous (pre-recorded) interviews.
+
+
+
+2.3  Assumptions & Dependencies
+
+Candidates have access to a device with a functioning webcam and microphone.
+
+All interviews conducted in English with standard audio quality.
+
+Google Gemini API is accessible with a valid API key and sufficient quota.
+
+DeepFace and YOLOv8/v11 models are pre-loaded or pulled from accessible model registries.
+
+Cloud infrastructure (AWS / GCP / Azure) is available for deployment.
+
+All users accept explicit consent for audio/video recording before starting an interview.
+
+Candidate data is processed in compliance with applicable data protection regulations (GDPR/PDPA).
+
+
+
+
+
+
+3.  User Personas & Role Matrix
+
+3.1  Persona Descriptions
+
+Candidate (Primary)
+
+Demographics: Recent graduates, experienced professionals, and career changers. Digitally literate; comfortable using web applications. Primary goal is securing a job placement with personalised guidance on how to improve.
+
+Pain points: Does not know why their resume was rejected. Has no insight into what specific skills they are lacking. Cannot access objective feedback from interviews.
+
+Goals on platform: Upload resume, understand match score, receive skill recommendations, complete an AI interview, view their evaluation card.
+
+
+
+HR Recruiter (Secondary)
+
+Demographics: Talent acquisition professionals or hiring managers at companies of any size. Primary goal is efficient, unbiased shortlisting of qualified candidates from a large applicant pool.
+
+Pain points: Overwhelmed by volume of resumes. Interview scheduling is manual and time-consuming. Post-interview calibration between panel members is inconsistent.
+
+Goals on platform: Upload job descriptions, view ranked candidate list, review evaluation reports, schedule interview slots, make data-driven shortlisting decisions.
+
+
+
+Administrator
+
+System operator who manages platform configuration, user accounts, feature flags, and security settings. Has full access to all modules.
+
+
+
+Data Analyst
+
+Reviews aggregated recruitment analytics to surface trends, bias patterns, and efficiency metrics. Read-only access to dashboards and reports.
+
+
+
+Moderator
+
+Reviews flagged content, approves uploaded job descriptions, monitors anti-cheat alerts, and manages candidate submissions that are under review.
+
+
+
+3.2  Role-Based Access Matrix
+
+Feature / Module
+
+Admin
+
+HR User
+
+Candidate
+
+Analyst
+
+Moderator
+
+User management
+
+Full
+
+None
+
+None
+
+None
+
+None
+
+Upload Job Description
+
+Full
+
+Full
+
+None
+
+None
+
+Review
+
+Upload Resume
+
+Full
+
+View
+
+Own
+
+None
+
+View
+
+Start Interview
+
+Full
+
+None
+
+Own
+
+None
+
+None
+
+View Evaluation Reports
+
+Full
+
+All
+
+Own
+
+All RO
+
+All RO
+
+HR Analytics Dashboard
+
+Full
+
+Full
+
+None
+
+Read
+
+Limited
+
+Anti-Cheat Alerts
+
+Full
+
+View
+
+None
+
+None
+
+Full
+
+System Configuration
+
+Full
+
+None
+
+None
+
+None
+
+None
+
+Skill Recommendations
+
+View
+
+View
+
+Own
+
+None
+
+None
+
+
+
+
+
+
+4.  Functional Requirements
+
+FR-1 | User Authentication & Profile Management
+
+The platform must support multi-role authentication with JWT-based session tokens. Registration flows must be role-specific (Candidate vs. HR User). Password recovery via email OTP must be available.
+
+
+
+ID
+
+Feature
+
+Description
+
+Priority
+
+FR-1.1
+
+Registration
+
+Candidates and HR users register with name, email, password, and role. Email verification required before first login.
+
+P0 — Critical
+
+FR-1.2
+
+Login / Logout
+
+Secure JWT-based authentication. Token refresh mechanism. Auto-logout after 30 minutes of inactivity.
+
+P0 — Critical
+
+FR-1.3
+
+Profile Edit
+
+Candidates can update name, contact, experience, target role, and profile photo. HR users can update company name and department.
+
+P1 — High
+
+FR-1.4
+
+Password Reset
+
+Email-based OTP password recovery with 10-minute expiry window.
+
+P1 — High
+
+FR-1.5
+
+Role-Based Routing
+
+Post-login, users are routed to their role-specific dashboard (Candidate Dashboard vs. HR Dashboard vs. Admin Panel).
+
+P0 — Critical
+
+
+
+FR-2 | Resume Upload & Intelligent Parsing
+
+The resume processing pipeline must accept PDF and DOCX files, extract structured candidate data using NLP, and store vector embeddings for matching. Unsupported file formats must be rejected with a user-facing error.
+
+
+
+ID
+
+Feature
+
+Description
+
+Priority
+
+FR-2.1
+
+File Upload
+
+Accept PDF and DOCX only. Max file size: 5 MB. Validate format on upload, reject invalid formats with descriptive error message.
+
+P0
+
+FR-2.2
+
+Text Extraction
+
+Use PyPDF2 for PDF and python-docx for DOCX. Extract raw text content for NLP processing.
+
+P0
+
+FR-2.3
+
+NLP Parsing
+
+Extract structured entities: full name, email, phone, skills (technical and soft), work experience, education, certifications, and projects. Flag missing critical sections.
+
+P0
+
+FR-2.4
+
+Preprocessing
+
+Apply tokenization, stop-word removal, and lemmatization to cleaned text before embedding generation.
+
+P0
+
+FR-2.5
+
+Embedding Storage
+
+Generate Doc2Vec vector for resume text and store in database linked to candidate profile. Re-generate on resume update.
+
+P0
+
+FR-2.6
+
+Parsing Feedback
+
+Display extracted skills and experience back to candidate for confirmation. Allow manual correction of incorrectly parsed fields.
+
+P1
+
+
+
+FR-3 | Job Description Management
+
+
+
+ID
+
+Feature
+
+Description
+
+Priority
+
+FR-3.1
+
+JD Upload
+
+HR users upload JDs as text input or PDF/DOCX file. System extracts required skills, experience level, responsibilities, job title, and industry.
+
+P0
+
+FR-3.2
+
+JD Embedding
+
+Generate and store Doc2Vec embedding for JD text using the same model as resume embeddings.
+
+P0
+
+FR-3.3
+
+JD Management
+
+HR can view, edit, archive, and delete their own job postings. Each JD has status: Draft, Active, Closed.
+
+P1
+
+FR-3.4
+
+Skill Extraction
+
+System automatically tags required skills from JD for use in skill gap analysis and RAG prompt injection.
+
+P0
+
+
+
+FR-4 | Semantic Resume-JD Matching
+
+The matching engine uses Doc2Vec embeddings trained on the Kaggle Resume Dataset and Job Description Dataset. Cosine similarity is the primary metric. Gemini LLM provides a secondary semantic reasoning score via RAG.
+
+
+
+ID
+
+Feature
+
+Description
+
+Priority
+
+FR-4.1
+
+Cosine Similarity
+
+Calculate cosine similarity between resume embedding and JD embedding. Score normalised to 0–1 (displayed as 0–100%).
+
+P0
+
+FR-4.2
+
+Match Score Display
+
+Show candidate a visual match score gauge with colour coding: < 40% Red, 40–70% Amber, > 70% Green.
+
+P1
+
+FR-4.3
+
+Skill Overlap Report
+
+Display matched skills, missing required skills, and additional skills not required by JD.
+
+P1
+
+FR-4.4
+
+Hybrid Score
+
+Combine Doc2Vec cosine similarity with Gemini RAG semantic reasoning score to produce a hybrid JD-fit score.
+
+P0
+
+FR-4.5
+
+Recruiter View
+
+HR dashboard shows match scores for all applicants against a selected JD, sortable and filterable.
+
+P1
+
+
+
+FR-5 | Skill Gap Analysis & Recommendations
+
+
+
+ID
+
+Feature
+
+Description
+
+Priority
+
+FR-5.1
+
+Gap Detection
+
+Compare extracted skills from resume against required skills in JD. Identify missing, partial, and fully matched skills.
+
+P0
+
+FR-5.2
+
+Training Recommendations
+
+For each identified skill gap, generate personalised recommendations including: topic description, suggested course names, resource type (video/article/certification), and estimated learning time.
+
+P1
+
+FR-5.3
+
+Prioritisation
+
+Rank recommendations by impact on match score. High-impact gaps (core JD requirements) shown first.
+
+P2
+
+FR-5.4
+
+Progress Tracking
+
+Candidate can mark recommendations as "In Progress" or "Completed." Platform tracks completion history.
+
+P2
+
+
+
+
+
+
+FR-6 | AI-Powered Interview Engine
+
+This is the core innovation of the platform. Two interview modes must be supported. Both modes use WebRTC for real-time video-audio communication and Gemini LLM with a RAG pipeline for dynamic question generation.
+
+
+
+FR-6A — HR Interview Mode (Structured)
+
+ID
+
+Feature
+
+Description
+
+Priority
+
+FR-6A.1
+
+Session Init
+
+Candidate selects target job role, inputs years of experience, optionally adds a description. System validates inputs before starting session.
+
+P0
+
+FR-6A.2
+
+Permissions
+
+System requests microphone AND camera access. Both must be granted to proceed. If denied, show actionable error with instructions.
+
+P0
+
+FR-6A.3
+
+RAG Pipeline
+
+JD text + candidate skill profile injected into Gemini prompt context. Questions generated are role-specific, context-aware, and non-repetitive across a session.
+
+P0
+
+FR-6A.4
+
+Question Delivery
+
+AI reads questions aloud via text-to-speech. Questions displayed as text simultaneously. Candidate responds verbally within a configurable time window (default: 90 seconds per question).
+
+P0
+
+FR-6A.5
+
+Response Recording
+
+Audio and video are recorded simultaneously throughout the session. Recordings stored securely per candidate session ID.
+
+P0
+
+FR-6A.6
+
+Transcription
+
+Gemini Speech-to-Text generates transcript of candidate audio responses in real time. Transcript used as input for semantic evaluation.
+
+P0
+
+FR-6A.7
+
+Session End
+
+After all questions answered (or session timeout), system confirms session completion, triggers evaluation pipeline asynchronously.
+
+P0
+
+
+
+FR-6B — PIA Smart Interview Mode (Adaptive)
+
+ID
+
+Feature
+
+Description
+
+Priority
+
+FR-6B.1
+
+Adaptive Mode
+
+Question format includes text-input answers, MCQs, and scenario-based questions. Mix determined dynamically based on candidate skill profile.
+
+P1
+
+FR-6B.2
+
+Auto Evaluation
+
+Text answers automatically evaluated for semantic accuracy by Gemini. MCQ answers scored against correct answer key.
+
+P1
+
+FR-6B.3
+
+Assessment Card
+
+Immediate post-assessment card generated showing: overall score, topic-wise breakdown, correct/incorrect distribution.
+
+P1
+
+
+
+FR-7 | Multimodal Analysis Modules
+
+FR-7A — Facial Emotion Analysis (DeepFace)
+
+ID
+
+Feature
+
+Description
+
+Priority
+
+FR-7A.1
+
+Frame Extraction
+
+OpenCV extracts frames from candidate video at 1-second intervals throughout the interview.
+
+P0
+
+FR-7A.2
+
+Emotion Labels
+
+DeepFace classifies each frame into: Happy, Confident, Neutral, Stressed, Confused, Anxious. Seven-class FER2013-trained model.
+
+P0
+
+FR-7A.3
+
+Stability Score
+
+Calculate emotional stability score = inverse variance of emotion distribution across session. Normalised to 0–100.
+
+P0
+
+FR-7A.4
+
+Timeline Chart
+
+Generate timeline of emotional state transitions throughout interview for inclusion in evaluation report.
+
+P1
+
+
+
+FR-7B — Speech Analysis Module
+
+ID
+
+Feature
+
+Description
+
+Priority
+
+FR-7B.1
+
+Audio Features
+
+Extract: pitch variation, speaking rate (WPM), pause frequency, filler word count (uh/um), tone modulation, and articulation clarity from RAVDESS-trained model.
+
+P0
+
+FR-7B.2
+
+Communication Score
+
+Compute communication effectiveness score (0–100) as a weighted combination of extracted audio features.
+
+P0
+
+FR-7B.3
+
+Background Noise
+
+Apply audio pre-processing: amplitude normalisation and background noise reduction before feature extraction.
+
+P1
+
+
+
+FR-8 | Identity Verification & Anti-Cheat
+
+
+
+ID
+
+Feature
+
+Description
+
+Priority
+
+FR-8.1
+
+Identity Verification
+
+At session start, capture reference face. DeepFace compares candidate face against reference frame-by-frame throughout interview. Confidence threshold: ≥ 90%.
+
+P0
+
+FR-8.2
+
+Face-Out Detection
+
+If candidate face is not detected for > 5 seconds, trigger visible on-screen warning. Log event with timestamp.
+
+P0
+
+FR-8.3
+
+Multiple Persons
+
+YOLOv8 / YOLOv11 detect if more than one person appears in frame. Immediately flag and log the event. Repeat offences escalate to session termination.
+
+P0
+
+FR-8.4
+
+Fake Video Detection
+
+Haarcascade liveness checks detect pre-recorded video playback. Flag session if liveness probability < threshold.
+
+P0
+
+FR-8.5
+
+Cheat Log
+
+All anti-cheat events stored in structured log with timestamp, event type, severity level (Warning / Critical). Visible to HR and Moderator.
+
+P0
+
+FR-8.6
+
+Screen Recording
+
+Browser screen recording captures candidate activity. Suspicious tab-switching or secondary screen usage logged.
+
+P1
+
+
+
+
+
+
+FR-9 | Candidate Scoring Engine
+
+The scoring engine aggregates outputs from all analysis modules into a single, explainable weighted composite score. Weights are configurable by HR users per job role.
+
+
+
+S_final  =  (w1 × S_semantic)  +  (w2 × S_similarity)  +  (w3 × S_emotion)  +  (w4 × S_audio)
+
+where w1 + w2 + w3 + w4 = 1.0     |     All scores normalised to 0–100 before weighting
+
+
+
+Score Component
+
+Source Module
+
+Range
+
+Default Weight
+
+Adjustable?
+
+S_semantic
+
+Gemini LLM Response Evaluation
+
+0 – 100
+
+35%
+
+Yes
+
+S_similarity
+
+Doc2Vec Cosine Similarity
+
+0 – 1 → 0–100
+
+30%
+
+Yes
+
+S_emotion
+
+DeepFace Stability Score
+
+0 – 100
+
+20%
+
+Yes
+
+S_audio
+
+Speech Analysis Module
+
+0 – 100
+
+15%
+
+Yes
+
+S_final (Overall Composite)
+
+0 – 100   (Shortlist threshold configurable; default: ≥ 70)
+
+
+
+FR-10 | Evaluation Report Generation
+
+
+
+ID
+
+Feature
+
+Description
+
+Priority
+
+FR-10.1
+
+Auto Report
+
+System automatically generates structured PDF report via ReportLab within 30 seconds of session completion.
+
+P0
+
+FR-10.2
+
+Report Contents
+
+Report must include: (1) Candidate profile summary, (2) Semantic accuracy score, (3) JD relevance score, (4) Emotional stability timeline, (5) Communication quality breakdown, (6) Final composite score, (7) AI-generated strengths/weaknesses, (8) Recommended hiring decision.
+
+P0
+
+FR-10.3
+
+Access Control
+
+Candidate sees their own report. HR sees reports for all candidates who applied to their JD. Admin sees all.
+
+P1
+
+FR-10.4
+
+Download
+
+PDF downloadable from dashboard. File naming convention: CandidateID_JobID_Date.pdf.
+
+P1
+
+
+
+FR-11 | Dashboards
+
+Candidate Dashboard
+
+Overall and per-session performance scores with trend chart.
+
+Skill gap summary with completion progress for training recommendations.
+
+Interview history with ability to re-view evaluation cards.
+
+Weekly activity summary (sessions completed, skills marked done).
+
+Upcoming scheduled interview slots.
+
+
+
+HR Recruiter Dashboard
+
+Job description management panel (create, edit, archive JDs).
+
+Candidate list per JD with match scores, final scores, and status (Pending / Shortlisted / Rejected).
+
+Ranked comparison view for all applicants to a single JD.
+
+Interview slot scheduling calendar.
+
+Anti-cheat alert log per candidate.
+
+Downloadable evaluation reports per candidate.
+
+
+
+
+
+
+5.  Non-Functional Requirements
+
+5.1  Performance
+
+Requirement
+
+Target
+
+Resume parsing time
+
+< 5 seconds for files up to 5 MB
+
+Doc2Vec embedding generation
+
+< 3 seconds per document
+
+Cosine similarity computation
+
+< 500 ms
+
+Gemini LLM API response
+
+< 8 seconds per question generation or evaluation call
+
+DeepFace frame processing
+
+< 200 ms per frame (1 fps processing requirement)
+
+WebRTC latency
+
+< 150 ms end-to-end audio latency
+
+Report generation
+
+< 30 seconds post-interview-completion
+
+Dashboard page load
+
+< 2 seconds on standard broadband (10 Mbps)
+
+Concurrent sessions
+
+Support ≥ 100 simultaneous interview sessions without degradation
+
+
+
+5.2  Security
+
+All data in transit encrypted with TLS 1.3 minimum.
+
+All data at rest encrypted with AES-256.
+
+JWT tokens with 1-hour expiry and rotating refresh tokens.
+
+Role-based access control enforced at API gateway level.
+
+Candidate interview recordings stored in private cloud storage buckets (not publicly accessible URLs).
+
+API rate limiting: 100 requests per minute per authenticated user.
+
+OWASP Top-10 protections implemented (SQL injection, XSS, CSRF).
+
+PII anonymisation in analytics data exports.
+
+
+
+5.3  Reliability & Availability
+
+Target system uptime: 99.5% SLA.
+
+Automatic retry for failed AI API calls (Gemini): 3 retries with exponential back-off.
+
+Graceful degradation: if emotion analysis fails, interview continues and emotion score is marked N/A; does not block overall evaluation.
+
+Database daily backups with 30-day retention.
+
+Circuit breaker pattern on all external API calls.
+
+
+
+5.4  Scalability
+
+Microservices architecture enables horizontal scaling of individual services (e.g., scale interview-processing service independently during peak hours).
+
+Serverless functions (resume parsing, report generation, emotion detection) auto-scale to zero when idle.
+
+Message broker (RabbitMQ / Kafka) decouples services and queues bursts of evaluation events.
+
+CDN used for static frontend assets to reduce latency globally.
+
+
+
+5.5  Usability
+
+WCAG 2.1 Level AA accessibility compliance.
+
+Responsive web design: fully functional on desktops (1920px) and tablets (768px).
+
+First-time user onboarding tour for both Candidate and HR User roles.
+
+All error messages must be descriptive and actionable, not generic HTTP codes.
+
+Camera/microphone permission denied states must provide step-by-step browser instructions.
+
+
+
+
+
+
+6.  System Architecture
+
+6.1  Architecture Pattern
+
+Career Connect AI uses a Microservices + Event-Driven + Serverless hybrid architecture. This pattern was chosen to enable independent deployability, fault isolation, and elastic scaling of individual services — critical for a platform whose workloads are non-uniform (resume parsing is quick; interview evaluation is compute-intensive and asynchronous).
+
+
+
+6.2  Layer Descriptions
+
+Layer
+
+Components
+
+Responsibilities
+
+Frontend
+
+React.js SPA, WebRTC client, MediaRecorder
+
+Candidate/HR UI, live video-audio capture, dashboard rendering
+
+API Gateway
+
+FastAPI + Uvicorn (async)
+
+Request routing, JWT validation, rate limiting, API versioning
+
+Microservices
+
+8 independent Python services
+
+See Section 6.3 for full service catalogue
+
+AI / ML Layer
+
+Gemini API, Doc2Vec, DeepFace, YOLOv8/v11, RAVDESS model
+
+Question generation, answer evaluation, emotion detection, speech analysis, anti-cheat
+
+Event Layer
+
+RabbitMQ / Apache Kafka
+
+Async event propagation between services (resume uploaded, interview completed, evaluation done)
+
+Storage Layer
+
+MongoDB + Relational DB + Object Storage
+
+Unstructured data (resumes, transcripts), structured metrics, media files
+
+Serverless
+
+Cloud Functions (AWS Lambda / GCP Cloud Run)
+
+Resume parsing, emotion detection, report generation — triggered by events, auto-scale
+
+
+
+6.3  Microservices Catalogue
+
+Service
+
+Responsibilities
+
+Key APIs
+
+Tech
+
+User Management
+
+Registration, login, JWT issuance, role management, profile CRUD
+
+POST /register, POST /login, GET /profile
+
+FastAPI, MongoDB
+
+Resume Processing
+
+File validation, text extraction, NLP parsing, Doc2Vec embedding generation
+
+POST /resume/upload, GET /resume/parse
+
+FastAPI, PyPDF2, python-docx, Gensim
+
+Job Description
+
+JD ingestion, skill extraction, embedding generation, JD CRUD
+
+POST /jd/upload, GET /jd/{id}
+
+FastAPI, Gensim
+
+Resume Matching
+
+Cosine similarity computation, hybrid scoring with Gemini, skill gap detection
+
+POST /match, GET /match/report
+
+FastAPI, NumPy, Gemini API
+
+AI Interview
+
+Session management, RAG pipeline, question generation, transcript management
+
+POST /interview/start, POST /interview/answer
+
+FastAPI, Gemini API, WebRTC
+
+Emotion Analysis
+
+Frame extraction, DeepFace emotion detection, stability score computation
+
+POST /emotion/analyse
+
+OpenCV, DeepFace
+
+Speech Analysis
+
+Audio preprocessing, feature extraction, communication score
+
+POST /speech/analyse
+
+Librosa, RAVDESS model
+
+Candidate Evaluation
+
+Aggregates all module scores, applies weighted formula, generates final score
+
+POST /evaluate, GET /evaluation/{id}
+
+FastAPI, ReportLab
+
+
+
+
+
+
+7.  Technology Stack
+
+Layer
+
+Technology
+
+Version / Source
+
+Purpose
+
+Frontend
+
+React.js
+
+v18+
+
+Interactive SPA; candidate & HR dashboards
+
+Frontend
+
+WebRTC + MediaRecorder
+
+Browser native API
+
+Live audio-video capture and interview streaming
+
+Frontend
+
+Axios
+
+Latest stable
+
+HTTP requests from React to FastAPI backend
+
+Backend
+
+FastAPI
+
+v0.110+
+
+High-performance async REST API server
+
+Backend
+
+Uvicorn
+
+Latest stable
+
+ASGI server for FastAPI
+
+Backend
+
+Python 3.11+
+
+3.11 minimum
+
+All microservices implementation language
+
+AI — LLM
+
+Google Gemini API
+
+gemini-1.5-pro
+
+Question gen, answer eval, speech transcription, RAG
+
+AI — Embeddings
+
+Gensim Doc2Vec
+
+v4.x
+
+Resume and JD vector embedding generation
+
+AI — Vision
+
+DeepFace
+
+Latest stable
+
+Facial emotion recognition, identity verification
+
+AI — Vision
+
+OpenCV
+
+v4.x
+
+Video frame extraction, Haarcascade detection
+
+AI — Object Det.
+
+YOLOv8 / YOLOv11
+
+Ultralytics
+
+Multi-person detection for anti-cheat
+
+AI — Speech
+
+Librosa + RAVDESS model
+
+RAVDESS dataset
+
+Audio feature extraction and emotion analysis
+
+Database
+
+MongoDB
+
+v7+
+
+Unstructured data: resumes, transcripts, JDs
+
+Database
+
+PostgreSQL
+
+v15+
+
+Structured evaluation metrics, user accounts
+
+Object Storage
+
+AWS S3 / GCS
+
+Cloud provider
+
+Interview recordings, resume files, reports
+
+Messaging
+
+RabbitMQ / Kafka
+
+Latest stable
+
+Async event-driven communication between services
+
+File Parsing
+
+PyPDF2 + python-docx
+
+Latest stable
+
+Resume text extraction
+
+Report Gen
+
+ReportLab
+
+v4+
+
+Automated PDF evaluation report generation
+
+Auth
+
+PyJWT + Passlib
+
+Latest stable
+
+JWT authentication and password hashing
+
+Containerisation
+
+Docker + Kubernetes
+
+K8s v1.28+
+
+Service containerisation and orchestration
+
+
+
+
+
+
+8.  Data Architecture & Datasets
+
+8.1  Dataset Summary
+
+Dataset
+
+Source
+
+Usage
+
+Preprocessing
+
+Kaggle Resume Dataset
+
+kaggle.com / gauravduttakiit
+
+Train Doc2Vec resume-side embeddings
+
+Tokenise, stop-word removal, lemmatise
+
+Job Description Dataset
+
+kaggle.com / ravindrasinghrana
+
+Train Doc2Vec JD-side embeddings
+
+Clean HTML tags, normalise skill tokens
+
+FER2013 Emotion Dataset
+
+kaggle.com / msambare
+
+Fine-tune DeepFace emotion classifier
+
+Grayscale normalise, 48×48 resize
+
+RAVDESS Speech Dataset
+
+zenodo.org/record/1188976
+
+Train speech emotion and feature model
+
+MFCC extraction, normalise amplitude
+
+Candidate Evaluation Dataset
+
+System-generated (internal)
+
+Store scores, logs, reports per session
+
+Structured format, PII anonymised for analytics
+
+
+
+8.2  Core Data Entities
+
+Entity
+
+Key Fields
+
+Storage
+
+User
+
+userID, email, role, hashedPassword, createdAt
+
+PostgreSQL (users table)
+
+Candidate Profile
+
+candidateID, name, skills[], experience, resumeID, docVec[]
+
+MongoDB (candidates collection)
+
+Resume
+
+resumeID, candidateID, rawText, parsedData{}, embedding[], fileFormat, s3URL
+
+MongoDB + S3 (file)
+
+Job Description
+
+jobID, hrUserID, title, requiredSkills[], embedding[], status, createdAt
+
+MongoDB (jobs collection)
+
+Interview Session
+
+sessionID, candidateID, jobID, questions[], transcripts[], videoURL, audioURL, status, timestamp
+
+MongoDB + S3
+
+Evaluation
+
+evalID, sessionID, semanticScore, similarityScore, emotionScore, audioScore, finalScore, weights{}, reportURL
+
+PostgreSQL (evaluations table)
+
+Anti-Cheat Log
+
+logID, sessionID, eventType, severity, timestamp, snapshot
+
+MongoDB (anticheat_logs collection)
+
+Skill Training
+
+recID, candidateID, skillGap, recommendations[], completionStatus
+
+MongoDB (recommendations collection)
+
+
+
+
+
+
+9.  User Flows
+
+9.1  Candidate — Full Journey
+
+Register and verify email → Land on Candidate Dashboard.
+
+Upload Resume (PDF/DOCX) → System auto-parses and displays extracted skills for confirmation.
+
+Browse available job roles or paste a JD → View match score gauge and skill overlap report.
+
+View skill gap recommendations → Mark items in progress.
+
+Click "Start HR Interview" → Select job role and input experience → Grant mic + camera access.
+
+Interview session begins: AI reads question → candidate responds verbally → system records audio + video simultaneously.
+
+Anti-cheat runs in background: identity verified, face-out events logged, YOLO monitors frame.
+
+Session ends: evaluation pipeline triggered asynchronously.
+
+Interview Card displayed: Composite score, semantic score, communication score, emotion stability.
+
+Full PDF report available for download within 30 seconds.
+
+Dashboard updated with new session in history and weekly summary.
+
+
+
+9.2  HR Recruiter — Full Journey
+
+Register as HR User, verify email → Land on HR Dashboard.
+
+Create a new Job Description → Input title, responsibilities, required skills → System generates JD embedding and extracts skill tags.
+
+Publish JD (status: Active) → Candidates can now apply.
+
+Review incoming candidate applications in Candidate List panel.
+
+View ranked match scores for all applicants to the JD.
+
+Click on a candidate → View full evaluation card: scores, emotion timeline, speech metrics, AI-generated summary.
+
+Download candidate PDF report for offline review.
+
+Mark candidate as Shortlisted / Rejected / Pending Further Review.
+
+Use interview slot scheduling to assign live human follow-up slots.
+
+Review anti-cheat log for flagged candidates.
+
+
+
+
+
+
+10.  Verified Test Cases
+
+The following test cases have been validated during the system testing phase and must pass before any production release. All 25 tests below are from the verified functional test matrix.
+
+
+
+#
+
+Module
+
+Scenario
+
+Input
+
+Expected Result
+
+Status
+
+Notes
+
+1
+
+Resume Upload
+
+Upload valid PDF resume
+
+Valid PDF
+
+Resume uploaded & stored in DB
+
+PASS
+
+Supported format
+
+2
+
+Resume Upload
+
+Upload DOCX resume
+
+Valid DOCX
+
+Resume parsed, details extracted
+
+PASS
+
+DOCX parsing OK
+
+3
+
+Resume Upload
+
+Upload unsupported format
+
+.jpg image file
+
+Error: Unsupported format
+
+PASS
+
+Validation OK
+
+4
+
+Resume Parsing
+
+Extract candidate info
+
+Resume with skills & edu
+
+Name, skills, education extracted
+
+PASS
+
+NLP parser OK
+
+5
+
+Resume Parsing
+
+Resume missing fields
+
+Resume without skills
+
+Warning: missing skills section
+
+PASS
+
+Field validation OK
+
+6
+
+Job Description
+
+Recruiter uploads JD
+
+JD text with skills
+
+JD parsed, skills extracted
+
+PASS
+
+JD module OK
+
+7
+
+Job Matching
+
+High skill match
+
+Resume + similar JD
+
+Cosine similarity = 0.87
+
+PASS
+
+High match
+
+8
+
+Job Matching
+
+Partial match
+
+Resume missing few skills
+
+Cosine similarity = 0.55
+
+PASS
+
+Partial match
+
+9
+
+Job Matching
+
+No match
+
+Unrelated resume
+
+Cosine similarity = 0.21
+
+PASS
+
+Mismatch OK
+
+10
+
+Interview Start
+
+Candidate starts interview
+
+Click start interview
+
+Camera and mic activated
+
+PASS
+
+WebRTC OK
+
+11
+
+Video Capture
+
+Video recording starts
+
+Webcam input
+
+Video stream recorded
+
+PASS
+
+Video module OK
+
+12
+
+Audio Capture
+
+Clear audio response
+
+Clear mic audio
+
+Audio recorded & processed
+
+PASS
+
+Audio OK
+
+13
+
+Audio Capture
+
+Low volume audio
+
+Soft speech
+
+Reduced clarity score
+
+PASS
+
+Score reduced
+
+14
+
+Audio Capture
+
+Microphone not found
+
+No mic input
+
+Error: mic access error
+
+PASS
+
+HW detection OK
+
+15
+
+Video Capture
+
+Camera not detected
+
+No webcam
+
+Error: camera error message
+
+PASS
+
+Camera validation
+
+16
+
+Transcription
+
+Convert speech to text
+
+Audio response
+
+Gemini accurate transcript
+
+PASS
+
+STT OK
+
+17
+
+Semantic Eval
+
+Correct answer given
+
+Relevant answer
+
+Semantic score = 91
+
+PASS
+
+LLM eval correct
+
+18
+
+Semantic Eval
+
+Irrelevant answer
+
+Off-topic answer
+
+Semantic score = 34
+
+PASS
+
+Low score OK
+
+19
+
+JD Similarity
+
+Compare answer with JD
+
+Candidate response
+
+Cosine similarity generated
+
+PASS
+
+Doc2Vec OK
+
+20
+
+Emotion Detection
+
+Confident expression
+
+Confident face
+
+DeepFace: Confident
+
+PASS
+
+Emotion accurate
+
+21
+
+Emotion Detection
+
+Stress expression
+
+Nervous face
+
+DeepFace: Stressed
+
+PASS
+
+Emotion analysis OK
+
+22
+
+Emotion Detection
+
+Neutral expression
+
+Neutral face
+
+DeepFace: Neutral
+
+PASS
+
+Stable detection
+
+23
+
+Identity Verif.
+
+Face matches profile
+
+Stored photo + webcam
+
+Match confidence = 96%
+
+PASS
+
+Verif. success
+
+24
+
+Identity Verif.
+
+Different person detected
+
+Different face in frame
+
+Face mismatch flagged
+
+PASS
+
+Anti-imperson. OK
+
+25
+
+Anti-Cheat
+
+Candidate leaves frame
+
+Face not visible
+
+Warning shown to candidate
+
+PASS
+
+Monitoring active
+
+
+
+
+
+
+11.  Implementation Roadmap
+
+11.1  Phase Plan
+
+The project is divided into four delivery phases across 12 weeks. Each phase has a defined deliverable gate that must be reached before beginning the next phase.
+
+
+
+Phase
+
+Weeks
+
+Deliverables
+
+Gate Criterion
+
+Phase 1
+
+1 – 2
+
+Project scaffold (React + FastAPI), User Auth (FR-1), Resume Upload + Parser (FR-2), JD Upload (FR-3), MongoDB + PostgreSQL schema setup
+
+Users can register, log in, upload resumes and JDs successfully
+
+Phase 2
+
+3 – 5
+
+Doc2Vec model training on datasets, cosine similarity matching engine (FR-4), Skill gap detection (FR-5), Match score dashboard, Gemini RAG pipeline setup
+
+Semantic matching returns accurate scores; skill gap correctly identified
+
+Phase 3
+
+6 – 9
+
+WebRTC interview sessions (FR-6A + FR-6B), Gemini question generation, Speech-to-text transcription, DeepFace emotion analysis (FR-7A), Speech analysis module (FR-7B), Anti-cheat engine (FR-8), Identity verification
+
+Full AI interview with all modalities working; anti-cheat events logged correctly
+
+Phase 4
+
+10 – 12
+
+Weighted scoring engine (FR-9), ReportLab PDF report generation (FR-10), HR Dashboard (FR-11), Candidate Dashboard, Analytics widgets, End-to-end integration testing, Security hardening, Deployment to cloud
+
+All 25 test cases pass; system handles 50 concurrent sessions; reports generate within 30s
+
+
+
+11.2  Week-by-Week Breakdown
+
+Week
+
+Focus Area
+
+Tasks
+
+1
+
+Project Setup
+
+Git repo, folder structure, Docker compose, React app scaffold, FastAPI skeleton, MongoDB + PostgreSQL connections, JWT auth
+
+2
+
+Core Auth + File Upload
+
+User registration/login APIs, Role-based routing, Resume upload endpoint, PyPDF2/python-docx parsing, NLP preprocessing pipeline
+
+3
+
+Doc2Vec Training
+
+Download Kaggle datasets, preprocess corpora, train Doc2Vec model, export model artifact, test embedding generation
+
+4
+
+Matching Engine
+
+Cosine similarity computation, hybrid Gemini scoring, match score API, skill overlap detection
+
+5
+
+Skill Gap + Recommendations
+
+Gap detection logic, recommendation generation via Gemini, candidate dashboard widgets, match score gauge UI
+
+6
+
+WebRTC + Interview Core
+
+WebRTC session setup, MediaRecorder integration, session init API, audio/video recording to S3
+
+7
+
+Gemini RAG Pipeline
+
+RAG context injection, question generation prompts, answer evaluation prompts, speech-to-text transcription
+
+8
+
+Emotion + Speech Analysis
+
+OpenCV frame extraction, DeepFace integration, emotion stability score, RAVDESS model integration, Librosa feature extraction
+
+9
+
+Anti-Cheat Engine
+
+YOLOv8/v11 person detection, Haarcascade liveness check, face-out detection, cheat log storage, moderator alert
+
+10
+
+Scoring + Reports
+
+Weighted scoring formula, weight config API, ReportLab PDF template, async report generation trigger, download endpoint
+
+11
+
+Dashboards + Integration
+
+HR dashboard (ranked list, interview slots), candidate dashboard (history, weekly summary), event-driven pipeline wiring, E2E flow test
+
+12
+
+Testing + Deployment
+
+All 25+ test cases executed, security hardening, load test (100 concurrent sessions), containerise all services, deploy to cloud, documentation
+
+
+
+
+
+
+12.  API Contract Reference
+
+All APIs follow RESTful conventions. Base URL: /api/v1. All requests require Bearer JWT token unless marked Public. Responses use standard HTTP status codes.
+
+
+
+Method
+
+Endpoint
+
+Description
+
+Request Body
+
+Response
+
+POST
+
+/auth/register
+
+Register new user (Public)
+
+name, email, password, role
+
+201: {userID, token}
+
+POST
+
+/auth/login
+
+Authenticate and get JWT (Public)
+
+email, password
+
+200: {token, refreshToken}
+
+POST
+
+/resume/upload
+
+Upload and parse candidate resume
+
+multipart/form-data: file
+
+200: {resumeID, parsedData}
+
+GET
+
+/resume/{id}
+
+Get parsed resume data
+
+–
+
+200: resume object
+
+POST
+
+/jd/upload
+
+HR uploads job description
+
+title, description, skills[]
+
+201: {jobID}
+
+GET
+
+/jd/list
+
+List all JDs for HR user
+
+–
+
+200: [{jobID, title, status}]
+
+POST
+
+/match
+
+Compute resume-JD match score
+
+resumeID, jobID
+
+200: {cosineScore, geminiScore, hybridScore, skillOverlap}
+
+POST
+
+/interview/start
+
+Initialise interview session
+
+jobID, experience, description?
+
+200: {sessionID, firstQuestion}
+
+POST
+
+/interview/answer
+
+Submit answer and get next question
+
+sessionID, audioBlob, videoFrame
+
+200: {nextQuestion} | 204: session complete
+
+POST
+
+/interview/end
+
+Mark session complete, trigger evaluation
+
+sessionID
+
+202: {evalID, estimatedReady}
+
+GET
+
+/evaluation/{id}
+
+Get evaluation scores and report URL
+
+–
+
+200: evaluation object with all scores
+
+GET
+
+/report/{id}/download
+
+Download PDF evaluation report
+
+–
+
+200: PDF binary
+
+GET
+
+/hr/candidates
+
+List all candidates ranked by final score for a JD
+
+jobID query param
+
+200: ranked candidate list
+
+GET
+
+/candidate/history
+
+Get interview history for logged-in candidate
+
+–
+
+200: [{sessionID, date, score}]
+
+
+
+
+
+
+13.  Risk Register
+
+Risk
+
+Likelihood
+
+Impact
+
+Mitigation
+
+Gemini API rate limits or quota exceeded during load testing
+
+Medium
+
+High
+
+Implement request caching, exponential retry backoff, and per-user rate limit. Budget API quota headroom.
+
+DeepFace accuracy drops for non-frontal or low-light video
+
+High
+
+Medium
+
+Pre-session lighting check UI prompt. Fallback: mark emotion score as "N/A" rather than failing session.
+
+WebRTC connection failure in constrained network environments
+
+Medium
+
+High
+
+TURN server fallback configuration. Show network quality indicator. Allow session resume within 10 minutes of disconnect.
+
+Doc2Vec model bias toward specific resume formats or domains
+
+Medium
+
+High
+
+Train on diverse resume dataset covering 10+ job categories. Audit cosine scores across demographics. Provide Gemini RAG as bias-correcting secondary signal.
+
+Candidate privacy concerns around video recording
+
+High
+
+High
+
+Explicit consent screen before session with clear data retention policy. Offer candidate access to request deletion of recordings post-evaluation.
+
+Anti-cheat false positives flagging legitimate candidates
+
+Medium
+
+Medium
+
+Tune YOLO confidence thresholds. Warnings (not immediate terminations) for first-time flags. Human moderator review queue for contested flags.
+
+PDF report generation bottleneck at scale
+
+Low
+
+Medium
+
+Run ReportLab as a serverless function. Queue report generation. Async notification to user when ready.
+
+
+
+
+
+
+14.  Future Enhancements (Post v1.0)
+
+14.1  v2.0 Planned Features
+
+Enhancement
+
+Description
+
+Priority
+
+Sentence-BERT Embeddings
+
+Replace Doc2Vec with Sentence-BERT (SBERT) for richer semantic representations and better cross-domain matching accuracy.
+
+P0
+
+Reinforcement Learning Adaptive Questions
+
+Train an RL agent to generate adaptive follow-up questions based on candidate response depth, expanding or drilling down dynamically.
+
+P1
+
+Multilingual Support
+
+Extend Gemini prompts to support Hindi, Tamil, Spanish, and Mandarin. Multilingual ASR and semantic scoring.
+
+P1
+
+Voice Emotion Recognition
+
+Add dedicated voice emotion model (e.g., SpeechBrain or wav2vec) alongside DeepFace for richer stress/confidence signals from audio alone.
+
+P1
+
+Blockchain Credential Verification
+
+Integrate tamper-proof candidate credential records using Hyperledger or Ethereum for verifiable degree/certification claims.
+
+P2
+
+HRIS / ATS Integrations
+
+Two-way sync with Workday, Greenhouse, Lever. Push shortlisted candidates directly from dashboard.
+
+P2
+
+Mobile Application
+
+React Native app for candidate-facing flows (resume upload, interview card view, recommendation tracking).
+
+P2
+
+Company-Specific RAG Datasets
+
+Allow organisations to upload historical interview notes and performance data to personalise the RAG context for their specific culture and evaluation benchmarks.
+
+P2
+
+
+
+
+
+
+15.  Glossary
+
+Term
+
+Definition
+
+Doc2Vec
+
+A neural network model (Gensim) that learns fixed-length numerical vector representations (embeddings) for paragraphs or documents, preserving semantic context.
+
+Cosine Similarity
+
+A mathematical measure of similarity between two non-zero vectors, computed as the cosine of the angle between them. Range: -1 to 1; higher = more similar.
+
+RAG
+
+Retrieval-Augmented Generation — a technique that injects retrieved external documents (e.g., JD text) into an LLM prompt to ground its responses in specific context.
+
+DeepFace
+
+An open-source Python library for deep learning-based facial analysis, providing face detection, recognition, verification, and emotion analysis.
+
+WebRTC
+
+Web Real-Time Communication — a browser API enabling peer-to-peer audio, video, and data communication without requiring plugins.
+
+RAVDESS
+
+Ryerson Audio-Visual Database of Emotional Speech and Song — a labelled dataset of human speech expressing different emotional tones, used for speech model training.
+
+FER2013
+
+Facial Expression Recognition 2013 — a Kaggle dataset of 35,000+ labelled facial images across 7 emotion classes, used for emotion detection model training.
+
+YOLOv8 / v11
+
+You Only Look Once — real-time object detection architectures by Ultralytics, used here for detecting multiple persons in interview frames for anti-cheat purposes.
+
+ASR
+
+Automatic Speech Recognition — technology that converts spoken audio into text transcripts.
+
+PIA
+
+Personalised Intelligence Assessment — the platform's adaptive interview mode that dynamically tailors question type and format to the candidate's profile.
+
+ATS
+
+Applicant Tracking System — software used by companies to manage job applications and filter candidates before human review.
+
+JWT
+
+JSON Web Token — a compact, URL-safe token format used for stateless authentication between client and server.
+
+
+
+16.  Document Revision History
+
+Version
+
+Date
+
+Author
+
+Changes
+
+1.0
+
+March 2025
+
+Shrey Joshi, Shatakshi Singh
+
+Initial PRD release covering all functional and non-functional requirements for v1.0 implementation.
+
+
+
+End of Document — Career Connect AI PRD v1.0
+
+SRM Institute of Science and Technology  •  Department of Computing Technologies  •  21CSP401L Major Project
+
+Career Connect AI  •  SRM Institute of Science and Technology  •  Dept. of Computing Technologies     Page  of

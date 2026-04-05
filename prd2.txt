@@ -1,0 +1,1471 @@
+Career Connect AI — Candidate PRD v1.0
+
+Candidate Portal  |  Confidential
+
+
+
+PRODUCT REQUIREMENTS DOCUMENT
+
+Career Connect AI
+
+CANDIDATE PORTAL
+
+Registration · Resume Matching · AI Interview · Skill Gap · Reports
+
+
+
+Document Type
+
+Product Requirements Document — Candidate Module
+
+Version
+
+1.0 — Initial Release
+
+Module
+
+Candidate Portal (End-to-End)
+
+Authors
+
+Shrey Joshi, Shatakshi Singh
+
+Mentor
+
+Dr. S. Girirajan, Asst. Professor, CTECH
+
+Institution
+
+SRM Institute of Science and Technology, Kattankulathur
+
+Date
+
+March 2025
+
+Status
+
+APPROVED FOR IMPLEMENTATION
+
+
+
+
+1.  Purpose & Scope
+
+This document defines the complete product requirements for the Candidate Portal of Career Connect AI. It specifies every feature, backend data flow, API interaction, email verification mechanism, UI screen, and business rule that governs the candidate experience — from initial account registration through AI interview completion and final report review.
+
+
+
+This PRD is written to be implementation-ready: a developer can read this document and build the candidate module end-to-end without requiring additional verbal clarification.
+
+
+
+1.1  Candidate Definition
+
+A Candidate is any job-seeker who creates an account on Career Connect AI. They:
+
+Register with First Name, Email, and Password (three mandatory fields).
+
+Verify their email address using a one-time link sent by the platform before accessing any feature.
+
+Upload their own resume (PDF or DOCX). They cannot upload or create Job Descriptions.
+
+Browse and select Job Descriptions posted by HR users.
+
+Initiate an AI-powered interview for a selected JD.
+
+View their skill gap analysis, interview performance scores, and evaluation reports on their personal dashboard.
+
+
+
+1.2  What Candidates Cannot Do
+
+Upload, create, edit, or delete Job Descriptions.
+
+View other candidates' profiles, resumes, or interview reports.
+
+Access the HR dashboard or HR analytics.
+
+Change evaluation scores or report contents.
+
+Access admin configuration panels.
+
+
+
+
+
+
+2.  Registration & Email Verification
+
+2.1  Registration Form — Field Specification
+
+The candidate registration screen contains exactly three mandatory input fields. No other fields are collected at registration time.
+
+
+
+Field
+
+Type
+
+Validation Rules
+
+Error Message
+
+First Name
+
+Text input
+
+Min 2 chars, max 50 chars. Letters and spaces only. No numbers or special chars.
+
+"Name must be 2–50 characters with letters only."
+
+Email Address
+
+Email input
+
+Valid RFC 5322 email format. Must not already exist in the users table. Max 254 chars.
+
+"Invalid email address." / "This email is already registered."
+
+Password
+
+Password input (masked)
+
+Min 8 chars. Must contain ≥ 1 uppercase, ≥ 1 number, ≥ 1 special character. Max 64 chars.
+
+"Password must be 8+ chars with uppercase, number, and special character."
+
+
+
+Design Note: The registration form also shows a "Confirm Password" re-entry field for UX safety, but this field is frontend-only and is NOT sent to the backend as a separate field. The frontend validates match before submitting.
+
+
+
+2.2  Email Verification — Free Implementation
+
+Email verification uses a one-time signed link mechanism. This is implemented at zero cost using one of the following free-tier SMTP/transactional email services:
+
+
+
+Service
+
+Free Tier
+
+Setup
+
+Recommended
+
+Resend (resend.com)
+
+3,000 emails/month, 100/day — completely free forever on free plan.
+
+Add domain or use sandbox. SDK in Python/Node.
+
+✅ BEST CHOICE
+
+SendGrid
+
+100 emails/day free forever. No credit card required.
+
+SMTP or HTTP API. Python SDK available.
+
+✅ Good
+
+Gmail SMTP
+
+500 emails/day via Gmail App Password. Completely free.
+
+Enable 2FA → App Password → use smtplib in Python.
+
+✅ Simplest
+
+Mailtrap (Dev)
+
+1,000 emails/month free. Test-friendly sandbox.
+
+For development/testing only. Not for production.
+
+⚠️ Dev Only
+
+
+
+2.2.1  Verification Token Generation
+
+When a candidate submits the registration form successfully:
+
+Backend creates a user record in the database with status = "pending_verification".
+
+Backend generates a cryptographically secure random token: 64-character hex string using secrets.token_hex(32) in Python.
+
+Token is stored in the verification_tokens table with columns: token (hashed with SHA-256), user_id (FK), created_at, expires_at (= created_at + 24 hours), used (boolean, default False).
+
+Backend sends a verification email to the registered address using the chosen free SMTP service.
+
+Candidate is shown a screen: "We sent a verification link to your-email@example.com. Please check your inbox."
+
+
+
+2.2.2  Verification Email Template
+
+Email Subject: "Verify your Career Connect AI account"
+Sender: Career Connect AI <noreply@careerconnectai.com> (or sandbox sender for development)
+Email Body: The email contains a branded HTML email with the candidate's first name, a one-click verification button, and a plain-text fallback link valid for 24 hours.
+
+
+
+Verification link format:
+
+  https://[domain]/auth/verify?token=[64-char-hex-token]
+
+
+
+2.2.3  Verification Click Flow (Backend)
+
+Candidate clicks the verification link in their email.
+
+Frontend extracts token from the URL query parameter and calls: GET /api/auth/verify?token={token}
+
+Backend: Hash the received token using SHA-256. Look up the hashed value in verification_tokens. If found: check used == False AND expires_at > NOW(). If valid: set users.status = "active", set verification_tokens.used = True. Return 200 with success message.
+
+If token is expired: return 410. If token already used: return 409. If token not found: return 404.
+
+Frontend redirects verified candidate to the Login page with a success toast: "Email verified! You can now sign in."
+
+
+
+2.2.4  Resend Verification Email
+
+If the candidate does not receive the email or it expires, they can request a new link on the "Check your email" screen:
+
+Candidate clicks "Resend verification email".
+
+Frontend calls: POST /api/auth/resend-verification with body { email: "candidate@example.com" }.
+
+Backend: Validate that the email exists and status == "pending_verification". Invalidate any existing unused tokens for this user. Generate a new token. Send a new email. Return 200.
+
+Rate limit: Maximum 3 resend requests per email per hour to prevent abuse.
+
+
+
+2.3  Login Flow
+
+Post-verification, a candidate logs in using Email + Password. The login screen has exactly two fields.
+
+
+
+Step
+
+Backend Logic
+
+1. Submit credentials
+
+POST /api/auth/login — Body: { email, password }
+
+2. Email lookup
+
+Query users table by email. If not found → 401 "Invalid credentials".
+
+3. Verification check
+
+If users.status == "pending_verification" → 403 "Please verify your email before logging in."
+
+4. Password check
+
+Compare submitted password against bcrypt hash stored in DB. If mismatch → 401.
+
+5. JWT issuance
+
+Generate signed JWT. Payload: { user_id, email, role: "candidate", name, iat, exp (24h) }. Return 200 with { token, user_object }.
+
+6. Token storage
+
+Frontend stores JWT in localStorage as cc_access_token. Attached as Authorization: Bearer <token> header on every subsequent API call.
+
+
+
+2.4  Password Reset Flow
+
+"Forgot Password" link on the login page triggers: POST /api/auth/forgot-password with { email }.
+
+Backend generates a 6-digit OTP (not a link, to differentiate from the verification link). OTP valid for 10 minutes.
+
+OTP emailed to the candidate. Frontend shows an OTP input screen.
+
+Candidate submits: POST /api/auth/reset-password with { email, otp, new_password }.
+
+Backend validates OTP, expiry, and updates the bcrypt hash. Invalidates the OTP. Returns 200.
+
+
+
+
+
+
+3.  Candidate Dashboard — Screen & Feature Specification
+
+After a successful login, the candidate is routed to their personal dashboard at /candidate/dashboard. This is the central hub for all candidate actions and insights.
+
+
+
+3.1  Dashboard Layout — Sections
+
+Zone
+
+Section Name
+
+Content Description
+
+A
+
+Top Summary Bar
+
+Candidate name, profile completeness %, resume upload status, total interviews taken.
+
+B
+
+KPI Stat Cards
+
+Four cards: Latest Score, Average Score, Interviews Completed, Shortlist Status of latest eval.
+
+C
+
+Resume Management Panel
+
+Upload zone, extracted skills display, resume file name and upload date.
+
+D
+
+Job Description Browser
+
+List of all active JDs posted by HR users. Candidate selects one to match or interview.
+
+E
+
+Resume–JD Match Panel
+
+Appears after JD selection. Shows cosine similarity score, matched skills, missing skills.
+
+F
+
+Skill Gap & Recommendations
+
+Detailed skill gap analysis with personalized training resource suggestions per gap.
+
+G
+
+Interview History & Reports
+
+List of all past AI interview sessions with scores, dates, and links to full evaluation reports.
+
+H
+
+Score Trend Chart
+
+Line/area chart showing final score trend across all sessions for the candidate.
+
+
+
+
+
+
+4.  Resume Upload & Parsing
+
+4.1  Upload Rules
+
+Accepted formats: PDF and DOCX only. Any other format is rejected with a specific error.
+
+Maximum file size: 5 MB. Files larger than 5 MB are rejected before uploading.
+
+A candidate may upload a new resume at any time. The new resume replaces the old one. All future match computations use the latest resume.
+
+The candidate cannot upload a Job Description — this action is locked behind the HR role at the API level.
+
+
+
+4.2  Backend Resume Processing Flow
+
+
+
+Step
+
+Process
+
+1
+
+File Validation
+
+Frontend validates file extension and size before uploading. If invalid, show error immediately without making an API call.
+
+2
+
+Multipart Upload
+
+Frontend: POST /api/resume/upload (multipart/form-data). Header: Authorization: Bearer {token}. Body: file (binary), filename.
+
+3
+
+Server-side Re-validation
+
+Backend re-validates file extension and size (never trust frontend validation alone). If invalid → 400.
+
+4
+
+Text Extraction
+
+For PDF: use PyPDF2 or pdfplumber. For DOCX: use python-docx. Extract raw text content. If extraction fails (corrupted or image-only PDF) → 422 with error "Unable to extract text from this file. Please upload a text-based resume.".
+
+5
+
+NLP Preprocessing
+
+Apply: (a) Tokenization using NLTK/spaCy. (b) Stop-word removal. (c) Lemmatization (running→run). (d) Special character cleaning.
+
+6
+
+Structured Data Extraction
+
+Using spaCy NER + regex patterns, extract: Full Name, Email, Phone, Skills list, Work Experience entries (role+company+duration), Education entries, Certifications, Projects. Flag sections that are missing.
+
+7
+
+Doc2Vec Embedding
+
+Feed cleaned resume text into the pre-trained Doc2Vec model. Generate a 300-dimensional float vector. Store vector in resume_embeddings table alongside resume_id.
+
+8
+
+Persist to DB
+
+Insert record into resumes table: { resume_id, candidate_id, original_filename, s3_url, parsed_json, embedding_id, created_at, updated_at }. Update candidates.resume_id FK.
+
+9
+
+Return Response
+
+Return 200 with: { resume_id, parsed_data: { name, email, skills[], experience[], education[], certifications[], projects[] }, skills_count, created_at }.
+
+
+
+4.3  Extracted Skills Display
+
+On the dashboard, after upload, all extracted skills are shown as colour-coded tags. Skills that match the currently selected JD (if any) are marked in green. Skills that are in the JD but missing from the resume are shown in red. The candidate can view the full extracted data in a collapsible panel.
+
+
+
+
+
+
+5.  Job Description Selection & Resume–JD Matching
+
+5.1  JD Browser
+
+Candidates do not upload Job Descriptions. They browse JDs that HR users have already published on the platform.
+
+
+
+API: GET /api/jobs?status=active — Returns all active job descriptions. Visible to all authenticated users (candidates and HR).
+
+Each JD card shows: Job Title, Company Name, Location, Experience Level, Required Skills (first 5 shown), date posted.
+
+Candidate clicks "Select for Matching" or "Start Interview" on any JD.
+
+Candidate may switch JD selection at any time. Selecting a new JD refreshes the match panel.
+
+
+
+5.2  Resume–JD Match Flow
+
+When a candidate selects a JD and clicks "Check Match":
+
+
+
+#
+
+Step
+
+1
+
+Check Prerequisites
+
+Frontend verifies: (a) Candidate has an uploaded resume. (b) A JD is selected. If either is missing, show an inline prompt to complete the missing step.
+
+2
+
+Trigger Match API
+
+POST /api/match — Body: { resume_id, job_id }. Header: Authorization: Bearer {token}.
+
+3
+
+Load Embeddings
+
+Backend retrieves: (a) Doc2Vec embedding for the resume from resume_embeddings table. (b) Doc2Vec embedding for the JD from job_embeddings table.
+
+4
+
+Cosine Similarity
+
+Compute: CosineSimilarity(resume_vector, jd_vector) = (A·B) / (||A|| × ||B||). Result is a float between 0 and 1.
+
+5
+
+Gemini RAG Scoring
+
+Append resume text + JD text into Gemini prompt with RAG context. Ask Gemini to rate semantic fit (0–100). This provides a secondary signal beyond mathematical similarity.
+
+6
+
+Skill Gap Computation
+
+Compare extracted resume skills list against JD required_skills list (case-insensitive, fuzzy match with Levenshtein distance ≤ 2). Categorise: Matched (in both), Missing (in JD but not resume), Extra (in resume but not JD).
+
+7
+
+Training Recommendations
+
+For each Missing skill, Gemini generates: (a) Brief description of why this skill is needed for the role. (b) Recommended resource type (course/tutorial/certification). (c) Estimated learning time (hours). (d) Suggested platform (Coursera/Udemy/YouTube/official docs).
+
+8
+
+Persist & Return
+
+Store result in match_results table: { match_id, resume_id, job_id, cosine_score, gemini_score, hybrid_score, matched_skills[], missing_skills[], extra_skills[], created_at }. Return full result to frontend.
+
+
+
+5.3  Match Score Display
+
+Score
+
+Range
+
+Colour & Label
+
+Cosine Similarity (Doc2Vec)
+
+0.00 – 1.00 (shown as 0–100%)
+
+≥ 70%: Green "Strong Match"  |  40–69%: Amber "Partial Match"  |  < 40%: Red "Low Match"
+
+Gemini Semantic Score
+
+0 – 100
+
+Same three-tier colour coding as above.
+
+Hybrid Score (displayed prominently)
+
+0 – 100 (weighted: 60% cosine + 40% Gemini)
+
+This is the primary score shown on the match card.
+
+
+
+
+
+
+6.  Skill Gap Analysis & Training Recommendations
+
+6.1  Gap Analysis Panel on Dashboard
+
+The skill gap panel appears automatically after a match computation. It is persistent — the candidate can return to the dashboard and view the gap analysis for the last matched JD without re-triggering the match.
+
+
+
+Category
+
+Definition
+
+Visual Presentation
+
+Matched Skills
+
+Skills present in both the candidate's resume and the job description.
+
+Green pill tags with ✓ checkmark.
+
+Missing Skills (Gap)
+
+Skills required in the JD that are absent from the candidate's resume.
+
+Red pill tags with ✗ icon. These are the primary focus of recommendations.
+
+Extra Skills
+
+Skills in the candidate's resume not required by the JD. Still a positive signal.
+
+Blue/gray pill tags marked as "Additional Strengths".
+
+
+
+6.2  Recommendation Card Structure
+
+For each Missing Skill, the platform renders a recommendation card containing:
+
+Skill name (bold, coloured heading).
+
+Why you need this: 1–2 sentence explanation of its relevance to the selected role.
+
+Recommended Learning Path: Course/book/tutorial name, platform (Coursera/Udemy/etc.), estimated hours.
+
+Priority level: High (core JD requirement) / Medium / Low.
+
+Completion tracker: Candidate can mark each recommendation as "Not Started", "In Progress", or "Done". This state is persisted to the DB and shown as a progress indicator on the dashboard.
+
+
+
+6.3  Recommendation Storage & Progress Tracking
+
+Table: skill_recommendations — { rec_id, match_id, candidate_id, skill_name, reason, resource_name, resource_url, platform, est_hours, priority, status (enum: not_started / in_progress / done), updated_at }.
+
+API: PATCH /api/recommendations/{rec_id} — Body: { status: "in_progress" }. Only the owning candidate can update their own recommendation status.
+
+Dashboard progress bar shows: "X of Y recommended skills completed."
+
+
+
+
+
+
+7.  AI Interview Engine — Candidate Flow
+
+7.1  Pre-Interview Checks
+
+Before an interview session can begin, the system enforces these prerequisites:
+
+Check
+
+Handling
+
+Resume uploaded?
+
+If no resume on file → show inline prompt "Upload your resume first." with link to upload page. Do not allow interview to start.
+
+JD selected?
+
+If no JD selected → show inline prompt "Select a job posting to interview for." with link to JD browser.
+
+Microphone access?
+
+Request browser microphone permission. If denied → show error: "Microphone access is required. Please enable it in your browser settings." with a help link. Interview cannot start without microphone.
+
+Camera access?
+
+Request browser camera permission. Camera is MANDATORY — emotion analysis and anti-cheat require it. If denied → show error with instructions. Interview cannot start without camera.
+
+
+
+7.2  Interview Session Start Flow
+
+#
+
+Step
+
+1
+
+Capture Context
+
+Candidate enters: (a) Years of experience (required, integer). (b) Target role description (optional, free text, max 300 chars). These are sent to the backend for RAG context injection.
+
+2
+
+Create Session
+
+POST /api/interview/start — Body: { job_id, resume_id, experience_years, role_description }. Backend creates interview_sessions record with status = "active". Returns { session_id, first_question, total_questions }.
+
+3
+
+RAG Context Build
+
+Backend retrieves JD text and candidate's parsed resume. Both are injected into the Gemini system prompt as context. Gemini uses this to generate role-specific, non-generic questions relevant to both the JD and the candidate's background.
+
+4
+
+Question Delivery
+
+The AI-generated question is displayed as text on screen AND read aloud via browser TTS (Web Speech API, no cost). Timer countdown visible to candidate (default: 90 seconds per question).
+
+5
+
+Response Recording
+
+Candidate responds verbally. Browser MediaRecorder API records audio. OpenCV (via WebSocket) processes video frames every 1 second from the camera feed.
+
+6
+
+Frame Processing
+
+Each video frame is sent to the backend emotion analysis endpoint in near-real-time (every 2 seconds). DeepFace classifies emotion per frame. YOLOv8 checks for multiple persons in frame. Results logged with timestamp.
+
+7
+
+Answer Submission
+
+When the candidate clicks "Submit Answer" or the 90-second timer expires: Audio blob is sent to backend. Gemini transcribes the audio to text (speech-to-text). Gemini evaluates the transcribed answer against the question and JD context. Scores returned: { semantic_score, jd_relevance, feedback_note }.
+
+8
+
+Next Question Loop
+
+Backend checks if more questions remain. If yes: return next_question. If no: return { done: true }. Frontend transitions to post-interview screen.
+
+9
+
+Session End
+
+POST /api/interview/end — Body: { session_id }. Backend aggregates all scores, generates final evaluation, triggers PDF report generation asynchronously. Returns { eval_id }.
+
+
+
+7.3  Question Generation Rules
+
+Total questions per session: 5 to 8 (configurable, default 7).
+
+Question types: Technical (role-specific), Behavioural (situational), Communication-quality (open-ended).
+
+No question is repeated within a session. Questions are generated dynamically by Gemini using the RAG context — they are NOT from a static template bank.
+
+RAG prompt instructs Gemini: "Generate interview questions for a [job_title] role. Consider this job description: [jd_text]. The candidate has [experience_years] years of experience and these skills from their resume: [skills_list]. Generate role-specific, non-repetitive questions that test technical depth and communication ability."
+
+
+
+
+
+
+8.  Multimodal Analysis (Background Processing)
+
+All three modalities run in parallel during the interview session. They are invisible to the candidate (no separate UI for these) — results are compiled into the final evaluation report.
+
+
+
+8.1  Facial Emotion Analysis (DeepFace)
+
+Parameter
+
+Specification
+
+Capture frequency
+
+1 video frame extracted per second via OpenCV during the interview.
+
+Detection model
+
+DeepFace with FER2013-trained backend. Detects: Happy, Neutral, Confident, Stressed, Confused, Anxious.
+
+Output per frame
+
+{ timestamp, dominant_emotion, emotion_probabilities: { happy: %, neutral: %, stressed: %, ... } }
+
+Emotion stability score
+
+Computed as: 100 − (variance across dominant_emotion distribution × 100). Higher score = more emotionally stable. Normalised to 0–100.
+
+Timeline storage
+
+emotion_logs table: { log_id, session_id, timestamp_seconds, emotion_label, confidence_score }.
+
+
+
+8.2  Speech Analysis
+
+Feature
+
+Method & Storage
+
+Speaking rate (WPM)
+
+Words in transcript ÷ audio duration in minutes. Target range: 120–160 WPM. Stored in speech_features table.
+
+Filler word count
+
+Count of "um", "uh", "like", "you know", "basically" in transcript. Higher count → lower communication score.
+
+Pitch / tone variation
+
+Extracted via Librosa from audio waveform. High variation = expressive. Very low = monotone. Encoded as a 0–100 score.
+
+Pause frequency
+
+Detected via silence gaps > 2 seconds in audio waveform. Excessive pauses reduce fluency score.
+
+Communication score
+
+Weighted combination: Speaking rate (25%) + Filler count inverse (30%) + Tone variation (25%) + Pause frequency inverse (20%). Normalised 0–100.
+
+
+
+8.3  Semantic Answer Evaluation (Gemini LLM)
+
+For each question-answer pair, Gemini evaluates: (a) Factual correctness — Is the answer technically accurate for the role? (b) Depth — Does the candidate go beyond surface-level? (c) JD alignment — Does the answer reference skills and responsibilities in the JD? (d) Completeness — Are all parts of the question addressed?
+
+Output: { semantic_score: 0–100, jd_relevance_score: 0–1, evaluation_notes: "string" }.
+
+Scores across all question-answer pairs are averaged to form the session-level Semantic Score.
+
+
+
+
+
+
+9.  Candidate Scoring Engine
+
+The final evaluation score is computed by the Candidate Evaluation Service after all analysis modules have completed. The formula is:
+
+
+
+S_final  =  (0.35 × S_semantic)  +  (0.30 × S_jd_similarity × 100)  +  (0.20 × S_emotion)  +  (0.15 × S_audio)
+
+All component scores normalised to 0–100 range before weighting. Final score is also 0–100.
+
+
+
+Component
+
+Source
+
+Range
+
+Default Weight
+
+HR Adjustable?
+
+S_semantic
+
+Gemini answer eval avg
+
+0 – 100
+
+35%
+
+Yes
+
+S_jd_similarity
+
+Doc2Vec cosine similarity
+
+0.0 – 1.0 → ×100
+
+30%
+
+Yes
+
+S_emotion
+
+DeepFace stability score
+
+0 – 100
+
+20%
+
+Yes
+
+S_audio
+
+Speech analysis composite
+
+0 – 100
+
+15%
+
+Yes
+
+S_final  (Final Composite Score)
+
+0 – 100   (Displayed to candidate and HR)
+
+
+
+9.1  Candidate Score Visibility
+
+Candidates see all four component scores + the final composite score on their Evaluation Report Card.
+
+Score thresholds shown as colour bands: ≥ 80 = Excellent (Green), 60–79 = Good (Teal), 40–59 = Average (Amber), < 40 = Needs Work (Red).
+
+Candidates do NOT see the HR-set shortlist decision (Shortlisted / Rejected) directly. They see their scores and Gemini-generated qualitative feedback.
+
+
+
+
+
+
+10.  Evaluation Report — Candidate View
+
+10.1  Report Card (On-Screen)
+
+Immediately after an interview ends, the candidate is shown an "Interview Card" screen containing:
+
+Final composite score (large, colour-coded score ring animation).
+
+All four component scores displayed as smaller score rings: Semantic, JD Match, Emotion Stability, Communication.
+
+Emotion timeline: A horizontal chart showing the candidate's emotional state distribution across the interview duration.
+
+Gemini-generated Strengths (2–3 bullet points).
+
+Gemini-generated Areas for Improvement (2–3 bullet points).
+
+Role Alignment Summary: A 2–3 sentence narrative generated by Gemini explaining how well the candidate fits the selected JD.
+
+A "Download Full Report" button to get the PDF version.
+
+
+
+10.2  PDF Report — Content Specification
+
+The PDF is generated by ReportLab within 30 seconds of session completion. It includes:
+
+#
+
+Section
+
+Content
+
+1
+
+Cover Page
+
+Candidate name, email, target job title, interview date, unique session ID.
+
+2
+
+Executive Summary
+
+Final score, recommendation band, 2-sentence overall assessment.
+
+3
+
+Score Breakdown
+
+Table with all 4 component scores, weights used, and final weighted score.
+
+4
+
+Question-Answer Analysis
+
+For each question: the question text, a summary of the candidate's answer, Gemini's semantic score, and improvement note.
+
+5
+
+Emotion Analysis
+
+Timeline chart of emotional states, dominant emotion %, stability score.
+
+6
+
+Speech Analysis
+
+WPM, filler word count, tone variation score, fluency score.
+
+7
+
+JD Alignment
+
+Matched skills table, missing skills table, hybrid match score.
+
+8
+
+Strengths
+
+Gemini-generated bullet list of demonstrated strengths.
+
+9
+
+Improvement Areas
+
+Gemini-generated improvement suggestions with specific actionable guidance.
+
+10
+
+Skill Recommendations
+
+Personalised training resources for each identified skill gap.
+
+
+
+10.3  Report History
+
+All past evaluation reports are listed on the candidate dashboard under "Interview History".
+
+Each row shows: Job Title, Interview Date, Final Score (colour-coded), Recommendation Band, Download button.
+
+Candidate can re-download any past PDF report at any time.
+
+
+
+
+
+
+11.  Candidate API Reference
+
+Method
+
+Endpoint
+
+Description
+
+Auth
+
+Response
+
+POST
+
+/auth/register
+
+Create candidate account with name, email, password.
+
+Public
+
+201 {user_id, message}
+
+GET
+
+/auth/verify
+
+Verify email via token from email link.
+
+Public
+
+200 / 410 / 409
+
+POST
+
+/auth/login
+
+Authenticate with email + password. Returns JWT.
+
+Public
+
+200 {token, user}
+
+POST
+
+/auth/resend-verification
+
+Resend email verification link (max 3/hour).
+
+Public
+
+200 / 429
+
+POST
+
+/auth/forgot-password
+
+Send OTP to email for password reset.
+
+Public
+
+200
+
+POST
+
+/auth/reset-password
+
+Reset password with OTP verification.
+
+Public
+
+200 / 400
+
+GET
+
+/auth/me
+
+Get current user profile.
+
+JWT (Candidate)
+
+200 {user}
+
+POST
+
+/resume/upload
+
+Upload PDF or DOCX resume.
+
+JWT (Candidate)
+
+200 {resume_id, parsed_data}
+
+GET
+
+/resume/mine
+
+Get candidate's latest resume and parsed data.
+
+JWT (Candidate)
+
+200 {resume}
+
+GET
+
+/jobs
+
+Browse all active job descriptions.
+
+JWT (Any)
+
+200 [{job}]
+
+POST
+
+/match
+
+Compute resume-JD match and skill gap.
+
+JWT (Candidate)
+
+200 {scores, gaps, recs}
+
+PATCH
+
+/recommendations/{id}
+
+Update skill recommendation completion status.
+
+JWT (Candidate)
+
+200
+
+POST
+
+/interview/start
+
+Start an AI interview session.
+
+JWT (Candidate)
+
+200 {session_id, question}
+
+POST
+
+/interview/answer
+
+Submit answer audio, get next question.
+
+JWT (Candidate)
+
+200 {next_q} / 204
+
+POST
+
+/interview/end
+
+End session and trigger evaluation pipeline.
+
+JWT (Candidate)
+
+202 {eval_id}
+
+GET
+
+/interview/history
+
+Get all past interview evaluations.
+
+JWT (Candidate)
+
+200 [{eval}]
+
+GET
+
+/evaluation/{eval_id}
+
+Get full evaluation object with all scores.
+
+JWT (Candidate)
+
+200 {evaluation}
+
+GET
+
+/report/{eval_id}/download
+
+Download PDF evaluation report.
+
+JWT (Candidate)
+
+200 PDF binary
+
+
+
+
+
+
+12.  Database Schema — Candidate Tables
+
+Table
+
+Key Fields
+
+Type
+
+Notes
+
+users
+
+user_id, name, email, password_hash, role, status, created_at
+
+PostgreSQL
+
+status ENUM: pending_verification, active, suspended.
+
+verification_tokens
+
+token_hash, user_id, expires_at, used
+
+PostgreSQL
+
+token stored as SHA-256 hash. NOT the raw token.
+
+password_reset_otps
+
+otp_hash, user_id, expires_at, used
+
+PostgreSQL
+
+6-digit OTP hashed with bcrypt. 10-min expiry.
+
+resumes
+
+resume_id, candidate_id, filename, s3_url, parsed_json, created_at
+
+MongoDB + S3
+
+parsed_json stores structured NLP output.
+
+resume_embeddings
+
+embedding_id, resume_id, vector[300], model_version
+
+PostgreSQL/pgvector
+
+300-dim Doc2Vec float vector.
+
+match_results
+
+match_id, resume_id, job_id, cosine_score, gemini_score, hybrid_score, matched_skills[], missing_skills[], created_at
+
+PostgreSQL
+
+Updated on each re-match trigger.
+
+skill_recommendations
+
+rec_id, match_id, candidate_id, skill_name, resource_name, platform, est_hours, priority, status
+
+PostgreSQL
+
+status: not_started / in_progress / done.
+
+interview_sessions
+
+session_id, candidate_id, job_id, resume_id, questions_json, answers_json, status, started_at, ended_at
+
+MongoDB
+
+questions and answers stored as JSON array.
+
+emotion_logs
+
+log_id, session_id, timestamp_sec, dominant_emotion, confidence
+
+MongoDB
+
+One row per captured video frame.
+
+speech_features
+
+feat_id, session_id, wpm, filler_count, tone_score, pause_count, communication_score
+
+PostgreSQL
+
+Computed once per completed session.
+
+evaluations
+
+eval_id, session_id, candidate_id, job_id, semantic_score, similarity_score, emotion_score, audio_score, final_score, weights_json, strengths_json, weaknesses_json, recommendation, report_url, created_at
+
+PostgreSQL
+
+report_url is the S3 URL of the generated PDF.
+
+
+
+
+
+
+13.  Functional Requirements Summary
+
+ID
+
+Module
+
+Requirement
+
+Priority
+
+CRQ-01
+
+Auth
+
+Candidate registers with exactly 3 fields: First Name, Email, Password.
+
+P0 Critical
+
+CRQ-02
+
+Auth
+
+Email verification link sent via free SMTP service. Account inactive until verified.
+
+P0 Critical
+
+CRQ-03
+
+Auth
+
+Token-based email verification. Tokens expire after 24 hours. Max 3 resends/hour.
+
+P0 Critical
+
+CRQ-04
+
+Auth
+
+Password reset via 6-digit OTP delivered to email. OTP expires in 10 minutes.
+
+P1 High
+
+CRQ-05
+
+Resume
+
+Candidate can upload PDF or DOCX resume. Max size 5 MB. Unsupported formats rejected.
+
+P0 Critical
+
+CRQ-06
+
+Resume
+
+System extracts name, email, skills, experience, education, certifications via NLP.
+
+P0 Critical
+
+CRQ-07
+
+Resume
+
+Candidate CANNOT upload or create Job Descriptions. This action returns 403 at API level.
+
+P0 Critical
+
+CRQ-08
+
+JD
+
+Candidate can browse all active JDs. Can select any JD for match or interview.
+
+P0 Critical
+
+CRQ-09
+
+Matching
+
+Resume-JD match produces cosine similarity score, Gemini semantic score, and hybrid score.
+
+P0 Critical
+
+CRQ-10
+
+Skill Gap
+
+System identifies matched, missing, and extra skills. Missing skills receive training recommendations.
+
+P0 Critical
+
+CRQ-11
+
+Interview
+
+Interview cannot start without (a) uploaded resume, (b) selected JD, (c) camera access, (d) mic access.
+
+P0 Critical
+
+CRQ-12
+
+Interview
+
+Gemini generates 5–8 role-specific questions using RAG context from JD + resume.
+
+P0 Critical
+
+CRQ-13
+
+Analysis
+
+DeepFace processes video 1 frame/sec. YOLOv8 checks for multiple persons per frame.
+
+P0 Critical
+
+CRQ-14
+
+Report
+
+PDF report generated within 30 seconds of session end. Contains all 10 sections specified.
+
+P0 Critical
+
+CRQ-15
+
+Dashboard
+
+Candidate sees own scores only. Cannot view other candidates' data. 403 enforced at API.
+
+P0 Critical
+
+CRQ-16
+
+Progress
+
+Skill recommendation status (not_started/in_progress/done) persisted and shown on dashboard.
+
+P1 High
+
+CRQ-17
+
+Dashboard
+
+Score trend chart shows score history across all sessions. Emotion timeline shown per session.
+
+P1 High
+
+
+
+
+
+
+14.  Appendix — Candidate Flow Diagram (Text)
+
+CANDIDATE COMPLETE JOURNEY:
+
+Landing Page → Register (Name + Email + Password) → "Check your inbox" screen
+→ Email Verification Link clicked → Login Page (success toast)
+→ Login (Email + Password) → Candidate Dashboard
+→ [1] Upload Resume → Skills extracted → shown on dashboard
+→ [2] Browse JD List → Select a JD → "Check Match" → Match score + skill gap + recommendations displayed
+→ [3] Click "Start Interview" for selected JD
+→ Pre-interview checks (camera + mic granted, resume + JD confirmed)
+→ Enter experience years + optional description
+→ Interview Session: AI question → candidate answers → DeepFace+YOLOv8+Speech running in background → next question loop
+→ Session ends → Evaluation pipeline triggered async
+→ Interview Card shown (scores + emotion timeline + Gemini feedback)
+→ Download PDF Report button
+→ Dashboard updated with new session in history and trend chart
+
+
+
+End of Document — Career Connect AI  |  Candidate Portal PRD v1.0
+
+SRM Institute of Science and Technology  •  Department of Computing Technologies
+
+Career Connect AI  •  Candidate Module  •  SRM Institute of Science and Technology     Page  of

@@ -88,6 +88,8 @@ export default function CandidateDashboard() {
   const [stats, setStats] = useState({ avg: 0, done: 0, pending: 0, total: 0 });
   const [history, setHistory] = useState<any[]>([]);
   const [recProgress, setRecProgress] = useState<{ total: number; done: number; inProgress: number; skills: { skill: string; status: string }[] }>({ total: 0, done: 0, inProgress: 0, skills: [] });
+  const [profilePct, setProfilePct] = useState(0);
+  const [profileBadge, setProfileBadge] = useState('');
   const [avatarOpen, setAvatarOpen] = useState(false);
   const avatarRef = useRef<HTMLDivElement>(null);
 
@@ -147,6 +149,53 @@ export default function CandidateDashboard() {
     load();
   }, [user]);
 
+  // ── Compute profile completeness from real data ──────────────────────────────
+  useEffect(() => {
+    if (!user) return;
+    const compute = async () => {
+      let points = 0;
+      const checks: string[] = [];
+
+      // §1 Name set (not default 'User')
+      if (user.name && user.name !== 'User' && user.name.trim().length > 1) {
+        points += 25;
+      } else {
+        checks.push('Set your display name');
+      }
+
+      // §2 Email verified (if we got here, it's verified)
+      points += 25;
+
+      // §3 Resume uploaded
+      try {
+        const resumes = await apiFetch<any[]>('/api/v1/resume/list');
+        if (resumes?.length > 0) {
+          points += 25;
+        } else {
+          checks.push('Upload a resume');
+        }
+      } catch { checks.push('Upload a resume'); }
+
+      // §4 At least one completed interview
+      try {
+        const h = await apiFetch<any[]>('/api/v1/candidate/history');
+        if (h?.length > 0) {
+          points += 25;
+        } else {
+          checks.push('Complete an AI interview');
+        }
+      } catch { checks.push('Complete an AI interview'); }
+
+      setProfilePct(points);
+      setProfileBadge(
+        checks.length === 0 ? 'Profile Complete! 🎉' :
+        checks.length === 1 ? checks[0] :
+        `${checks.length} steps remaining`
+      );
+    };
+    compute();
+  }, [user]);
+
   return (
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar role="candidate" />
@@ -161,15 +210,29 @@ export default function CandidateDashboard() {
           >
             <div>
               <h1 className="font-display font-bold text-3xl text-foreground">
-                Welcome back, {user?.name?.split(' ')[0] || 'User'} 👋
+                Welcome back, {user?.name && user.name !== 'User' ? user.name.split(' ')[0] : user?.email?.split('@')[0] || 'there'} 👋
               </h1>
               <p className="text-base text-muted-foreground mt-1 mb-3">Here's your recruitment journey overview.</p>
               <div className="flex items-center gap-3">
                 <div className="flex-1 w-[200px] h-2 rounded-full bg-secondary/50 overflow-hidden border border-border/50">
-                  <div className="h-full bg-emerald-500 rounded-full w-[80%]" />
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{
+                      width: `${profilePct}%`,
+                      background: profilePct === 100 ? '#10b981' : 'linear-gradient(90deg, #00e5ff, #8b5cf6)',
+                    }}
+                  />
                 </div>
-                <span className="text-xs font-medium text-muted-foreground">80% Profile</span>
-                <span className="text-[10px] uppercase font-bold tracking-widest bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">Resume Uploaded</span>
+                <span className="text-xs font-medium text-muted-foreground">{profilePct}% Profile</span>
+                <span
+                  className={`text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full border ${
+                    profilePct === 100
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                  }`}
+                >
+                  {profileBadge || 'Loading...'}
+                </span>
               </div>
             </div>
             {/* User avatar dropdown */}

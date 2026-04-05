@@ -30,6 +30,17 @@ class User(Base):
     job_descriptions: Mapped[list["JobDescription"]] = relationship(back_populates="hr_user")
 
 
+class PasswordResetOTP(Base):
+    __tablename__ = "password_reset_otps"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    otp_hash: Mapped[str] = mapped_column(String(255))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+
 class Resume(Base):
     __tablename__ = "resumes"
 
@@ -105,6 +116,7 @@ class Evaluation(Base):
     audio_score: Mapped[float] = mapped_column(Float, default=0.0)
     final_score: Mapped[float] = mapped_column(Float, default=0.0)
     report_url: Mapped[str] = mapped_column(String(500), default="")
+    insights_json: Mapped[str] = mapped_column(Text, default="{}")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
 
 

@@ -258,6 +258,50 @@ def ai_extract_resume_details(raw_text: str) -> dict:
     return {}
 
 
+def ai_generate_insights(transcript_lines: list[dict], semantic_score: float, similarity_score: float, emotion_score: float, audio_score: float) -> dict:
+    """
+    Generate actionable insights (Top Strength and To Improve) based on interview scores and transcript.
+    Returns: {"topStrength": "...", "toImprove": "..."}
+    """
+    if not settings.github_token:
+        # Fallback to static rules
+        return {
+            "topStrength": "Your answers were highly relevant contextually to the role expectations." if semantic_score > emotion_score else "You maintained strong communication and engagement throughout.",
+            "toImprove": "Focus on tailoring your answers using specific vocabulary from the Job Description." if similarity_score < 70 else "Work on controlling pacing and reducing filler words for better clarity."
+        }
+
+    system_prompt = (
+        "You are an expert Interview Coach. Review the candidate's scores and interview QA. "
+        "Reply ONLY with a JSON object matching this schema exactly: "
+        "{\"topStrength\": \"One concise sentence describing what they did best\", \"toImprove\": \"One concise sentence describing an actionable area of improvement\"} "
+        "Keep the responses encouraging and highly actionable. Provide NO other text."
+    )
+    
+    # summarize transcript to save tokens
+    text_summary = "\n".join([f"Q: {qa.get('q','')}\nA: {qa.get('a','')}" for qa in transcript_lines])[:4000]
+    
+    user_prompt = (
+        f"Scores:\nSemantic (Relevance): {semantic_score}%\nJD Similarity: {similarity_score}%\n"
+        f"Emotion (Engagement): {emotion_score}%\nAudio (Clarity): {audio_score}%\n\n"
+        f"Transcript:\n{text_summary}"
+    )
+
+    try:
+        import json
+        text = _chat(system_prompt, user_prompt, temperature=0.4, max_tokens=200)
+        text = text.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
+        parsed = json.loads(text)
+        if isinstance(parsed, dict) and "topStrength" in parsed and "toImprove" in parsed:
+            return parsed
+    except Exception:
+        pass
+
+    # fallback
+    return {
+        "topStrength": "Your answers were highly relevant contextually to the role expectations." if semantic_score > emotion_score else "You maintained strong communication and engagement throughout.",
+        "toImprove": "Focus on tailoring your answers using specific vocabulary from the Job Description." if similarity_score < 70 else "Work on controlling pacing and reducing filler words for better clarity."
+    }
+
 # ───────────────────────────────────────────────
 # Internal fallback helpers
 # ───────────────────────────────────────────────

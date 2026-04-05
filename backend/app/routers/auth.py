@@ -9,7 +9,8 @@ from ..db import get_db
 from ..models import User
 from ..schemas import (
     RegisterRequest, AuthResponse, LoginRequest, LoginResponse,
-    ProfileResponse, ProfileUpdateRequest, VerifyEmailRequest, ResendVerificationRequest
+    ProfileResponse, ProfileUpdateRequest, VerifyEmailRequest, ResendVerificationRequest,
+    ForgotPasswordRequest, ResetPasswordOTPRequest
 )
 import smtplib
 from email.message import EmailMessage
@@ -218,6 +219,113 @@ def resend_verification(payload: ResendVerificationRequest, db: Session = Depend
     _otp_store[email] = {"otp": otp, "expires_at": expires_at, "used": False}
     _send_otp_email(email, otp)
     return {"message": "Verification email resent"}
+
+
+# ──────────────────────────────────────────────────────────────────
+# Password Reset Logic
+# ──────────────────────────────────────────────────────────────────
+
+def _send_password_reset_email(to_email: str, otp: str):
+    smtp_user = settings.smtp_email
+    smtp_pass = settings.smtp_password
+    if not smtp_user or not smtp_pass:
+        print(f"[DEV] Missing SMTP config. Reset OTP for {to_email} is {otp}")
+        return True
+
+    try:
+        msg = EmailMessage()
+        msg["Subject"] = "Reset your password - Career Connect AI"
+        msg["From"] = f"Career Connect AI <{smtp_user}>"
+        msg["To"] = to_email
+        msg.set_content(f"Hello,\n\nYour Career Connect AI password reset code is: {otp}\n\nThis code will expire in 10 minutes.\n\nThank you!")
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{ font-family: sans-serif; background-color: #fafbfc; padding: 50px 20px; }}
+                .container {{ max-width: 480px; margin: 0 auto; background-color: #ffffff; padding: 45px 40px; border-radius: 16px; border: 1px solid #e1e4e8; }}
+                .highlight {{ color: #00e5ff; }}
+                .otp-button {{ background-color: #00e5ff; font-size: 28px; padding: 16px 32px; border-radius: 12px; letter-spacing: 8px; font-weight: bold; display: inline-block; }}
+            </style>
+        </head>
+        <body>
+            <div style="text-align:center; font-size: 26px; font-weight: bold; margin-bottom: 25px;">Career<span class="highlight">Connect</span> AI</div>
+            <div class="container">
+                <h1 style="margin-top: 0;">Reset your Password</h1>
+                <p>We received a request to reset your password. Use the code below to securely reset it.</p>
+                <div style="text-align:center; margin: 20px 0;"><div class="otp-button">{otp}</div></div>
+                <p style="font-size: 13px; color: #6e7781;">This code expires in 10 minutes. If you did not request this, you can safely ignore this email.</p>
+            </div>
+        </body>
+        </html>
+        """
+        msg.add_alternative(html_content, subtype='html')
+
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+        return True
+    except Exception as e:
+        print(f"[ERROR] Failed to send email to {to_email}: {e}")
+        return False
+
+@router.post("/forgot-password")
+def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    email = payload.email.lower().strip()
+    user = db.query(User).filter(User.email == email).one_or_none()
+    if not user:
+        return {"message": "If that email is registered, we have sent a reset code."}
+        
+    otp = _gen_otp()
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+    
+    from ..models import PasswordResetOTP
+    record = PasswordResetOTP(
+        user_id=user.id,
+        otp_hash=hash_password(otp),
+        expires_at=expires_at,
+        used=False
+    )
+    db.add(record)
+    db.commit()
+    
+    _send_password_reset_email(user.email, otp)
+    return {"message": "If that email is registered, we have sent a reset code."}
+
+@router.post("/reset-password")
+def reset_password(payload: ResetPasswordOTPRequest, db: Session = Depends(get_db)):
+    email = payload.email.lower().strip()
+    user = db.query(User).filter(User.email == email).one_or_none()
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid request")
+        
+    from ..models import PasswordResetOTP
+    # Get latest active
+    record = (
+        db.query(PasswordResetOTP)
+        .filter(PasswordResetOTP.user_id == user.id, PasswordResetOTP.used == False)
+        .order_by(PasswordResetOTP.created_at.desc())
+        .first()
+    )
+    
+    if not record:
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+        
+    if datetime.now(timezone.utc) > record.expires_at:
+        raise HTTPException(status_code=410, detail="OTP has expired")
+        
+    if not verify_password(payload.otp, record.otp_hash):
+        raise HTTPException(status_code=400, detail="Invalid OTP code")
+        
+    # Valid OTP -> Wipe password
+    user.password_hash = hash_password(payload.new_password)
+    record.used = True
+    db.commit()
+    
+    return {"message": "Password reset successfully!"}
 
 
 # ──────────────────────────────────────────────────────────────────

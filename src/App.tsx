@@ -19,6 +19,7 @@ import VerifyEmail from "./pages/VerifyEmail.tsx";
 import CandidateProfile from "./pages/CandidateProfile.tsx";
 import CandidateReports from "./pages/CandidateReports.tsx";
 import CandidateSkills from "./pages/CandidateSkills.tsx";
+import { VanAgent } from "./components/VoiceAgent/VanAgent";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const App = () => (
           <Route path="/hr/anticheat" element={<HRDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <VanAgent />
       </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>

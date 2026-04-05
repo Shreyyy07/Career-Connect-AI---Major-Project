@@ -443,21 +443,7 @@ def create_evaluation_for_session(db: Session, session: InterviewSession) -> int
         (0.35 * semantic) + (0.30 * similarity) + (0.20 * emotion) + (0.15 * audio), 2
     )
 
-    ev = Evaluation(
-        interview_session_id=session.id,
-        semantic_score=semantic,
-        similarity_score=similarity,
-        emotion_score=emotion,
-        audio_score=audio,
-        final_score=final,
-        report_url="",  # set after render
-    )
-    db.add(ev)
-    db.commit()
-    db.refresh(ev)
-
-    # ── Rich PDF payload ─────────────────────────────────────────────────────
-    # Parse transcript into Q/A pairs for §4
+    # Parse transcript into Q/A pairs (used for insights and PDF)
     transcript_lines = []
     if session.transcript:
         lines = session.transcript.splitlines()
@@ -468,6 +454,26 @@ def create_evaluation_for_session(db: Session, session: InterviewSession) -> int
             elif line.startswith("A:") and current_q:
                 transcript_lines.append({"q": current_q, "a": line[2:].strip()})
                 current_q = None
+
+    import json
+    from ..ai_service import ai_generate_insights
+    insights = ai_generate_insights(transcript_lines, semantic, similarity, emotion, audio)
+
+    ev = Evaluation(
+        interview_session_id=session.id,
+        semantic_score=semantic,
+        similarity_score=similarity,
+        emotion_score=emotion,
+        audio_score=audio,
+        final_score=final,
+        report_url="",  # set after render
+        insights_json=json.dumps(insights),
+    )
+    db.add(ev)
+    db.commit()
+    db.refresh(ev)
+
+    # ── Rich PDF payload ─────────────────────────────────────────────────────
 
     # Candidate info
     candidate_user = db.query(User).filter(User.id == session.user_id).one_or_none()
@@ -532,7 +538,6 @@ def create_evaluation_for_session(db: Session, session: InterviewSession) -> int
     return ev.id
 
 
-
 @router.get("/evaluation/{id}", response_model=EvaluationResponse)
 def get_evaluation(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     ev = db.query(Evaluation).filter(Evaluation.id == id).one_or_none()
@@ -546,6 +551,27 @@ def get_evaluation(id: int, db: Session = Depends(get_db), user: User = Depends(
     if session.user_id != user.id and str(user.role) not in ("admin", "hr", "moderator", "analyst"):
         raise HTTPException(status_code=403, detail="Not allowed")
 
+    # ── Fetch speech features ─────────────────────────────────────────────────
+    from ..models import SpeechFeatures, EmotionLog
+    from collections import Counter
+
+    sf = (
+        db.query(SpeechFeatures)
+        .filter(SpeechFeatures.session_id == session.session_id)
+        .one_or_none()
+    )
+
+    # ── Dominant emotion from logs ────────────────────────────────────────────
+    emotion_logs = (
+        db.query(EmotionLog)
+        .filter(EmotionLog.session_id == session.session_id)
+        .all()
+    )
+    dominant_emotion = None
+    if emotion_logs:
+        dom_counts = Counter(log.dominant_emotion for log in emotion_logs)
+        dominant_emotion = dom_counts.most_common(1)[0][0]
+
     return EvaluationResponse(
         evalID=ev.id,
         sessionID=session.session_id,
@@ -555,5 +581,10 @@ def get_evaluation(id: int, db: Session = Depends(get_db), user: User = Depends(
         audioScore=ev.audio_score,
         finalScore=ev.final_score,
         reportURL=ev.report_url or None,
+        wpm=sf.wpm if sf else None,
+        fillerCount=sf.filler_count if sf else None,
+        fillerPercentage=sf.filler_percentage if sf else None,
+        wordCount=sf.word_count if sf else None,
+        dominantEmotion=dominant_emotion,
+        insightsJson=ev.insights_json,
     )
-

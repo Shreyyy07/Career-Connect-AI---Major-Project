@@ -33,6 +33,16 @@ class ResendVerificationRequest(BaseModel):
     email: EmailStr
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordOTPRequest(BaseModel):
+    email: EmailStr
+    otp: str = Field(min_length=6, max_length=6)
+    new_password: str = Field(min_length=8, max_length=128)
+
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=1, max_length=128)
@@ -115,6 +125,13 @@ class EvaluationResponse(BaseModel):
     audioScore: float
     finalScore: float
     reportURL: Optional[str] = None
+    # Speech analysis fields (from SpeechFeatures table)
+    wpm: Optional[float] = None
+    fillerCount: Optional[int] = None
+    fillerPercentage: Optional[float] = None
+    wordCount: Optional[int] = None
+    dominantEmotion: Optional[str] = None
+    insightsJson: Optional[str] = None
 
 
 class ProfileResponse(BaseModel):
@@ -159,3 +176,19 @@ class AssessmentItem(BaseModel):
 class CreateAssessmentResponse(BaseModel):
     id: int
 
+
+class AgentQueryRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=1000)
+    current_page: str = Field(default="/", max_length=200)
+    user_role: str = Field(default="candidate", max_length=50)
+
+
+class AgentAction(BaseModel):
+    type: str  # "navigate" | "open_section" | "none"
+    target: Optional[str] = None  # route path for navigate
+
+
+class AgentQueryResponse(BaseModel):
+    intent: str  # "navigate" | "fetch_data" | "answer_faq" | "unknown"
+    action: Optional[AgentAction] = None
+    response_text: str

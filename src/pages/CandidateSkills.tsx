@@ -38,7 +38,7 @@ const ResourceIcon = ({ type, size = 16 }: { type: string; size?: number }) => {
   return <FileText size={size} className="text-[#00e5ff]" />;
 };
 
-const RecCard = ({ r, index }: { r: any, index: number }) => {
+const RecCard = ({ r, index, onStatusChange }: { r: any, index: number, onStatusChange?: (id: string | number, status: string) => void }) => {
   const [statusBusy, setStatusBusy] = useState(false);
   const [status, setStatus] = useState(r.status);
   const isHigh = r.impact === 'high';
@@ -52,6 +52,7 @@ const RecCard = ({ r, index }: { r: any, index: number }) => {
         method: 'POST', body: JSON.stringify({ status: newStatus }),
       });
       setStatus(updated.status);
+      onStatusChange?.(r.recID ?? r.skill, updated.status);
     } catch { /* ignore */ }
     finally { setStatusBusy(false); }
   };
@@ -63,6 +64,7 @@ const RecCard = ({ r, index }: { r: any, index: number }) => {
           method: 'POST', body: JSON.stringify({ status: 'in_progress' }),
         });
         setStatus('in_progress');
+        onStatusChange?.(r.recID ?? r.skill, 'in_progress');
       }
       const res = await apiFetch<any>(`/api/v1/recommendations/${r.recID}/resource-url`);
       if (res?.url) window.open(res.url, '_blank', 'noopener');
@@ -184,6 +186,19 @@ export default function CandidateSkills() {
 
   const hybridScore = Math.round(matchResult.hybridScore || 0);
 
+  // ── Live recommendation progress tracker ─────────────────────────────────
+  const [recStatuses, setRecStatuses] = useState<Record<string, string>>(
+    () => Object.fromEntries(recommendations.map((r: any) => [r.recID ?? r.skill, r.status || 'pending']))
+  );
+  const doneCount = Object.values(recStatuses).filter(s => s === 'completed').length;
+  const inProgCount = Object.values(recStatuses).filter(s => s === 'in_progress').length;
+  const totalRecs = recommendations.length;
+  const progressPct = totalRecs ? Math.round((doneCount / totalRecs) * 100) : 0;
+
+  const handleStatusChange = (recID: string | number, newStatus: string) => {
+    setRecStatuses(prev => ({ ...prev, [String(recID ?? '')]: newStatus }));
+  };
+
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <DashboardSidebar role={user?.role?.includes('hr') ? 'hr' : 'candidate'} />
@@ -199,6 +214,52 @@ export default function CandidateSkills() {
                  <Bookmark size={16} /> Re-evaluate Another Role
                </Link>
             </motion.div>
+
+            {/* ── Recommendation Progress Banner ───────────────────────────────── */}
+            {totalRecs > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+                className={`${glass} rounded-2xl p-5 mb-8 flex flex-col sm:flex-row sm:items-center gap-4`}
+              >
+                <div className="flex items-center gap-4 flex-1">
+                  <div className="relative shrink-0">
+                    <svg width="60" height="60" style={{ transform: 'rotate(-90deg)' }}>
+                      <circle cx="30" cy="30" r="24" fill="none" stroke="hsl(240 8% 18%)" strokeWidth="6" />
+                      <circle cx="30" cy="30" r="24" fill="none"
+                        stroke={progressPct === 100 ? '#10b981' : '#6366f1'}
+                        strokeWidth="6" strokeLinecap="round"
+                        strokeDasharray={`${2 * Math.PI * 24}`}
+                        strokeDashoffset={`${2 * Math.PI * 24 * (1 - progressPct / 100)}`}
+                        style={{ transition: 'stroke-dashoffset 0.8s ease' }}
+                      />
+                    </svg>
+                    <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-foreground">{progressPct}%</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-display font-bold text-foreground text-base mb-1">
+                      Learning Path: <span className={progressPct === 100 ? 'text-emerald-400' : 'text-indigo-400'}>{doneCount} of {totalRecs} skills completed</span>
+                    </p>
+                    <div className="w-full h-2 rounded-full bg-secondary/50 overflow-hidden border border-border/30">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: `${progressPct}%`,
+                          background: progressPct === 100 ? '#10b981' : 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+                        }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      {inProgCount > 0 && `${inProgCount} in progress · `}{totalRecs - doneCount - inProgCount} pending
+                    </p>
+                  </div>
+                </div>
+                {progressPct === 100 && (
+                  <div className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-sm font-bold">
+                    <CheckCircle size={16} className="fill-emerald-500/20" /> All skills mastered!
+                  </div>
+                )}
+              </motion.div>
+            )}
 
             {/* Top Stats Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -279,7 +340,7 @@ export default function CandidateSkills() {
                ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                      {recommendations.map((r: any, i: number) => (
-                        <RecCard key={r.recID || i} r={r} index={i} />
+                        <RecCard key={r.recID || i} r={r} index={i} onStatusChange={handleStatusChange} />
                      ))}
                   </div>
                )}

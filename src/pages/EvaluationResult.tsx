@@ -18,6 +18,13 @@ interface EvalData {
   audioScore: number;
   finalScore: number;
   reportURL?: string;
+  // Speech analysis fields
+  wpm?: number;
+  fillerCount?: number;
+  fillerPercentage?: number;
+  wordCount?: number;
+  dominantEmotion?: string;
+  insightsJson?: string;
 }
 
 interface EmotionPoint {
@@ -266,6 +273,85 @@ export const EvaluationResult = () => {
 
               <EmotionTimeline timeline={timeline} />
 
+              {/* Speech Analysis Card */}
+              {(data.wpm != null || data.fillerCount != null) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                  className={`${glass} rounded-3xl p-8`}
+                >
+                  <div className="flex items-center gap-3 mb-6">
+                    <span className="text-2xl">🎙️</span>
+                    <h3 className="text-xl font-display font-bold text-foreground">Speech Analysis</h3>
+                    <span className="ml-auto text-xs font-bold uppercase tracking-widest text-muted-foreground bg-secondary/60 px-3 py-1 rounded-full border border-border">
+                      Transcript-Based
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {/* WPM */}
+                    <div className="bg-background/40 rounded-2xl p-5 border border-border text-center">
+                      <p className="text-3xl font-display font-bold mb-1"
+                        style={{ color: (data.wpm || 0) >= 100 && (data.wpm || 0) <= 170 ? '#10b981' : '#f59e0b' }}>
+                        {Math.round(data.wpm || 0)}
+                      </p>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Words / Min</p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-1">Ideal: 100–170</p>
+                    </div>
+
+                    {/* Filler Words */}
+                    <div className="bg-background/40 rounded-2xl p-5 border border-border text-center">
+                      <p className="text-3xl font-display font-bold mb-1"
+                        style={{ color: (data.fillerCount || 0) <= 5 ? '#10b981' : (data.fillerCount || 0) <= 15 ? '#f59e0b' : '#f43f5e' }}>
+                        {data.fillerCount ?? 0}
+                      </p>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Filler Words</p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-1">
+                        {(data.fillerPercentage || 0).toFixed(1)}% of speech
+                      </p>
+                    </div>
+
+                    {/* Total Words */}
+                    <div className="bg-background/40 rounded-2xl p-5 border border-border text-center">
+                      <p className="text-3xl font-display font-bold text-sky-400 mb-1">{data.wordCount ?? 0}</p>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Total Words</p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-1">Across all answers</p>
+                    </div>
+
+                    {/* Communication Score */}
+                    <div className="bg-background/40 rounded-2xl p-5 border border-border text-center">
+                      <p className="text-3xl font-display font-bold mb-1"
+                        style={{ color: data.audioScore >= 70 ? '#10b981' : data.audioScore >= 45 ? '#f59e0b' : '#f43f5e' }}>
+                        {Math.round(data.audioScore)}%
+                      </p>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Clarity Score</p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-1">Communication</p>
+                    </div>
+                  </div>
+
+                  {/* WPM bar */}
+                  <div className="mt-5">
+                    <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
+                      <span>Speaking Pace</span>
+                      <span className="font-mono font-bold">{Math.round(data.wpm || 0)} WPM</span>
+                    </div>
+                    <div className="h-2 bg-secondary/80 rounded-full overflow-hidden border border-border">
+                      <div
+                        className="h-full rounded-full transition-all duration-1000"
+                        style={{
+                          width: `${Math.min(100, ((data.wpm || 0) / 250) * 100)}%`,
+                          background: (data.wpm || 0) >= 100 && (data.wpm || 0) <= 170
+                            ? 'linear-gradient(90deg, #10b981, #34d399)'
+                            : 'linear-gradient(90deg, #f59e0b, #fbbf24)'
+                        }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-[10px] text-muted-foreground/50 mt-1">
+                      <span>Too slow (60)</span><span className="text-emerald-500/70">Ideal zone (100-170)</span><span>Too fast (250+)</span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Score Breakdown Bars */}
                 <motion.div initial={{ opacity: 0, x: -15 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className={`${glass} rounded-3xl p-8`}>
@@ -301,18 +387,37 @@ export const EvaluationResult = () => {
                   <div className="flex items-center gap-3 mb-6">
                      <BrainCircuit className="w-6 h-6 text-[#00e5ff]" />
                      <h3 className="text-xl font-display font-bold text-foreground">Actionable Insights</h3>
+                     <span className="ml-auto text-[10px] font-bold uppercase tracking-widest text-[#00e5ff] bg-[#00e5ff]/10 px-2.5 py-1 rounded-full border border-[#00e5ff]/20">
+                       AI Generated
+                     </span>
                   </div>
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-emerald-500/10 border border-emerald-500/20 p-5 rounded-2xl">
                       <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><CheckCircle size={14}/> Top Strength</p>
                       <p className="text-sm text-foreground/90 font-medium">
-                         {data.semanticScore > data.emotionScore ? 'Your answers were highly relevant contextually to the role expectations.' : 'You maintained strong communication and engagement throughout.'}
+                         {(() => {
+                           try {
+                             if (data.insightsJson) {
+                               const parsed = JSON.parse(data.insightsJson);
+                               if (parsed.topStrength) return parsed.topStrength;
+                             }
+                           } catch { /* ignore */ }
+                           return data.semanticScore > data.emotionScore ? 'Your answers were highly relevant contextually to the role expectations.' : 'You maintained strong communication and engagement throughout.';
+                         })()}
                       </p>
                     </div>
                     <div className="bg-amber-500/10 border border-amber-500/20 p-5 rounded-2xl">
                       <p className="text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><RefreshCw size={14}/> To Improve</p>
                       <p className="text-sm text-foreground/90 font-medium">
-                         {data.similarityScore < 70 ? 'Focus on tailoring your answers using specific vocabulary from the Job Description.' : 'Work on controlling pacing and reducing filler words for better clarity.'}
+                         {(() => {
+                           try {
+                             if (data.insightsJson) {
+                               const parsed = JSON.parse(data.insightsJson);
+                               if (parsed.toImprove) return parsed.toImprove;
+                             }
+                           } catch { /* ignore */ }
+                           return data.similarityScore < 70 ? 'Focus on tailoring your answers using specific vocabulary from the Job Description.' : 'Work on controlling pacing and reducing filler words for better clarity.';
+                         })()}
                       </p>
                     </div>
                     <div className="bg-indigo-500/10 border border-indigo-500/20 p-5 rounded-2xl md:col-span-2 mt-auto">

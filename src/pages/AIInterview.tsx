@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { apiFetch } from "../lib/api";
@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DashboardSidebar from "@/components/DashboardSidebar";
+import * as faceapi from "face-api.js";
 
 const TOTAL_QUESTIONS = 5;
 const TIME_PER_Q = 120;
@@ -43,6 +44,7 @@ export default function AIInterview() {
   const [experience, setExperience] = useState(2);
   const [starting, setStarting] = useState(false);
   const [setupError, setSetupError] = useState("");
+  const [roleDescription, setRoleDescription] = useState(""); // §7.2 optional free-text
 
   const [sessionID, setSessionID] = useState(location.state?.sessionID || "");
   const [started, setStarted] = useState(false);
@@ -60,6 +62,7 @@ export default function AIInterview() {
   const [qTimer, setQTimer] = useState(TIME_PER_Q);
   const [totalElapsed, setTotalElapsed] = useState(0);
   const [ending, setEnding] = useState(false);
+  const [cheatWarning, setCheatWarning] = useState(""); // Anti-cheat warning from backend
 
   // Emotion tracking state
   const [liveEmotion, setLiveEmotion] = useState<{
@@ -75,10 +78,22 @@ export default function AIInterview() {
   const frameIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionIdRef = useRef(sessionID); // always fresh inside interval
   const elapsedRef = useRef(0);
+  const faceApiReadyRef = useRef(false);
 
   // Keep refs in sync
   useEffect(() => { sessionIdRef.current = sessionID; }, [sessionID]);
   useEffect(() => { elapsedRef.current = totalElapsed; }, [totalElapsed]);
+
+  // ── Load face-api.js models once on mount ─────────────────────────────────
+  useEffect(() => {
+    const MODEL_URL = '/models';
+    Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+      faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
+    ])
+      .then(() => { faceApiReadyRef.current = true; console.log('[face-api.js] Models loaded'); })
+      .catch((err) => console.warn('[face-api.js] Model load failed:', err));
+  }, []);
 
   useEffect(() => {
     if (!started && !location.state?.sessionID) {
@@ -113,43 +128,73 @@ export default function AIInterview() {
     return () => clearInterval(id);
   }, [started, currentQ, ending]);
 
-  // ── Frame capture loop ───────────────────────────────────────────────────
+  // ── Frame capture loop (face-api.js browser-side detection) ─────────────
   const startFrameCapture = useCallback((sid: string) => {
     if (frameIntervalRef.current) clearInterval(frameIntervalRef.current);
 
     frameIntervalRef.current = setInterval(async () => {
-      if (!videoRef.current || !canvasRef.current) return;
       const video = videoRef.current;
-      const canvas = canvasRef.current;
-      canvas.width = 320;
-      canvas.height = 240;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.drawImage(video, 0, 0, 320, 240);
+      if (!video || video.readyState < 2) return;
 
-      // Extract JPEG base64 (strip data: prefix)
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.6);
-      const frame_b64 = dataUrl.split(",")[1];
-      if (!frame_b64) return;
+      let dominant = 'neutral';
+      let emotions: Record<string, number> = { neutral: 1.0 };
 
+      // ── face-api.js (browser-side, instant) ─────────────────────────────
+      if (faceApiReadyRef.current) {
+        try {
+          const detection = await faceapi
+            .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.3 }))
+            .withFaceExpressions();
+
+          if (detection?.expressions) {
+            const raw = detection.expressions as unknown as Record<string, number>;
+            const total = Object.values(raw).reduce((s, v) => s + v, 0) || 1;
+            emotions = Object.fromEntries(
+              Object.entries(raw).map(([k, v]) => [k, parseFloat((v / total).toFixed(4))])
+            );
+            dominant = Object.entries(emotions).sort(([, a], [, b]) => b - a)[0][0];
+          }
+        } catch (_) { /* non-fatal */ }
+      }
+
+      // Update live badge immediately (no round-trip delay)
+      const display = EMOTION_DISPLAY[dominant] ?? { label: dominant, color: 'text-foreground', emoji: '😐' };
+      setLiveEmotion({ dominant, ...display });
+
+      // ── Priority 3: YOLOv8 Anti-Cheat (Send frame to backend) ─────────
+      let frameB64 = '';
       try {
-        const result = await apiFetch<{
-          dominant_emotion: string;
-          emotions: Record<string, number>;
-        }>("/api/v1/analysis/emotion-frame", {
-          method: "POST",
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth / 2; // scale down to save bandwidth
+        canvas.height = video.videoHeight / 2;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          frameB64 = canvas.toDataURL('image/jpeg', 0.5).split(',')[1] || '';
+        }
+      } catch (e) {
+        console.warn("Failed to grab base64 frame", e);
+      }
+
+      // Persist to backend (send precomputed scores and frame)
+      try {
+        const res = await apiFetch<any>('/api/v1/analysis/emotion-frame', {
+          method: 'POST',
           body: JSON.stringify({
             session_id: sid,
-            frame_b64,
+            frame_b64: frameB64,
             timestamp_sec: elapsedRef.current,
+            precomputed_emotions: emotions,
           }),
         });
-        const dom = result.dominant_emotion || "neutral";
-        const display = EMOTION_DISPLAY[dom] ?? { label: dom, color: "text-foreground", emoji: "😐" };
-        setLiveEmotion({ dominant: dom, ...display });
-      } catch (_) {
-        // Non-fatal — continue capturing
-      }
+        
+        // Handle Anti-Cheat YOLO Response
+        if (res?.cheat_warning) {
+          setCheatWarning(res.cheat_warning);
+          // clear it after 4 seconds
+          setTimeout(() => setCheatWarning(""), 4000);
+        }
+      } catch (_) { /* Non-fatal */ }
     }, FRAME_INTERVAL_MS);
   }, []);
 
@@ -167,13 +212,30 @@ export default function AIInterview() {
       setSetupError("Please select a target role.");
       return;
     }
+
+    // §7.1 Hard camera permission block – verify BEFORE creating a session
+    try {
+      const testStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      testStream.getTracks().forEach(t => t.stop()); // release immediately
+    } catch {
+      setSetupError(
+        "🚫 Camera & microphone access is required to start the interview. " +
+        "Please click the lock 🔒 icon in your browser URL bar, allow Camera & Mic, then refresh."
+      );
+      return; // Hard block — do NOT proceed
+    }
+
     setStarting(true);
     try {
       let sid = sessionID;
       if (!sid) {
         const res = await apiFetch<any>("/api/v1/interview/start", {
           method: "POST",
-          body: JSON.stringify({ jobID: selectedJD, experience, bio: "" }),
+          body: JSON.stringify({
+            jobID: selectedJD,
+            experience,
+            bio: roleDescription.trim().slice(0, 300), // §7.2 role description context
+          }),
         });
         sid = res.sessionID;
         setSessionID(sid);
@@ -193,6 +255,7 @@ export default function AIInterview() {
       setStarting(false);
     }
   };
+
 
   const startQuestion = useCallback(
     (qIdx: number) => {
@@ -327,7 +390,7 @@ export default function AIInterview() {
                 { icon: Clock, text: `~120 seconds per question, ${TOTAL_QUESTIONS} questions` },
                 { icon: Shield, text: "Anti-cheat monitoring active — stay in frame" },
                 { icon: Brain, text: "AI evaluates semantic accuracy & emotional signals" },
-                { icon: Smile, text: "DeepFace emotion analysis runs every 2 seconds" },
+                { icon: Smile, text: "Real-time face-api.js emotion analysis (7 emotions)" },
               ].map((item, i) => (
                 <div
                   key={i}
@@ -380,6 +443,22 @@ export default function AIInterview() {
                     <option value={3}>2-4 years</option>
                     <option value={5}>5+ years</option>
                   </select>
+                </div>
+
+                {/* §7.2 Optional role description */}
+                <div>
+                  <label className="text-sm text-foreground font-medium mb-1.5 block text-left">
+                    Role Description
+                    <span className="ml-2 text-[11px] text-muted-foreground font-normal">(optional — helps AI tailor questions)</span>
+                  </label>
+                  <textarea
+                    value={roleDescription}
+                    onChange={(e) => setRoleDescription(e.target.value.slice(0, 300))}
+                    placeholder="e.g. Looking for a senior frontend role at a fintech startup focusing on React and performance optimisation..."
+                    rows={3}
+                    className="w-full rounded-lg bg-secondary/50 border border-border/60 text-foreground px-3 py-2.5 text-sm focus:outline-none focus:border-[#00e5ff] transition-colors resize-none"
+                  />
+                  <p className="text-right text-[11px] text-muted-foreground mt-1">{roleDescription.length}/300</p>
                 </div>
               </div>
             )}
@@ -456,6 +535,25 @@ export default function AIInterview() {
                 }`}
               />
 
+              {/* Anti-Cheat Overlay */}
+              <AnimatePresence>
+                {cheatWarning && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="absolute top-4 inset-x-4 z-50 bg-rose-500/90 backdrop-blur-md border border-rose-400 text-white p-4 rounded-2xl shadow-xl flex items-center gap-3 !pointer-events-none"
+                  >
+                    <div className="bg-white/20 p-2 rounded-full animate-pulse flex-shrink-0">
+                      <AlertCircle className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-[10px] tracking-widest uppercase text-white/80">System Warning</p>
+                      <p className="text-sm font-medium">{cheatWarning}</p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               {!camOn && (
                 <div className="absolute inset-0 flex items-center justify-center bg-background/90">
                   <div className="text-center">

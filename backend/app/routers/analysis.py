@@ -18,6 +18,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+try:
+    from ultralytics import YOLO
+    _yolo_model = YOLO("yolov8n.pt")  # Auto-downloads weights and loads to memory
+except ImportError:
+    _yolo_model = None
+
 from ..db import get_db
 from ..deps import get_current_user
 from ..models import EmotionLog, SpeechFeatures, InterviewSession, User
@@ -188,14 +194,16 @@ def compute_emotion_score_from_logs(logs: list[EmotionLog]) -> float:
 
 class EmotionFrameRequest(BaseModel):
     session_id: str
-    frame_b64: str        # JPEG base64
+    frame_b64: str = ""          # JPEG base64 — optional when precomputed_emotions provided
     timestamp_sec: int = 0
+    precomputed_emotions: dict[str, float] | None = None  # from face-api.js browser detection
 
 
 class EmotionFrameResponse(BaseModel):
     stored: bool
     dominant_emotion: str
     emotions: dict[str, float]
+    cheat_warning: str | None = None
 
 
 class EmotionTimelineItem(BaseModel):
@@ -231,22 +239,58 @@ def submit_emotion_frame(
     emotions: dict[str, float] = {"neutral": 1.0}
     stored = False
 
-    try:
-        import numpy as np
-        from PIL import Image  # type: ignore
+    # ── Priority 1: Use pre-computed browser-side face-api.js scores ─────────
+    if payload.precomputed_emotions:
+        emotions = payload.precomputed_emotions
+        # Normalise so values sum to 1.0
+        total = sum(emotions.values()) or 1.0
+        emotions = {k: round(v / total, 4) for k, v in emotions.items()}
+        dominant = max(emotions, key=emotions.get)  # type: ignore[arg-type]
+        logger.debug(f"Using precomputed emotions: dominant={dominant}")
 
-        # Decode base64 → PIL Image → numpy
-        raw = base64.b64decode(payload.frame_b64)
-        img = Image.open(io.BytesIO(raw)).convert("RGB")
-        arr = np.array(img)
+    # ── Priority 2: Fallback — try DeepFace on the raw JPEG frame ────────────
+    elif payload.frame_b64:
+        try:
+            import numpy as np
+            from PIL import Image  # type: ignore
 
-        result = _try_deepface(arr)
-        if result:
-            dominant = result["dominant_emotion"]
-            emotions = result["emotions"]
+            raw = base64.b64decode(payload.frame_b64)
+            img = Image.open(io.BytesIO(raw)).convert("RGB")
+            arr = np.array(img)
 
-    except Exception as exc:
-        logger.warning(f"Frame decode/analysis error: {exc}")
+            result = _try_deepface(arr)
+            if result:
+                dominant = result["dominant_emotion"]
+                emotions = result["emotions"]
+        except Exception as exc:
+            logger.warning(f"Frame decode/analysis error: {exc}")
+
+    # ── Priority 3: Anti-Cheat YOLOv8 Detections ─────────────────────────────
+    cheat_warning = None
+    if _yolo_model and payload.frame_b64:
+        try:
+            import numpy as np
+            from PIL import Image
+            import base64
+            import io
+            
+            raw = base64.b64decode(payload.frame_b64)
+            img = Image.open(io.BytesIO(raw)).convert("RGB")
+            results = _yolo_model(img, verbose=False)
+            
+            # Count classes: 0 is person, 67 is cell phone
+            if len(results) > 0:
+                boxes = results[0].boxes
+                classes = boxes.cls.cpu().numpy()
+                person_count = (classes == 0).sum()
+                cell_phone_count = (classes == 67).sum()
+
+                if person_count > 1:
+                    cheat_warning = "Multiple faces detected in frame!"
+                elif cell_phone_count > 0:
+                    cheat_warning = "Cell phone detected in frame!"
+        except Exception as exc:
+            logger.warning(f"YOLO detection error: {exc}")
 
     # Always persist (even fallback neutral entry keeps timeline populated)
     log = EmotionLog(
@@ -259,7 +303,12 @@ def submit_emotion_frame(
     db.commit()
     stored = True
 
-    return EmotionFrameResponse(stored=stored, dominant_emotion=dominant, emotions=emotions)
+    return EmotionFrameResponse(
+        stored=stored, 
+        dominant_emotion=dominant, 
+        emotions=emotions,
+        cheat_warning=cheat_warning
+    )
 
 
 @router.get("/emotion-timeline/{session_id}", response_model=list[EmotionTimelineItem])
