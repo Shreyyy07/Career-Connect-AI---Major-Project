@@ -45,8 +45,8 @@ export function useVoiceAgent() {
   const { user } = useAuth();
 
   const recognitionRef = useRef<any>(null);
-  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
+  const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   // ── On mount: check browser support + pre-load voices ────────────────────
   useEffect(() => {
@@ -76,25 +76,46 @@ export function useVoiceAgent() {
 
   // ── Speak helper ──────────────────────────────────────────────────────────
   const speak = useCallback((text: string, onEnd?: () => void) => {
-    window.speechSynthesis.cancel(); // cancel any in-progress speech
+    // Clear any stuck queues
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+    }
+    
+    // CRITICAL: Chrome often gets permanently stuck in 'paused' state silently.
+    window.speechSynthesis.resume();
+    
     setState("speaking");
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.05;
-    utterance.volume = 1.0;
-    if (voiceRef.current) utterance.voice = voiceRef.current;
+    setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      (window as any)._vanUtterance = utterance;
 
-    utterance.onend = () => {
-      setState("idle");
-      onEnd?.();
-    };
-    utterance.onerror = () => {
-      setState("idle");
-      onEnd?.();
-    };
+      utterance.rate = 1.0;
+      // Normal pitch prevents some glitched engines from failing
+      utterance.pitch = 1.0; 
+      utterance.volume = 1.0; // Max volume
+      
+      const v = voiceRef.current;
+      if (v) utterance.voice = v;
+      
+      console.log(`[Van] Speaking: "${text}" | Voice: ${v ? v.name : 'Default'}`);
 
-    window.speechSynthesis.speak(utterance);
+      const cleanup = () => {
+        setState("idle");
+        onEnd?.();
+      };
+
+      utterance.onend = cleanup;
+      
+      utterance.onerror = (e) => {
+        console.error("[Van] Speech synthesis error:", e);
+        cleanup();
+      };
+
+      // Force resume again right before speak
+      window.speechSynthesis.resume();
+      window.speechSynthesis.speak(utterance);
+    }, 50);
   }, []);
 
   // ── Add message to panel ──────────────────────────────────────────────────
@@ -123,13 +144,13 @@ export function useVoiceAgent() {
 
         addMessage("van", response.response_text);
 
-        // Execute navigation / section action
-        if (response.action) {
-          executeAgentAction(response.action as any, navigate);
-        }
-
-        // Speak the response
-        speak(response.response_text);
+        // Speak the response FIRST. Only trigger the download/navigation action
+        // AFTER she finishes speaking, so the browser doesn't kill the audio stream.
+        speak(response.response_text, () => {
+          if (response.action) {
+            executeAgentAction(response.action as any, navigate);
+          }
+        });
       } catch {
         const errMsg =
           "Sorry, I'm having trouble connecting right now. Please try again in a moment.";

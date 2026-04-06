@@ -51,7 +51,8 @@ APP PAGES (candidate routes):
 - /candidate/reports → History of all past evaluations
 - /hr/dashboard → HR recruiter view (job postings, candidate rankings)
 
-COMMON FEATURES:
+COMMON FEATURES & FAQs:
+- What is Career Connect AI?: An AI-powered recruitment platform that automates JD matching, skill gap tracking, and conducts smart AI video interviews.
 - Hybrid Match Score: 60% cosine similarity + 40% AI semantic score
 - Evaluation scores: 35% Answer Relevance + 30% JD Alignment + 20% Emotion + 15% Speech
 - Anti-cheat: YOLOv8 detects multiple persons and phones during interviews
@@ -62,18 +63,20 @@ COMMON FEATURES:
 
 INTENT TYPES you must classify the user's message into:
 - "navigate": user wants to go to a specific page
+- "download_report": user asks to download a PDF report
+- "click_button": user asks to click a specific button on their current screen
 - "fetch_data": user asks about their own data (score, resume status, skill gaps, etc.)
 - "answer_faq": user asks how something works or needs help
 - "unknown": anything outside Career Connect AI scope
 
 RESPONSE FORMAT — You MUST reply with ONLY a valid JSON object:
 {
-  "intent": "navigate" | "fetch_data" | "answer_faq" | "unknown",
+  "intent": "navigate" | "download_report" | "click_button" | "fetch_data" | "answer_faq" | "unknown",
   "action": {
-    "type": "navigate",
-    "target": "/candidate/dashboard"
+    "type": "navigate" | "download_report" | "click_button",
+    "target": "text of the button"
   } | null,
-  "response_text": "The text Van will speak aloud (1-2 short sentences)"
+  "response_text": ""
 }
 
 For "navigate" intent: action.type = "navigate", action.target = the route path.
@@ -139,17 +142,8 @@ def _fetch_user_data(intent_json: dict, user: Optional[User], db: Session) -> st
             )
             if ev:
                 score = round(ev.final_score)
-                band = (
-                    "Excellent" if score >= 80
-                    else "Good" if score >= 60
-                    else "Average" if score >= 40
-                    else "Needs Improvement"
-                )
-                return (
-                    f"Your latest interview score is {score}%, rated as {band}. "
-                    f"Head to your Reports page to see the full breakdown!"
-                )
-        return "I couldn't find any completed interviews yet. Try starting one from the AI Interview page!"
+                return f"This is your required result. Your latest interview score is {score}%."
+        return "This is your required result. No completed interviews were found."
 
     if any(k in msg_lower for k in ["resume", "upload", "cv"]):
         resume = (
@@ -159,8 +153,8 @@ def _fetch_user_data(intent_json: dict, user: Optional[User], db: Session) -> st
             .first()
         )
         if resume:
-            return f"Your latest resume '{resume.filename}' is uploaded and parsed. Head to Resume & Match to run a JD comparison!"
-        return "You haven't uploaded a resume yet. Go to Resume & Match to upload your PDF or DOCX file!"
+            return f"This is your required result. Your latest uploaded resume is {resume.filename}."
+        return "This is your required result. You have not uploaded a resume yet."
 
     if any(k in msg_lower for k in ["skill", "gap", "missing", "recommendation"]):
         recs = (
@@ -171,15 +165,47 @@ def _fetch_user_data(intent_json: dict, user: Optional[User], db: Session) -> st
         if recs:
             pending = [r for r in recs if r.status != "completed"]
             done = [r for r in recs if r.status == "completed"]
-            return (
-                f"You have {len(recs)} skill recommendations. "
-                f"{len(done)} completed, {len(pending)} still in progress. "
-                f"Check the Skills page to track your learning!"
-            )
-        return "No skill recommendations yet. Run a JD match on the Resume page to generate personalized skill gaps!"
+            return f"This is your required result. You have {len(done)} completed and {len(pending)} pending skill recommendations."
+        return "This is your required result. No skill recommendations found."
 
     # Generic data response fallback
-    return intent_json.get("response_text", _UNKNOWN_RESPONSE)
+    return f"This is your required result. {intent_json.get('response_text', '')}"
+
+
+def _handle_download(message: str, user: User, db: Session) -> Optional[AgentAction]:
+    """Parse ordinal (first, 2nd, last) and return the download action."""
+    evals = (
+        db.query(Evaluation)
+        .join(InterviewSession)
+        .filter(InterviewSession.user_id == user.id)
+        .order_by(InterviewSession.created_at.asc())
+        .all()
+    )
+    if not evals:
+        return None
+        
+    msg = message.lower()
+    index = -1  # default to latest if no ordinal is found but download_report triggered
+
+    # Simple ordinal parsing
+    if any(k in msg for k in ["first", "1st"]):
+        index = 0
+    elif any(k in msg for k in ["second", "2nd"]):
+        index = 1
+    elif any(k in msg for k in ["third", "3rd"]):
+        index = 2
+    elif any(k in msg for k in ["fourth", "4th", "four"]):
+        index = 3
+    elif any(k in msg for k in ["fifth", "5th", "five"]):
+        index = 4
+    elif any(k in msg for k in ["sixth", "6th", "six"]):
+        index = 5
+        
+    try:
+        target_eval = evals[index]
+        return AgentAction(type="download_report", target=f"/api/v1/report/{target_eval.id}/download")
+    except IndexError:
+        return None
 
 
 # ── Route ─────────────────────────────────────────────────────────────────────
@@ -206,13 +232,24 @@ def agent_query(
     if intent == "fetch_data":
         response_text = _fetch_user_data(result, user, db)
 
+    import random
+
     # Build action object
     action: Optional[AgentAction] = None
-    if raw_action and isinstance(raw_action, dict):
+    if intent == "download_report" and user:
+        action = _handle_download(body.message, user, db)
+        response_text = random.choice(["Sure, I am downloading the file right now.", "Yes, getting that ready for you."]) if action else "I couldn't find that specific report in your history."
+    elif raw_action and isinstance(raw_action, dict):
         action = AgentAction(
             type=raw_action.get("type", "none"),
             target=raw_action.get("target"),
         )
+        
+    # Hardcode action responses
+    if intent == "navigate":
+        response_text = random.choice(["Sure, taking you there right away.", "Yes, navigating there now."])
+    elif intent == "click_button":
+        response_text = "Sure, clicking that for you right now."
 
     return AgentQueryResponse(
         intent=intent,
