@@ -53,6 +53,41 @@ export default function CandidateReports() {
             </p>
           </motion.div>
 
+          {/* Top Engagement Stats */}
+          {!loading && reports.length > 0 && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+              <div className="glass rounded-2xl p-6 flex items-center gap-4 border-l-4 border-l-[#00e5ff] hover:bg-secondary/40 transition-all">
+                <div className="p-4 rounded-xl bg-[#00e5ff]/10">
+                  <FileText className="w-8 h-8 text-[#00e5ff]" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Total Reports</p>
+                  <p className="text-3xl font-display font-bold text-foreground">{reports.length}</p>
+                </div>
+              </div>
+              <div className="glass rounded-2xl p-6 flex items-center gap-4 border-l-4 border-l-emerald-500 hover:bg-secondary/40 transition-all">
+                <div className="p-4 rounded-xl bg-emerald-500/10">
+                  <Award className="w-8 h-8 text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Highest Score</p>
+                  <p className="text-3xl font-display font-bold text-foreground">{Math.round(Math.max(...reports.map(r => r.score || 0), 0))}%</p>
+                </div>
+              </div>
+              <div className="glass rounded-2xl p-6 flex items-center gap-4 border-l-4 border-l-indigo-500 hover:bg-secondary/40 transition-all">
+                <div className="p-4 rounded-xl bg-indigo-500/10">
+                  <Calendar className="w-8 h-8 text-indigo-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Recent Activity</p>
+                  <p className="text-base font-bold text-foreground mt-1">
+                    {new Date(Math.max(...reports.map(r => new Date(r.completed_at).getTime()))).toLocaleDateString(undefined, {month:'short', day:'numeric'})}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {/* List */}
           {loading ? (
             <div className="flex items-center justify-center py-20">

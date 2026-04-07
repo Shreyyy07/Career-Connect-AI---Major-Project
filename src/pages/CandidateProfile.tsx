@@ -82,7 +82,7 @@ export default function CandidateProfile() {
       <DashboardSidebar role="candidate" />
 
       <main className="flex-1 overflow-auto">
-        <div className="p-8 w-full max-w-4xl">
+        <div className="p-8 w-full max-w-6xl mx-auto">
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
             <h1 className="font-display font-bold text-3xl text-foreground">My Profile</h1>
             <p className="text-base text-muted-foreground mt-1">Manage your account settings and preferences.</p>

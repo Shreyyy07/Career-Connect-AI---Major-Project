@@ -56,6 +56,7 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [companyName, setCompanyName] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -75,6 +76,9 @@ export default function Register() {
     if (!pw.length || !pw.uppercase || !pw.number || !pw.special)
       errs.password = "Password must be 8+ chars with uppercase, number, and special character.";
     if (password !== confirmPassword) errs.confirm = "Passwords do not match.";
+    if (selectedRole === "hr" && companyName.trim().length < 2) {
+      errs.company = "Company name must be at least 2 characters.";
+    }
     return errs;
   };
 
@@ -87,7 +91,7 @@ export default function Register() {
     setLoading(true);
     setGlobalErr("");
     try {
-      await signUp(email, password, name, selectedRole);
+      await signUp(email, password, name, selectedRole, isHr ? companyName : undefined);
       navigate(`/verify-email?email=${encodeURIComponent(email)}`);
     } catch (e: any) {
       const msg = e.message || "";
@@ -202,6 +206,24 @@ export default function Register() {
               </div>
               {fieldErrors.name && <p className="text-xs text-destructive mt-1">{fieldErrors.name}</p>}
             </div>
+
+            {/* Company Name (HR Only) */}
+            {isHr && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
+                <label className="text-sm text-foreground font-medium mb-1.5 block">Company Name</label>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground flex items-center justify-center font-bold text-xs border border-muted-foreground rounded-sm">C</div>
+                  <Input
+                    value={companyName}
+                    onChange={(e) => { setCompanyName(e.target.value); setFieldErrors((p) => ({ ...p, company: "" })); }}
+                    placeholder="Acme Corp"
+                    className={`pl-10 bg-secondary/50 border-border/60 focus:border-[#00e5ff] h-11 ${fieldErrors.company ? "border-destructive" : ""}`}
+                    required={isHr}
+                  />
+                </div>
+                {fieldErrors.company && <p className="text-xs text-destructive mt-1">{fieldErrors.company}</p>}
+              </motion.div>
+            )}
 
             {/* Email */}
             <div>

@@ -42,6 +42,7 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     user = User(
         email=payload.email.lower(),
         full_name=payload.name.strip(),
+        company_name=payload.company_name.strip() if payload.company_name else "",
         role=payload.role.value,
         password_hash=hash_password(payload.password),
         is_verified=False
@@ -204,7 +205,7 @@ def verify_email(payload: VerifyEmailRequest, db: Session = Depends(get_db)):
     record["used"] = True
     db.commit()
 
-    token = create_access_token(sub=str(user.id), role=user.role.value, name=user.full_name)
+    token = create_access_token(sub=str(user.id), role=user.role.value, name=user.full_name, company_name=getattr(user, "company_name", ""))
     return AuthResponse(userID=user.id, token=token)
 
 @router.post("/resend-verification")
@@ -314,8 +315,12 @@ def reset_password(payload: ResetPasswordOTPRequest, db: Session = Depends(get_d
     if not record:
         raise HTTPException(status_code=400, detail="Invalid or expired OTP")
         
-    if datetime.now(timezone.utc) > record.expires_at:
-        raise HTTPException(status_code=410, detail="OTP has expired")
+    # Make sure we compare offset-naive or offset-aware correctly
+    now_utc = datetime.now(timezone.utc)
+    record_expires = record.expires_at.replace(tzinfo=timezone.utc) if record.expires_at.tzinfo is None else record.expires_at
+    
+    if now_utc > record_expires:
+        raise HTTPException(status_code=400, detail="OTP has expired")
         
     if not verify_password(payload.otp, record.otp_hash):
         raise HTTPException(status_code=400, detail="Invalid OTP code")
@@ -340,7 +345,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     if not user.is_verified:
         raise HTTPException(status_code=403, detail="Please verify your email to log in.")
 
-    token = create_access_token(sub=str(user.id), role=user.role.value, name=user.full_name)
+    token = create_access_token(sub=str(user.id), role=user.role.value, name=user.full_name, company_name=getattr(user, "company_name", ""))
     return LoginResponse(token=token, refreshToken=None)
 
 
@@ -354,6 +359,7 @@ def me(current_user: User = Depends(get_current_user)):
         email=current_user.email,
         name=current_user.full_name,
         role=current_user.role.value,
+        company_name=getattr(current_user, "company_name", ""),
     )
 
 
@@ -374,6 +380,7 @@ def update_me(
         email=current_user.email,
         name=current_user.full_name,
         role=current_user.role.value,
+        company_name=getattr(current_user, "company_name", ""),
     )
 
 

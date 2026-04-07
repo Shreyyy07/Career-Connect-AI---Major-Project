@@ -21,6 +21,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True)
     full_name: Mapped[str] = mapped_column(String(200), default="")
+    company_name: Mapped[str] = mapped_column(String(200), default="")  # HR users only
     role: Mapped[UserRole] = mapped_column(SAEnum(UserRole), index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -68,11 +69,15 @@ class JobDescription(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     hr_user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     title: Mapped[str] = mapped_column(String(200))
+    company_name: Mapped[str] = mapped_column(String(200), default="")  # overridable per JD
     description: Mapped[str] = mapped_column(Text, default="")
-    skills_csv: Mapped[str] = mapped_column(Text, default="")  # comma-separated for v1
+    skills_csv: Mapped[str] = mapped_column(Text, default="")  # comma-separated
+    experience_level: Mapped[str] = mapped_column(String(50), default="")  # Fresher/Junior/Mid/Senior/Lead
+    location: Mapped[str] = mapped_column(String(200), default="")
     embedding_csv: Mapped[str] = mapped_column(Text, default="")
     status: Mapped[JDStatus] = mapped_column(SAEnum(JDStatus), default=JDStatus.draft, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
 
     hr_user: Mapped["User"] = relationship(back_populates="job_descriptions")
 
@@ -105,6 +110,12 @@ class InterviewSession(Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
+class HRStatus(str, Enum):
+    pending = "pending"
+    shortlisted = "shortlisted"
+    rejected = "rejected"
+
+
 class Evaluation(Base):
     __tablename__ = "evaluations"
 
@@ -117,6 +128,9 @@ class Evaluation(Base):
     final_score: Mapped[float] = mapped_column(Float, default=0.0)
     report_url: Mapped[str] = mapped_column(String(500), default="")
     insights_json: Mapped[str] = mapped_column(Text, default="{}")
+    # HR decision fields
+    hr_status: Mapped[str] = mapped_column(String(20), default="pending")  # pending/shortlisted/rejected
+    hr_notes: Mapped[str] = mapped_column(Text, default="")  # private HR note, max 500 chars
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
 
 
@@ -200,4 +214,39 @@ class SpeechFeatures(Base):
     filler_percentage: Mapped[float] = mapped_column(Float, default=0.0)
     wpm: Mapped[float] = mapped_column(Float, default=0.0)
     communication_score: Mapped[float] = mapped_column(Float, default=0.0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+
+class AntiCheatEvent(Base):
+    """
+    One row per anti-cheat event detected during an interview session.
+    Severity: LOW / WARNING / CRITICAL
+    Event types: face_mismatch, face_absent, multiple_persons, fake_video, tab_switch
+    """
+    __tablename__ = "anticheat_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    session_id: Mapped[str] = mapped_column(String(64), index=True)
+    candidate_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    timestamp_sec: Mapped[int] = mapped_column(Integer, default=0)
+    event_type: Mapped[str] = mapped_column(String(50))  # face_mismatch|face_absent|multiple_persons|fake_video|tab_switch
+    severity: Mapped[str] = mapped_column(String(20))    # LOW | WARNING | CRITICAL
+    details_json: Mapped[str] = mapped_column(Text, default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+
+class AntiCheatSummary(Base):
+    """
+    Aggregated anti-cheat result per session (computed after session ends).
+    is_flagged = True if critical_count >= 2 OR integrity_score < 60
+    """
+    __tablename__ = "anticheat_summaries"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    session_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    candidate_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    warning_count: Mapped[int] = mapped_column(Integer, default=0)
+    critical_count: Mapped[int] = mapped_column(Integer, default=0)
+    integrity_score: Mapped[float] = mapped_column(Float, default=100.0)  # 0–100
+    is_flagged: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)

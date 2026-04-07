@@ -18,6 +18,7 @@ export default function VerifyEmail() {
   const [resending, setResending] = useState(false);
   const [resendStatus, setResendStatus] = useState<"idle" | "success" | "error">("idle");
   const [resendCount, setResendCount] = useState(0);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const handleOtpChange = (index: number, value: string) => {
@@ -76,6 +77,19 @@ export default function VerifyEmail() {
       setResendStatus("success");
       setResendCount((c) => c + 1);
       toast.success("Verification code resent successfully.");
+      
+      // Start 30s cooldown
+      setResendCooldown(30);
+      const timer = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
     } catch {
       setResendStatus("success");
       setResendCount((c) => c + 1);
@@ -143,12 +157,14 @@ export default function VerifyEmail() {
 
         <Button
           onClick={handleResend}
-          disabled={resending || resendCount >= 3}
+          disabled={resending || resendCount >= 3 || resendCooldown > 0}
           variant="outline"
           className="w-full border-border/60 text-muted-foreground hover:text-foreground hover:bg-secondary/50 mb-6 rounded-xl"
         >
           {resending ? (
              <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Sending…</>
+          ) : resendCooldown > 0 ? (
+             <><RefreshCw className="w-4 h-4 mr-2 opacity-50" /> Resend in {resendCooldown}s</>
           ) : (
             <><Mail className="w-4 h-4 mr-2" /> Resend Code</>
           )}

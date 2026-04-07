@@ -8,6 +8,9 @@ import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
 import CandidateDashboard from "./pages/CandidateDashboard.tsx";
 import HRDashboard from "./pages/HRDashboard.tsx";
+import HRJobsPage from "./pages/HRJobsPage.tsx";
+import HRCandidatesPage from "./pages/HRCandidatesPage.tsx";
+import HRAntiCheatPage from "./pages/HRAntiCheatPage.tsx";
 import AIInterview from "./pages/AIInterview.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { AuthProvider } from "./context/AuthContext";
@@ -45,10 +48,10 @@ const App = () => (
           <Route path="/candidate/evaluation/:id" element={<EvaluationResult />} />
           <Route path="/candidate/reports" element={<CandidateReports />} />
           <Route path="/hr/dashboard" element={<HRDashboard />} />
-          <Route path="/hr/jobs" element={<HRDashboard />} />
-          <Route path="/hr/candidates" element={<HRDashboard />} />
-          <Route path="/hr/interviews" element={<HRDashboard />} />
-          <Route path="/hr/anticheat" element={<HRDashboard />} />
+          <Route path="/hr/jobs" element={<HRJobsPage />} />
+          <Route path="/hr/candidates" element={<HRCandidatesPage />} />
+          <Route path="/hr/interviews" element={<HRCandidatesPage />} />
+          <Route path="/hr/anticheat" element={<HRAntiCheatPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <VanAgent />

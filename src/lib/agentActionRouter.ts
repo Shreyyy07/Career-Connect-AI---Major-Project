@@ -10,7 +10,7 @@ import { downloadAuthorizedFile } from "./api";
 import { toast } from "sonner";
 
 export interface AgentAction {
-  type: "navigate" | "open_section" | "download_report" | "click_button" | "none";
+  type: "navigate" | "open_section" | "download_report" | "click_button" | "toggle_theme" | "none";
   target?: string;
 }
 
@@ -54,20 +54,26 @@ export function executeAgentAction(
 
     case "click_button":
       if (action.target) {
-        const query = action.target.toLowerCase();
-        const buttons = Array.from(document.querySelectorAll("button"));
-        const targetBtn = buttons.find((btn) => 
+        const query = action.target.toLowerCase().replace(/button/g, "").trim();
+        const clickableElements = Array.from(document.querySelectorAll("button, a, [role='button']"));
+        const targetBtn = clickableElements.find((btn) => 
           btn.textContent?.toLowerCase().includes(query)
         );
         
         if (targetBtn) {
-          targetBtn.click();
+          (targetBtn as HTMLElement).click();
           return true;
         } else {
           toast.error(`Could not find a button matching "${action.target}"`);
         }
       }
       break;
+
+    case "toggle_theme":
+      document.body.classList.toggle("light-theme");
+      const isLight = document.body.classList.contains("light-theme");
+      toast.success(isLight ? "Switched to Light Mode" : "Switched to Dark Mode");
+      return true;
   }
 
   return false;

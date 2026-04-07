@@ -1,0 +1,143 @@
+
+PRODUCT REQUIREMENTS DOCUMENT
+Career Connect AI
+HR RECRUITER PORTAL
+Registration · JD Management · Candidate Evaluation · Anti-Cheat · Analytics
+
+
+1.  Purpose & Scope
+This document defines the complete product requirements for the HR Recruiter Portal of Career Connect AI. It specifies every feature, backend flow, API interaction, email verification mechanism, dashboard component, and business rule that governs the HR recruiter experience — from account registration through job description management, candidate review, anti-cheat monitoring, and final hiring decision.
+
+This PRD is a companion document to the Candidate Portal PRD. Together they constitute the full platform specification. This HR PRD is written to be fully implementation-ready.
+
+1.1  HR Recruiter Definition
+An HR User is a human resources professional or hiring manager who creates an account on behalf of their company. They:
+Register with First Name, Email, Password, and Company Name (four mandatory fields).
+Verify their email address before accessing any feature.
+Upload, manage, and publish Job Descriptions (JDs) that candidates can browse and interview for.
+View all candidates who have completed AI interviews for their JDs, including full evaluation reports, anti-cheat logs, and multimodal scores.
+Make shortlisting decisions (Shortlist / Reject / Keep Under Review) on individual candidates.
+Access aggregated HR analytics dashboards.
+
+1.2  What HR Users Cannot Do
+Upload or view candidate resumes directly (they see extracted skills summaries only — full resume file is not accessible to preserve candidate privacy).
+Modify or override AI-generated scores.
+View candidates who applied to jobs posted by other HR users.
+Access the Candidate Portal flows (resume upload, JD selection for personal matching, AI interview as a candidate).
+Access admin system configuration panels.
+
+
+2.  HR Registration & Email Verification
+2.1  Registration Form — Field Specification
+The HR registration screen contains exactly four mandatory input fields. All four are required before submission is accepted.
+
+
+
+2.2  Email Verification — Free Implementation (Same as Candidate Module)
+The HR email verification uses the identical token-based mechanism as the Candidate Portal. Refer to Candidate PRD Section 2.2 for the full technical specification. The summary is:
+
+
+2.3  HR Login Flow
+Post-verification, HR users log in with Email + Password. The login screen is shared with candidates but routes to the HR-specific dashboard based on the user.role value in the JWT.
+
+
+
+3.  HR Dashboard — Screen & Feature Specification
+After login, the HR user is routed to their dedicated dashboard at /hr/dashboard. This is a completely separate interface from the Candidate Portal — different URL, different component tree, different data access scope.
+
+3.1  Dashboard Layout — Sections
+
+
+4.  Job Description Management
+4.1  JD Creation Rules
+Only users with role = "hr" can create, edit, or delete Job Descriptions. This is enforced at the API level (middleware role check returns 403 if role != "hr").
+A JD can be in one of three states: Draft (visible only to the creating HR user), Active (visible to all candidates for browsing and interviewing), Closed (hidden from candidates, preserved for HR analytics).
+HR users can create unlimited JDs under their account.
+
+4.2  JD Creation Form — Fields
+
+4.3  JD Backend Processing Flow
+
+4.4  JD Lifecycle Actions
+
+
+5.  Candidate Evaluation View — HR Dashboard
+HR users see all candidates who have completed AI interviews for any JD posted by their account. The HR never initiates or participates in the interview — they only see the post-interview evaluation data.
+
+5.1  Candidate Evaluation List Table
+API: GET /api/hr/candidates?job_id={optional} — Returns evaluations for all the HR user's JDs. The job_id query parameter filters by a specific JD.
+
+
+5.2  Candidate Detail Panel (Expanded View)
+When HR clicks "View" on a candidate row, a full-width side panel or modal opens showing:
+
+5.2.1  Personal & Role Section
+Candidate first name and anonymised email (e.g., a***@gmail.com — partial masking for privacy during shortlisting phase).
+Target job role (JD title). Experience years declared by candidate at interview start.
+Interview date and session duration.
+
+5.2.2  Score Breakdown Section
+
+5.2.3  Emotion Analysis Section (HR View)
+Emotion Timeline Chart: Horizontal timeline showing dominant emotion at each 30-second interval of the interview. Allows HR to see if the candidate became increasingly stressed during technical questions.
+Emotion Distribution Donut: Percentage breakdown of time spent in each emotional state (Confident, Neutral, Stressed, Happy, Confused).
+Stability Score interpretation: Shown as a text badge e.g. "High Stability (Score: 82)" or "Variable Emotional Response (Score: 41)".
+
+5.2.4  Speech & Communication Section (HR View)
+Speaking Rate: "{X} WPM — Optimal range is 120–160 WPM." Shown with a horizontal gauge.
+Filler Words Used: "{X} instances of filler words detected." Below 5 = Excellent, 5–10 = Acceptable, >10 = High.
+Tone Variation Score: "{X}/100 — Indicates expressiveness in speech." Low score = monotone delivery.
+Fluency Score: "{X}/100 — Overall speech fluency." Composite of rate, fillers, pauses, and clarity.
+
+5.2.5  Gemini AI Analysis Section
+Role Alignment Narrative: A 2–3 sentence Gemini-generated assessment of how well the candidate's responses aligned with the JD requirements.
+Demonstrated Strengths: Bullet list of 2–3 specific strengths observed.
+Areas for Development: Bullet list of 2–3 specific gaps or concerns.
+Per-Question Analysis (expandable): For each interview question — the question text, a 1-sentence summary of the candidate's answer, and the semantic score awarded.
+
+5.2.6  HR Decision Panel
+Within the Candidate Detail Panel, the HR recruiter can take an action:
+
+
+6.  Anti-Cheat Monitoring — HR View
+The anti-cheat system runs continuously during every candidate interview session. HR users see the results on their dashboard in a dedicated Anti-Cheat Panel. Candidates are informed that monitoring is active (shown in the pre-interview consent screen) but cannot see the specific events flagged.
+
+6.1  Anti-Cheat Detection Modules
+
+6.2  Event Severity Levels
+
+6.3  Anti-Cheat Panel on HR Dashboard
+The Anti-Cheat Panel shows a unified log across all candidates. HR can:
+View all events chronologically, or filter by candidate, session, severity, or event type.
+See per-candidate anti-cheat score: 100 = fully clean session. Deducted based on severity and frequency of events.
+See flagged sessions prominently highlighted at the top of the candidate list.
+Toggle an "Integrity Risk" filter on the candidate list to show only candidates with CRITICAL events.
+
+6.4  Anti-Cheat Data Schema
+Table: anticheat_events — { event_id, session_id, candidate_id, timestamp, event_type (enum), severity (enum: LOW/WARNING/CRITICAL), frame_snapshot_url (optional), details_json, created_at }.
+Aggregated per session: anticheat_summaries — { summary_id, session_id, warning_count, critical_count, overall_integrity_score (0–100), is_flagged (boolean) }.
+is_flagged = true if critical_count ≥ 2 OR overall_integrity_score < 60.
+
+
+7.  HR Analytics & Insights Dashboard
+The Analytics Dashboard gives HR users an aggregated, visual overview of recruitment performance across all their JDs and all evaluated candidates.
+
+7.1  Analytics Data Points
+
+
+8.  HR Portal API Reference
+
+
+9.  Database Schema — HR Tables
+
+
+10.  Functional Requirements Summary
+
+
+11.  Security & Privacy — HR Module
+
+
+12.  Appendix — HR Complete Flow Diagram (Text)
+
+End of Document — Career Connect AI  |  HR Recruiter Portal PRD v1.0
+SRM Institute of Science and Technology  •  Department of Computing Technologies

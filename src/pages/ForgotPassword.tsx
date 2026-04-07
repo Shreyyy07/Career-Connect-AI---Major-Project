@@ -19,15 +19,27 @@ export default function ForgotPassword() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   // ── Step 1: request OTP ─────────────────────────────────────────
-  const handleRequestOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleRequestOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!email) return;
     setLoading(true); setErr("");
     try {
       await resetPassword(email);
       setStep("otp");
+      
+      setResendCooldown(30);
+      const timer = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     } catch (e: any) {
       setErr(e.message || "Failed to send OTP. Please try again.");
     } finally {
@@ -160,8 +172,11 @@ export default function ForgotPassword() {
                   {loading ? "Resetting…" : "Reset Password"} <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </form>
-              <p className="text-sm text-muted-foreground mt-4 text-center">
-                <button onClick={() => { setStep("email"); setOtp(""); setErr(""); }} className="text-[#00e5ff] hover:underline inline-flex items-center gap-1">
+              <p className="text-sm text-muted-foreground mt-4 text-center flex flex-col gap-2">
+                <button type="button" onClick={() => handleRequestOtp()} disabled={resendCooldown > 0 || loading} className="text-[#00e5ff] hover:underline disabled:opacity-50 disabled:no-underline">
+                  {resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : "Resend OTP"}
+                </button>
+                <button onClick={() => { setStep("email"); setOtp(""); setErr(""); }} className="text-muted-foreground hover:text-foreground hover:underline inline-flex items-center justify-center gap-1">
                   <ArrowLeft className="w-3 h-3" /> Try a different email
                 </button>
               </p>

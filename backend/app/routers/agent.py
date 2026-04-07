@@ -41,6 +41,7 @@ ABSOLUTE RULES:
 5. Be warm, professional, and encouraging.
 
 APP PAGES (candidate routes):
+- / → Homepage / Landing Page
 - /candidate/dashboard → Overview: stats, score trend, interview history
 - /candidate/profile → Edit display name, change password
 - /candidate/resume → Upload resume PDF/DOCX, run JD match, see skill gaps
@@ -65,22 +66,23 @@ INTENT TYPES you must classify the user's message into:
 - "navigate": user wants to go to a specific page
 - "download_report": user asks to download a PDF report
 - "click_button": user asks to click a specific button on their current screen
+- "toggle_theme": user asks to change to light or dark mode / theme
 - "fetch_data": user asks about their own data (score, resume status, skill gaps, etc.)
 - "answer_faq": user asks how something works or needs help
 - "unknown": anything outside Career Connect AI scope
 
 RESPONSE FORMAT — You MUST reply with ONLY a valid JSON object:
 {
-  "intent": "navigate" | "download_report" | "click_button" | "fetch_data" | "answer_faq" | "unknown",
+  "intent": "navigate" | "download_report" | "click_button" | "toggle_theme" | "fetch_data" | "answer_faq" | "unknown",
   "action": {
-    "type": "navigate" | "download_report" | "click_button",
+    "type": "navigate" | "download_report" | "click_button" | "toggle_theme",
     "target": "text of the button"
   } | null,
   "response_text": ""
 }
 
-For "navigate" intent: action.type = "navigate", action.target = the route path.
-For "fetch_data" intent: action = null (data is injected separately by backend).
+For "navigate" or "click_button" or "toggle_theme" or "download_report": leave response_text completely empty ("") to save time.
+For "fetch_data" intent: action = null.
 For "answer_faq" intent: action = null.
 For "unknown" intent: action = null, response_text = polite out-of-scope reply.
 """
@@ -250,6 +252,8 @@ def agent_query(
         response_text = random.choice(["Sure, taking you there right away.", "Yes, navigating there now."])
     elif intent == "click_button":
         response_text = "Sure, clicking that for you right now."
+    elif intent == "toggle_theme":
+        response_text = "Of course, changing the theme for you now."
 
     return AgentQueryResponse(
         intent=intent,

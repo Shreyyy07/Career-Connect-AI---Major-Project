@@ -8,6 +8,14 @@ import { motion } from 'framer-motion';
 
 const glass = 'bg-card/50 backdrop-blur-xl border border-border/50 shadow-lg';
 
+// ─── Utility to extract keywords from long sentences ───────────────────────────
+const summarizeSkill = (s: string) => {
+  if (!s || s.length < 25) return s;
+  let text = s.replace(/(good to have skills|must have skills|prior experience with|prior experience in|knowledge of|expertise in|understanding of|familiarity with|etc\.|etc)/gi, '').replace(/[:;-]/g, '').trim();
+  if (text.length > 40) return text.substring(0, 40).trim() + '...';
+  return text || s.substring(0, 30) + '...';
+};
+
 // ─── SVG Circular Progress Ring ───────────────────────────────────────────────
 const CircleRing = ({ pct, size = 120, stroke = 9, color = '#6366f1', trackColor = '#e2e8f0', label, sublabel }:
   { pct: number; size?: number; stroke?: number; color?: string; trackColor?: string; label?: string; sublabel?: string }) => {
@@ -93,7 +101,7 @@ const RecCard = ({ r, index, onStatusChange }: { r: any, index: number, onStatus
            <ResourceIcon type={r.resourceType} size={20} />
          </div>
          <div>
-            <h3 className="font-display font-bold text-xl text-foreground mb-1 leading-tight">{r.skill}</h3>
+            <h3 className="font-display font-bold text-xl text-foreground mb-1 leading-tight">{summarizeSkill(r.skill)}</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">{r.topicDescription}</p>
          </div>
       </div>
@@ -306,7 +314,7 @@ export default function CandidateSkills() {
                            <span className="text-sm text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 font-medium">None! Covering all bases.</span>
                         ) : (
                            overlap.missing?.map((s: string, i: number) => (
-                              <span key={i} className="text-sm bg-rose-500/10 text-rose-400 border border-rose-500/20 px-3 py-1.5 rounded-lg font-medium shadow-sm">{s}</span>
+                              <span key={i} title={s} className="text-sm bg-rose-500/10 text-rose-400 border border-rose-500/20 px-3 py-1.5 rounded-lg font-medium shadow-sm">{summarizeSkill(s)}</span>
                            ))
                         )}
                      </div>
