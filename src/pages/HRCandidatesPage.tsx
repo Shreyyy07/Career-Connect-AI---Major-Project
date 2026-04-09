@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, downloadAuthorizedFile } from "@/lib/api";
 import DashboardSidebar from "@/components/DashboardSidebar";
+import TopbarProfile from "@/components/TopbarProfile";
 import ScoreGauge from "@/components/ScoreGauge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,18 +83,7 @@ export default function HRCandidatesPage() {
 
   const handleDownloadReport = async (evalId: number) => {
     try {
-      const resp = await fetch(`/api/v1/hr/report/${evalId}/download`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` }
-      });
-      if (!resp.ok) throw new Error("Report not available");
-      const blob = await resp.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `evaluation_${evalId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      await downloadAuthorizedFile(`/api/v1/hr/report/${evalId}/download`, `evaluation_${evalId}.pdf`);
     } catch {
       toast.error("Failed to download report");
     }
@@ -111,6 +101,7 @@ export default function HRCandidatesPage() {
               <h1 className="text-3xl font-display font-bold">Candidates</h1>
               <p className="text-muted-foreground mt-1 text-sm">Review interview results and manage pipeline.</p>
             </div>
+            <TopbarProfile />
           </div>
 
           <div className="glass p-4 rounded-xl flex items-center gap-4">
@@ -289,8 +280,16 @@ export default function HRCandidatesPage() {
                       <div className="space-y-3">
                          <h3 className="font-semibold flex items-center gap-2"><Brain className="w-4 h-4 text-[#00e5ff]"/> AI Assessment</h3>
                          <div className="glass p-4 rounded-xl prose prose-invert prose-sm max-w-none">
-                           {/* Assuming simple markdown/text for now */}
-                           <pre className="whitespace-pre-wrap font-sans bg-transparent border-0 p-0 m-0">{JSON.parse(detailData.insightsJson || '{"summary":"No data"}').summary || "AI Analysis unavailable."}</pre>
+                           <pre className="whitespace-pre-wrap font-sans bg-transparent border-0 p-0 m-0">
+                             {(() => {
+                               try {
+                                 const parsed = JSON.parse(detailData.insightsJson);
+                                 return parsed?.summary || "AI Analysis unavailable.";
+                               } catch {
+                                 return "AI Analysis unavailable (legacy data format).";
+                               }
+                             })()}
+                           </pre>
                          </div>
                       </div>
                     )}

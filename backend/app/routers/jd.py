@@ -116,15 +116,10 @@ def list_my_jds(db: Session = Depends(get_db), user: User = Depends(get_current_
     _require_hr(user)
     rows = (
         db.query(JobDescription)
-        .filter(
-            JobDescription.hr_user_id == user.id,
-            JobDescription.status != JDStatus.draft.__class__("deleted")  # exclude soft-deleted
-        )
+        .filter(JobDescription.hr_user_id == user.id)
         .order_by(JobDescription.created_at.desc())
         .all()
     )
-    # Filter out soft-deleted (stored as string "deleted")
-    rows = [r for r in rows if str(r.status.value).lower() != "deleted"]
     return [_jd_to_list_item(r) for r in rows]
 
 
@@ -138,7 +133,6 @@ def list_jds(db: Session = Depends(get_db), user: User = Depends(get_current_use
         .order_by(JobDescription.created_at.desc())
         .all()
     )
-    rows = [r for r in rows if str(r.status.value).lower() != "deleted"]
     return [_jd_to_list_item(r) for r in rows]
 
 

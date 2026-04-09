@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Edit, Trash2, Search, Briefcase, Eye, EyeOff } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import DashboardSidebar from "@/components/DashboardSidebar";
+import TopbarProfile from "@/components/TopbarProfile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -133,9 +134,12 @@ export default function HRJobsPage() {
               <h1 className="text-3xl font-display font-bold">Job Descriptions</h1>
               <p className="text-muted-foreground mt-1 text-sm">Manage job postings, applicants, and statuses.</p>
             </div>
-            <Button onClick={openNewModal} className="bg-[#00e5ff] text-black hover:bg-[#00e5ff]/90 glow-primary font-semibold">
-              <Plus className="w-4 h-4 mr-2" /> Post New Job
-            </Button>
+            <div className="flex items-center gap-4">
+              <Button onClick={openNewModal} className="bg-[#00e5ff] text-black hover:bg-[#00e5ff]/90 glow-primary font-semibold">
+                <Plus className="w-4 h-4 mr-2" /> Post New Job
+              </Button>
+              <TopbarProfile />
+            </div>
           </div>
 
           <div className="glass p-4 rounded-xl flex items-center gap-4">

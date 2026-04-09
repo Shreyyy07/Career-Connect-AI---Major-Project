@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import DashboardSidebar from '@/components/DashboardSidebar';
 
 type ResumeListItem = { resumeID: number; filename: string; created_at: string };
-type JDListItem = { jobID: number; title: string; status: string; skills?: string };
+type JDListItem = { jobID: number; title: string; status: string; skills?: string[] };
 
 const glass = 'bg-card/60 backdrop-blur-sm border border-border/50 shadow-lg';
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
@@ -189,12 +189,12 @@ export default function ResumeMatch() {
                              <span className="font-bold text-foreground text-sm">{j.title}</span>
                              <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 px-2.5 py-1 rounded-md">{j.status}</span>
                            </div>
-                           {j.skills && (
+                           {j.skills && Array.isArray(j.skills) && (
                               <div className="flex flex-wrap gap-1.5">
-                                 {j.skills.split(',').slice(0, 4).map((s, i) => (
+                                 {j.skills.slice(0, 4).map((s, i) => (
                                     <span key={i} className="text-xs text-muted-foreground bg-background border border-border px-2 py-0.5 rounded shadow-sm">{s.trim()}</span>
                                  ))}
-                                 {j.skills.split(',').length > 4 && <span className="text-xs text-muted-foreground">+{j.skills.split(',').length - 4}</span>}
+                                 {j.skills.length > 4 && <span className="text-xs text-muted-foreground">+{j.skills.length - 4}</span>}
                               </div>
                            )}
                          </li>

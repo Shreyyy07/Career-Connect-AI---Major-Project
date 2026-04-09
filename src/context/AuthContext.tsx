@@ -6,6 +6,7 @@ interface UserProfile {
   email: string;
   role: string;
   name: string;
+  companyName?: string;
 }
 
 interface AuthContextType {
@@ -63,6 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: decoded.email || '',
         role: decoded.role || 'candidate',
         name: decoded.name || 'User',
+        companyName: decoded.company_name || undefined,
       });
     }
     fetchMe().finally(() => setLoading(false));
@@ -77,7 +79,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const decoded = decodeJWT(res.token);
     const role = decoded?.role || 'candidate';
     // Optimistic update; then fetch real profile
-    setUser({ id: parseInt(decoded?.sub || '0'), email, role, name: decoded?.name || 'User' });
+    setUser({ id: parseInt(decoded?.sub || '0'), email, role, name: decoded?.name || 'User', companyName: decoded?.company_name || undefined });
     // Fetch real profile in background
     fetchMe();
     return role;

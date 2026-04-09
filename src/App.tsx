@@ -11,6 +11,7 @@ import HRDashboard from "./pages/HRDashboard.tsx";
 import HRJobsPage from "./pages/HRJobsPage.tsx";
 import HRCandidatesPage from "./pages/HRCandidatesPage.tsx";
 import HRAntiCheatPage from "./pages/HRAntiCheatPage.tsx";
+import HRProfile from "./pages/HRProfile.tsx";
 import AIInterview from "./pages/AIInterview.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { AuthProvider } from "./context/AuthContext";
@@ -52,6 +53,7 @@ const App = () => (
           <Route path="/hr/candidates" element={<HRCandidatesPage />} />
           <Route path="/hr/interviews" element={<HRCandidatesPage />} />
           <Route path="/hr/anticheat" element={<HRAntiCheatPage />} />
+          <Route path="/hr/profile" element={<HRProfile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <VanAgent />

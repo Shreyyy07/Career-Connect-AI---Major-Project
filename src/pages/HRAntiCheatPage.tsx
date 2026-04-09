@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import DashboardSidebar from "@/components/DashboardSidebar";
+import TopbarProfile from "@/components/TopbarProfile";
 import { Shield, AlertTriangle, Search, Filter, MonitorX, UserX, AlertCircle, VideoOff, History } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -57,12 +58,15 @@ export default function HRAntiCheatPage() {
       <DashboardSidebar role="hr" />
       <div className="flex-1 p-8 h-screen overflow-y-auto">
         <div className="max-w-6xl mx-auto space-y-8">
-          <div>
-            <h1 className="text-3xl font-display font-bold flex items-center gap-3">
-              <Shield className="w-8 h-8 text-[#00e5ff]" /> 
-              Integrity Monitor
-            </h1>
-            <p className="text-muted-foreground mt-1 text-sm">Real-time alerts and logs from AI proctoring.</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-display font-bold flex items-center gap-3">
+                <Shield className="w-8 h-8 text-[#00e5ff]" /> 
+                Integrity Monitor
+              </h1>
+              <p className="text-muted-foreground mt-1 text-sm">Real-time alerts and logs from AI proctoring.</p>
+            </div>
+            <TopbarProfile />
           </div>
 
           <div className="glass p-4 rounded-xl flex items-center gap-4">
