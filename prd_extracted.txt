@@ -1,1403 +1,143 @@
-Career Connect AI — HR Portal PRD v1.0
-
-HR Portal  |  Confidential
-
-
 
 PRODUCT REQUIREMENTS DOCUMENT
-
 Career Connect AI
-
 HR RECRUITER PORTAL
-
 Registration · JD Management · Candidate Evaluation · Anti-Cheat · Analytics
 
 
-
-Document Type
-
-Product Requirements Document — HR Recruiter Module
-
-Version
-
-1.0 — Initial Release
-
-Module
-
-HR Recruiter Portal (End-to-End)
-
-Authors
-
-Shrey Joshi, Shatakshi Singh
-
-Mentor
-
-Dr. S. Girirajan, Asst. Professor, CTECH
-
-Institution
-
-SRM Institute of Science and Technology, Kattankulathur
-
-Date
-
-March 2025
-
-Status
-
-APPROVED FOR IMPLEMENTATION
-
-
-
-
 1.  Purpose & Scope
-
 This document defines the complete product requirements for the HR Recruiter Portal of Career Connect AI. It specifies every feature, backend flow, API interaction, email verification mechanism, dashboard component, and business rule that governs the HR recruiter experience — from account registration through job description management, candidate review, anti-cheat monitoring, and final hiring decision.
-
-
 
 This PRD is a companion document to the Candidate Portal PRD. Together they constitute the full platform specification. This HR PRD is written to be fully implementation-ready.
 
-
-
 1.1  HR Recruiter Definition
-
 An HR User is a human resources professional or hiring manager who creates an account on behalf of their company. They:
-
 Register with First Name, Email, Password, and Company Name (four mandatory fields).
-
 Verify their email address before accessing any feature.
-
 Upload, manage, and publish Job Descriptions (JDs) that candidates can browse and interview for.
-
 View all candidates who have completed AI interviews for their JDs, including full evaluation reports, anti-cheat logs, and multimodal scores.
-
 Make shortlisting decisions (Shortlist / Reject / Keep Under Review) on individual candidates.
-
 Access aggregated HR analytics dashboards.
 
-
-
 1.2  What HR Users Cannot Do
-
 Upload or view candidate resumes directly (they see extracted skills summaries only — full resume file is not accessible to preserve candidate privacy).
-
 Modify or override AI-generated scores.
-
 View candidates who applied to jobs posted by other HR users.
-
 Access the Candidate Portal flows (resume upload, JD selection for personal matching, AI interview as a candidate).
-
 Access admin system configuration panels.
 
 
-
-
-
-
 2.  HR Registration & Email Verification
-
 2.1  Registration Form — Field Specification
-
 The HR registration screen contains exactly four mandatory input fields. All four are required before submission is accepted.
 
 
 
-Field
-
-Type
-
-Validation Rules
-
-Error Message
-
-First Name
-
-Text input
-
-Min 2 chars, max 50 chars. Letters and spaces only.
-
-"Name must be 2–50 letters only."
-
-Email Address
-
-Email input
-
-Valid RFC 5322 email format. Must not already exist in the users table. Max 254 chars.
-
-"Invalid email." / "Email already registered."
-
-Password
-
-Password (masked)
-
-Min 8 chars. ≥ 1 uppercase, ≥ 1 number, ≥ 1 special character. Max 64 chars.
-
-"Password must meet complexity requirements."
-
-Company Name
-
-Text input
-
-Min 2 chars, max 100 chars. Letters, numbers, spaces, and common punctuation (. , & - ') allowed.
-
-"Please enter a valid company name."
-
-
-
-Design Note: Company Name is stored in the users table under a company_name field. It is also used as the default company label on all JDs created by this HR user, though they can override it per JD. A "Confirm Password" field is shown on the frontend for UX safety but is frontend-only — only one password value is sent to the backend.
-
-
-
 2.2  Email Verification — Free Implementation (Same as Candidate Module)
-
 The HR email verification uses the identical token-based mechanism as the Candidate Portal. Refer to Candidate PRD Section 2.2 for the full technical specification. The summary is:
 
 
-
-Step
-
-Action
-
-Registration submitted
-
-HR user record created with status = "pending_verification". 64-char hex token generated and stored as SHA-256 hash. Verification email sent via free SMTP (Resend / SendGrid / Gmail SMTP).
-
-Email sent
-
-From: Career Connect AI <noreply@careerconnectai.com>. Subject: "Verify your Career Connect AI HR account". Body: Personalised HTML with one-click verification button. Link valid for 24 hours.
-
-Link clicked
-
-GET /api/auth/verify?token={token}. Backend validates hash, expiry, and used status. If valid: status = "active". Redirect to HR login with success message.
-
-Resend option
-
-POST /api/auth/resend-verification. Rate limited to 3 requests/hour per email to prevent abuse.
-
-
-
 2.3  HR Login Flow
-
 Post-verification, HR users log in with Email + Password. The login screen is shared with candidates but routes to the HR-specific dashboard based on the user.role value in the JWT.
 
 
 
-Step
-
-Backend Logic
-
-1. Submit login
-
-POST /api/auth/login — Body: { email, password }
-
-2. Email lookup
-
-Query users table. If not found → 401 "Invalid credentials". (Same message for both not-found and wrong-password — prevents email enumeration attacks.)
-
-3. Verification check
-
-If status == "pending_verification" → 403 with body { error: "EMAIL_NOT_VERIFIED", message: "Please verify your email before logging in." }. Frontend shows a specific screen with resend link.
-
-4. Password check
-
-bcrypt.verify(password, stored_hash). Failure → 401.
-
-5. JWT issuance
-
-JWT payload: { user_id, email, role: "hr", name, company_name, iat, exp: +24h }. Return 200 { token, user: { id, name, email, role, company_name } }.
-
-6. Dashboard routing
-
-Frontend checks user.role from JWT payload. If "hr" → route to /hr/dashboard. If "candidate" → route to /candidate/dashboard. This prevents an HR user from accidentally accessing the candidate flow.
-
-
-
-
-
-
 3.  HR Dashboard — Screen & Feature Specification
-
 After login, the HR user is routed to their dedicated dashboard at /hr/dashboard. This is a completely separate interface from the Candidate Portal — different URL, different component tree, different data access scope.
-
-
 
 3.1  Dashboard Layout — Sections
 
-Zone
-
-Section Name
-
-Content Description
-
-A
-
-HR Header Bar
-
-Recruiter name, company name, notification bell (anti-cheat alerts), logout.
-
-B
-
-KPI Summary Cards
-
-Active JDs count, Total Candidates Evaluated, Avg Score across all candidates, Shortlisted Count.
-
-C
-
-Job Description Manager
-
-Full CRUD panel for JDs. Create new JD, view existing JDs, edit, archive, or delete. Status toggles: Draft / Active / Closed.
-
-D
-
-Candidate Evaluation List
-
-Filterable, sortable table of all candidates who completed AI interviews for any of this HR's JDs. Shows: candidate name, JD applied for, final score, recommendation, date, action buttons.
-
-E
-
-Candidate Detail Panel
-
-Full evaluation breakdown for a selected candidate. Score rings, emotion timeline, speech metrics, anti-cheat log.
-
-F
-
-Anti-Cheat Monitoring Panel
-
-Centralized log of all anti-cheat events across all candidates and sessions.
-
-G
-
-Analytics & Insights
-
-Score distribution chart, emotion heatmap, JD performance comparison, time-to-hire metrics.
-
-H
-
-Interview Slot Calendar
-
-Calendar view for scheduling follow-up human interviews with shortlisted candidates.
-
-
-
-
-
 
 4.  Job Description Management
-
 4.1  JD Creation Rules
-
 Only users with role = "hr" can create, edit, or delete Job Descriptions. This is enforced at the API level (middleware role check returns 403 if role != "hr").
-
 A JD can be in one of three states: Draft (visible only to the creating HR user), Active (visible to all candidates for browsing and interviewing), Closed (hidden from candidates, preserved for HR analytics).
-
 HR users can create unlimited JDs under their account.
-
-
 
 4.2  JD Creation Form — Fields
 
-Field
-
-Type
-
-Validation
-
-Usage
-
-Job Title
-
-Text
-
-Min 3, max 100 chars. Required.
-
-Displayed to candidates in JD browser.
-
-Company Name
-
-Text (pre-filled)
-
-Pre-filled from HR profile company_name. Editable per JD. Max 100 chars.
-
-Shown on JD card to candidates.
-
-Job Description
-
-Rich text / Long text
-
-Min 100 chars, max 5,000 chars. Required.
-
-Used by Gemini RAG pipeline for question generation and answer evaluation.
-
-Required Skills
-
-Tag input (multi-value)
-
-Min 3 skills, max 20. Each tag max 50 chars.
-
-Used for skill gap computation and match scoring.
-
-Experience Level
-
-Dropdown
-
-Options: Fresher (0 yr), Junior (1–2 yr), Mid (3–5 yr), Senior (5+ yr), Lead (8+ yr).
-
-Shown on JD card. Used for RAG context.
-
-Location
-
-Text
-
-Max 100 chars. e.g. "Remote", "Mumbai, India". Required.
-
-Shown on JD card to candidates.
-
-Status
-
-Toggle
-
-Default: Draft. HR toggles to Active to publish.
-
-Only Active JDs visible to candidates.
-
-
-
 4.3  JD Backend Processing Flow
-
-#
-
-Step
-
-1
-
-Auth Check
-
-Middleware verifies JWT. Checks role == "hr". If not → 403 Forbidden. If yes → proceed.
-
-2
-
-Field Validation
-
-Backend re-validates all fields (never rely solely on frontend validation). Return 422 with field-specific error messages if any fail.
-
-3
-
-Create JD Record
-
-INSERT into job_descriptions table: { jd_id (UUID), hr_user_id, title, company_name, description, required_skills (JSON array), experience_level, location, status, created_at, updated_at }.
-
-4
-
-NLP Skill Tagging
-
-Extract skill entities from the jd.description text using spaCy NER. Merge with the manually entered required_skills. Store combined list as jd_auto_skills (de-duplicated, case-normalised).
-
-5
-
-Doc2Vec Embedding
-
-Feed JD text (title + description + required_skills concatenated) into the same Doc2Vec model used for resumes. Generate 300-dim vector. Store in job_embeddings table.
-
-6
-
-Gemini JD Summary
-
-Optional async step: Gemini generates a 2-sentence plain-language summary of the JD for use in candidate-facing preview cards.
-
-7
-
-Return Response
-
-POST /api/jobs → 201 { jd_id, title, status, created_at }.
-
-
 
 4.4  JD Lifecycle Actions
 
-Action
-
-API
-
-Behaviour
-
-Publish (Draft → Active)
-
-PATCH /api/jobs/{jd_id}/status
-
-Sets status = "active". JD becomes visible to candidates in JD browser. Triggers Doc2Vec embedding if not already done.
-
-Edit JD
-
-PUT /api/jobs/{jd_id}
-
-Updates editable fields. Re-runs Doc2Vec embedding on new text. Invalidates cached match_results for this JD (candidates must re-match).
-
-Close JD
-
-PATCH /api/jobs/{jd_id}/status
-
-Sets status = "closed". Candidates can no longer select this JD for interviews. Existing evaluations are preserved.
-
-Delete JD
-
-DELETE /api/jobs/{jd_id}
-
-Soft delete: sets status = "deleted". Data preserved for analytics. Candidate evaluations remain accessible to HR.
-
-
-
-
-
 
 5.  Candidate Evaluation View — HR Dashboard
-
 HR users see all candidates who have completed AI interviews for any JD posted by their account. The HR never initiates or participates in the interview — they only see the post-interview evaluation data.
 
-
-
 5.1  Candidate Evaluation List Table
-
 API: GET /api/hr/candidates?job_id={optional} — Returns evaluations for all the HR user's JDs. The job_id query parameter filters by a specific JD.
 
 
-
-Column
-
-Data
-
-Sortable
-
-Filterable
-
-Format
-
-Default Sort
-
-Notes
-
-Candidate
-
-First Name only (privacy)
-
-Yes ↑↓
-
-Search bar
-
-Text
-
-—
-
-Only first name shown in list. Full name in detail panel.
-
-Job Role
-
-JD Title
-
-Yes
-
-Dropdown filter
-
-Text
-
-—
-
-Filter by specific JD.
-
-Final Score
-
-0 – 100 float
-
-Yes (primary)
-
-Range slider
-
-Colour-coded number
-
-Desc
-
-Default view sorted high-to-low.
-
-Recommendation
-
-SHORTLIST / CONSIDER / REJECT
-
-Yes
-
-Checkbox filter
-
-Badge
-
-—
-
-AI-generated. HR can override.
-
-HR Status
-
-Shortlisted / Rejected / Pending
-
-Yes
-
-Checkbox filter
-
-Badge
-
-—
-
-HR-set decision. Editable.
-
-Date
-
-Interview completion date
-
-Yes
-
-Date range picker
-
-DD MMM YYYY
-
-—
-
-—
-
-Actions
-
-View · Download · Decision
-
-No
-
-No
-
-Button group
-
-—
-
-"View" opens detail panel. "Download" gets PDF.
-
-
-
 5.2  Candidate Detail Panel (Expanded View)
-
 When HR clicks "View" on a candidate row, a full-width side panel or modal opens showing:
 
-
-
 5.2.1  Personal & Role Section
-
 Candidate first name and anonymised email (e.g., a***@gmail.com — partial masking for privacy during shortlisting phase).
-
 Target job role (JD title). Experience years declared by candidate at interview start.
-
 Interview date and session duration.
-
-
 
 5.2.2  Score Breakdown Section
 
-Metric
-
-Score
-
-Weight Used
-
-Visual
-
-Semantic Accuracy
-
-0 – 100
-
-35%
-
-Circular score ring (colour-coded)
-
-JD Relevance (Doc2Vec)
-
-0.00 – 1.00 (× 100)
-
-30%
-
-Circular score ring
-
-Emotion Stability
-
-0 – 100
-
-20%
-
-Circular score ring
-
-Communication Quality
-
-0 – 100
-
-15%
-
-Circular score ring
-
-FINAL COMPOSITE SCORE
-
-0 – 100  (Large animated ring, primary visual)
-
-
-
 5.2.3  Emotion Analysis Section (HR View)
-
 Emotion Timeline Chart: Horizontal timeline showing dominant emotion at each 30-second interval of the interview. Allows HR to see if the candidate became increasingly stressed during technical questions.
-
 Emotion Distribution Donut: Percentage breakdown of time spent in each emotional state (Confident, Neutral, Stressed, Happy, Confused).
-
 Stability Score interpretation: Shown as a text badge e.g. "High Stability (Score: 82)" or "Variable Emotional Response (Score: 41)".
 
-
-
 5.2.4  Speech & Communication Section (HR View)
-
 Speaking Rate: "{X} WPM — Optimal range is 120–160 WPM." Shown with a horizontal gauge.
-
 Filler Words Used: "{X} instances of filler words detected." Below 5 = Excellent, 5–10 = Acceptable, >10 = High.
-
 Tone Variation Score: "{X}/100 — Indicates expressiveness in speech." Low score = monotone delivery.
-
 Fluency Score: "{X}/100 — Overall speech fluency." Composite of rate, fillers, pauses, and clarity.
 
-
-
 5.2.5  Gemini AI Analysis Section
-
 Role Alignment Narrative: A 2–3 sentence Gemini-generated assessment of how well the candidate's responses aligned with the JD requirements.
-
 Demonstrated Strengths: Bullet list of 2–3 specific strengths observed.
-
 Areas for Development: Bullet list of 2–3 specific gaps or concerns.
-
 Per-Question Analysis (expandable): For each interview question — the question text, a 1-sentence summary of the candidate's answer, and the semantic score awarded.
 
-
-
 5.2.6  HR Decision Panel
-
 Within the Candidate Detail Panel, the HR recruiter can take an action:
-
-HR Action
-
-Button / UI
-
-Backend Effect
-
-Shortlist candidate
-
-Green "Shortlist" button.
-
-PATCH /api/hr/candidate-status — { eval_id, hr_status: "shortlisted" }. Triggers email notification to candidate (optional v2 feature).
-
-Reject candidate
-
-Red "Reject" button (requires confirmation dialog).
-
-PATCH /api/hr/candidate-status — { eval_id, hr_status: "rejected" }.
-
-Keep under review
-
-Gray "Keep Pending" button.
-
-PATCH /api/hr/candidate-status — { eval_id, hr_status: "pending" }.
-
-Download PDF Report
-
-"Download Report" button.
-
-GET /api/report/{eval_id}/download. Returns the same PDF generated for the candidate, with all sections.
-
-Add private note
-
-Text area for HR-only note (max 500 chars).
-
-PATCH /api/evaluations/{eval_id}/hr-notes — { note: "string" }. Stored in evaluations.hr_notes column. Visible only to HR.
-
-
-
-
 
 
 6.  Anti-Cheat Monitoring — HR View
-
 The anti-cheat system runs continuously during every candidate interview session. HR users see the results on their dashboard in a dedicated Anti-Cheat Panel. Candidates are informed that monitoring is active (shown in the pre-interview consent screen) but cannot see the specific events flagged.
-
-
 
 6.1  Anti-Cheat Detection Modules
 
-Module
-
-Technology
-
-Detects
-
-Trigger Threshold
-
-Face Verification
-
-DeepFace
-
-Identity mismatch between the initial face captured at session start and the face appearing throughout the interview.
-
-Confidence match < 90% triggers WARNING. < 70% triggers CRITICAL flag.
-
-Face-Out Detection
-
-DeepFace + OpenCV
-
-Candidate's face is not visible in the camera frame.
-
-Face absent for > 5 continuous seconds triggers WARNING. > 15 seconds triggers CRITICAL.
-
-Multiple Person Detection
-
-YOLOv8 / YOLOv11
-
-More than one person detected in the interview frame.
-
-Any detection of 2+ persons triggers immediate CRITICAL flag. Session flagged for review.
-
-Liveness / Fake Video
-
-Haarcascade liveness check
-
-Pre-recorded video playback instead of live camera feed.
-
-Liveness probability < 60% triggers WARNING. Sustained < 40% → CRITICAL.
-
-Screen Switching
-
-Browser Page Visibility API
-
-Candidate switches to another browser tab or application during the interview.
-
-Any tab switch > 10 seconds logged as WARNING. Repeated switches flagged as CRITICAL.
-
-
-
 6.2  Event Severity Levels
 
-Severity
-
-Label
-
-Action Taken During Interview
-
-HR View
-
-LOW
-
-Informational
-
-Logged. No interruption to candidate.
-
-Shown in expanded log. Does not affect final score.
-
-WARNING
-
-Suspicious Activity
-
-On-screen warning shown to candidate: "Maintain proper interview posture." Interview continues.
-
-Yellow badge in candidate row. Count shown in summary.
-
-CRITICAL
-
-Integrity Violation
-
-Second CRITICAL within same session → prompts "Your session has been flagged." Third CRITICAL → automatic session termination.
-
-Red badge. HR receives notification. Evaluated separately.
-
-
-
 6.3  Anti-Cheat Panel on HR Dashboard
-
 The Anti-Cheat Panel shows a unified log across all candidates. HR can:
-
 View all events chronologically, or filter by candidate, session, severity, or event type.
-
 See per-candidate anti-cheat score: 100 = fully clean session. Deducted based on severity and frequency of events.
-
 See flagged sessions prominently highlighted at the top of the candidate list.
-
 Toggle an "Integrity Risk" filter on the candidate list to show only candidates with CRITICAL events.
 
-
-
 6.4  Anti-Cheat Data Schema
-
 Table: anticheat_events — { event_id, session_id, candidate_id, timestamp, event_type (enum), severity (enum: LOW/WARNING/CRITICAL), frame_snapshot_url (optional), details_json, created_at }.
-
 Aggregated per session: anticheat_summaries — { summary_id, session_id, warning_count, critical_count, overall_integrity_score (0–100), is_flagged (boolean) }.
-
 is_flagged = true if critical_count ≥ 2 OR overall_integrity_score < 60.
 
 
-
-
-
-
 7.  HR Analytics & Insights Dashboard
-
 The Analytics Dashboard gives HR users an aggregated, visual overview of recruitment performance across all their JDs and all evaluated candidates.
 
-
-
 7.1  Analytics Data Points
-
-Widget
-
-Data Source
-
-Visualisation
-
-KPI Cards (top row)
-
-GET /api/hr/analytics — total_candidates, shortlisted, avg_score, active_jobs.
-
-4 stat cards with icons and trend arrows.
-
-Score Distribution
-
-Count of candidates in bands: 90–100, 70–89, 50–69, 0–49.
-
-Horizontal bar chart or donut chart.
-
-Emotion Heatmap
-
-Aggregated emotion_logs across all sessions.
-
-Heatmap showing which questions trigger most stress/confidence across candidates.
-
-JD Performance Comparison
-
-Avg score per JD for the HR's postings.
-
-Grouped bar chart comparing JDs side by side.
-
-Recommendation Breakdown
-
-Count of SHORTLIST / CONSIDER / REJECT across all evaluations.
-
-Stacked bar or donut chart.
-
-Anti-Cheat Summary
-
-Count of WARNING and CRITICAL events this week.
-
-Small line chart showing event frequency over time.
-
-Top Skills Gap (Aggregate)
-
-Most-frequently-missing skills across all candidates for a given JD.
-
-Horizontal ranked bar chart. Useful for calibrating JD difficulty.
-
-
-
-
 
 
 8.  HR Portal API Reference
 
-Method
-
-Endpoint
-
-Description
-
-Auth
-
-Response
-
-POST
-
-/auth/register
-
-Create HR account with name, email, password, company.
-
-Public
-
-201 {user_id}
-
-GET
-
-/auth/verify
-
-Verify email via token link.
-
-Public
-
-200 / 410
-
-POST
-
-/auth/login
-
-Login. Returns JWT with role=hr payload.
-
-Public
-
-200 {token,user}
-
-POST
-
-/auth/resend-verification
-
-Resend email verification. Rate limited 3/hr.
-
-Public
-
-200 / 429
-
-GET
-
-/auth/me
-
-Get HR user profile including company_name.
-
-JWT (HR)
-
-200 {user}
-
-GET
-
-/api/jobs/mine
-
-List all JDs created by this HR user (all statuses).
-
-JWT (HR)
-
-200 [{job}]
-
-GET
-
-/api/jobs
-
-List all ACTIVE JDs (visible to candidates too).
-
-JWT (Any)
-
-200 [{job}]
-
-POST
-
-/api/jobs
-
-Create new JD. HR only. Returns jd_id.
-
-JWT (HR)
-
-201 {jd_id}
-
-PUT
-
-/api/jobs/{jd_id}
-
-Edit JD. Triggers re-embedding. HR only.
-
-JWT (HR, owner)
-
-200 {jd}
-
-PATCH
-
-/api/jobs/{jd_id}/status
-
-Change JD status: draft/active/closed.
-
-JWT (HR, owner)
-
-200
-
-DELETE
-
-/api/jobs/{jd_id}
-
-Soft-delete JD (status=deleted). Data preserved.
-
-JWT (HR, owner)
-
-200
-
-GET
-
-/api/hr/candidates
-
-All evaluations for HR's JDs. Optional ?job_id filter.
-
-JWT (HR)
-
-200 [{eval}]
-
-GET
-
-/api/evaluation/{eval_id}
-
-Full evaluation details for one candidate session.
-
-JWT (HR, owner of JD)
-
-200 {eval}
-
-PATCH
-
-/api/hr/candidate-status
-
-Set HR decision: shortlisted/rejected/pending.
-
-JWT (HR)
-
-200
-
-PATCH
-
-/api/evaluations/{id}/hr-notes
-
-Add/update HR private note on a candidate eval.
-
-JWT (HR)
-
-200
-
-GET
-
-/api/report/{eval_id}/download
-
-Download full PDF evaluation report.
-
-JWT (HR, owner)
-
-200 PDF binary
-
-GET
-
-/api/hr/anticheat
-
-All anti-cheat events for HR's candidates. Filter by session/severity.
-
-JWT (HR)
-
-200 [{event}]
-
-GET
-
-/api/hr/anticheat/{session_id}
-
-Anti-cheat log for a specific session.
-
-JWT (HR)
-
-200 {summary, events[]}
-
-GET
-
-/api/hr/analytics
-
-Aggregated HR metrics: counts, avg score, distributions.
-
-JWT (HR)
-
-200 {analytics}
-
-
-
-
-
 
 9.  Database Schema — HR Tables
-
-Table
-
-Key Fields
-
-Type
-
-Notes
-
-users (shared)
-
-user_id, name, email, password_hash, role, company_name, status
-
-PostgreSQL
-
-role = "hr". company_name populated from registration.
-
-verification_tokens (shared)
-
-token_hash, user_id, expires_at, used
-
-PostgreSQL
-
-Same structure as candidate module.
-
-job_descriptions
-
-jd_id, hr_user_id, title, company_name, description, required_skills[], experience_level, location, status, created_at, updated_at
-
-PostgreSQL
-
-status ENUM: draft / active / closed / deleted.
-
-job_embeddings
-
-embedding_id, jd_id, vector[300], model_version, created_at
-
-PostgreSQL/pgvector
-
-Re-generated on every JD edit.
-
-evaluations (shared)
-
-eval_id, session_id, candidate_id, job_id (FK → job_descriptions), semantic_score, similarity_score, emotion_score, audio_score, final_score, recommendation, hr_status, hr_notes, report_url, created_at
-
-PostgreSQL
-
-hr_status: null / shortlisted / rejected / pending. hr_notes: text, HR-only.
-
-anticheat_events
-
-event_id, session_id, candidate_id, timestamp_sec, event_type, severity, frame_url, details_json
-
-MongoDB
-
-event_type ENUM: face_mismatch / face_absent / multiple_persons / fake_video / tab_switch.
-
-anticheat_summaries
-
-summary_id, session_id, warning_count, critical_count, integrity_score, is_flagged
-
-PostgreSQL
-
-Computed after session end. Joined to evaluations on session_id.
-
-
-
-
 
 
 10.  Functional Requirements Summary
 
-ID
-
-Module
-
-Requirement
-
-Priority
-
-HRQ-01
-
-Auth
-
-HR registers with exactly 4 fields: First Name, Email, Password, Company Name. All mandatory.
-
-P0 Critical
-
-HRQ-02
-
-Auth
-
-Email verification via free SMTP. HR account inactive until email verified. Same token mechanism as Candidate module.
-
-P0 Critical
-
-HRQ-03
-
-Auth
-
-JWT payload for HR contains role="hr" and company_name. Frontend routes to HR dashboard based on role.
-
-P0 Critical
-
-HRQ-04
-
-JD
-
-HR can create, edit, publish, close, and soft-delete JDs. Only HR users can create JDs (403 for candidates).
-
-P0 Critical
-
-HRQ-05
-
-JD
-
-JD creation triggers Doc2Vec embedding generation. Editing a JD triggers re-embedding and cache invalidation.
-
-P0 Critical
-
-HRQ-06
-
-JD
-
-JDs have three HR-visible statuses: Draft, Active, Closed. Only Active JDs appear in the candidate JD browser.
-
-P0 Critical
-
-HRQ-07
-
-Candidates
-
-HR can view evaluations only for candidates who interviewed for their own JDs. Cannot view other HR users' candidates.
-
-P0 Critical
-
-HRQ-08
-
-Candidates
-
-Candidate list sortable by final score (default desc), filterable by JD, recommendation, HR status, date range.
-
-P1 High
-
-HRQ-09
-
-Evaluation
-
-Candidate detail panel shows all 4 score components as rings, emotion timeline, speech metrics, Gemini analysis, per-question breakdown.
-
-P0 Critical
-
-HRQ-10
-
-Decision
-
-HR can set decision: Shortlisted / Rejected / Pending. Decision stored in evaluations.hr_status. Does NOT modify AI scores.
-
-P0 Critical
-
-HRQ-11
-
-Notes
-
-HR can add a private note (max 500 chars) to any candidate evaluation. Visible to HR only, not to candidate.
-
-P1 High
-
-HRQ-12
-
-Anti-Cheat
-
-Anti-cheat panel shows all events with severity (LOW/WARNING/CRITICAL), timestamp, and type for every session.
-
-P0 Critical
-
-HRQ-13
-
-Anti-Cheat
-
-Candidates with CRITICAL events are visually highlighted in the candidate list. HR can filter by "Integrity Risk".
-
-P0 Critical
-
-HRQ-14
-
-Reports
-
-HR can download the same full PDF report generated for the candidate. Access restricted to HR who owns the JD.
-
-P0 Critical
-
-HRQ-15
-
-Analytics
-
-Analytics dashboard shows: KPI cards, score distribution chart, JD comparison chart, emotion heatmap, anti-cheat trend, top skills gap.
-
-P1 High
-
-HRQ-16
-
-Privacy
-
-HR sees candidate first name and masked email in list view. Full name + email accessible only in detail panel of confirmed evaluations.
-
-P1 High
-
-
-
-
-
 
 11.  Security & Privacy — HR Module
-
-Concern
-
-Implementation
-
-HR-to-candidate data access
-
-Every /api/hr/* endpoint checks: (a) JWT is valid. (b) user.role == "hr". (c) For evaluation-specific endpoints, the job_id in the evaluation matches a JD created by this HR user (ownership check). Violation → 403.
-
-Cross-HR isolation
-
-HR User A cannot see HR User B's candidates, JDs, or analytics. All queries are scoped by hr_user_id.
-
-Candidate resume files
-
-HR users CANNOT download the original resume PDF/DOCX. They see only the extracted, structured skills data. Raw resume files are stored in private S3 with pre-signed URLs accessible only to the owning candidate.
-
-Anti-cheat snapshots
-
-Video frame snapshots captured during anti-cheat events are stored in private S3 with 30-day retention. Accessible only to HR for review. Not included in the candidate-facing report PDF.
-
-Rate limiting
-
-All /api/hr/* endpoints: 200 requests/minute per authenticated HR user. Throttle with 429 response. Prevents scraping of candidate data.
-
-GDPR / data deletion
-
-Candidate can request data deletion via account settings. Cascade deletes: resume file (S3), parsed data, embeddings, emotion logs, speech features. Evaluation records are anonymised (candidate_id set to NULL) and retained for 90 days for HR analytics before full deletion.
-
-
-
-
 
 
 12.  Appendix — HR Complete Flow Diagram (Text)
 
-HR RECRUITER COMPLETE JOURNEY:
-
-Landing Page → Register (Name + Email + Password + Company Name)
-→ "Check your inbox" screen → Verification email clicked
-→ Login Page (success toast) → Login (Email + Password)
-→ JWT contains role="hr" + company_name → Routed to HR Dashboard
-
-── JD Management Flow ──
-HR Dashboard → Job Description Manager → "Create New JD"
-→ Fill: Title, Company (pre-filled), Description, Required Skills, Experience Level, Location
-→ Save as Draft (private) OR Save + Publish (Active, visible to candidates)
-→ Doc2Vec embedding generated in background
-→ JD appears in Candidate JD Browser when Active
-
-── Reviewing Candidate Evaluations ──
-HR Dashboard → "Candidates" section → Filter by JD → Sorted by Final Score (desc)
-→ Sees: Candidate Name, JD Applied, Final Score, AI Recommendation, HR Status, Date
-→ Click "View" → Candidate Detail Panel opens:
-   • All 4 score rings (Semantic, JD Match, Emotion, Audio) + Final Score ring
-   • Emotion Timeline Chart
-   • Speech metrics (WPM, Fillers, Tone, Fluency)
-   • Gemini Analysis: Role Alignment, Strengths, Weaknesses
-   • Per-question breakdown (expandable)
-   • Anti-Cheat Summary for this session
-→ HR sets decision: [Shortlist] [Reject] [Keep Pending]
-→ HR adds optional private note
-→ Download PDF Report
-
-── Anti-Cheat Monitoring ──
-HR Dashboard → Anti-Cheat Panel → Filter by severity/candidate/event type
-→ Flagged candidates highlighted in red in Candidate List
-→ "Integrity Risk" filter toggle shows only flagged sessions
-
-── Analytics ──
-HR Dashboard → Analytics Tab → KPI Cards + Charts + JD Comparison + Heatmaps
-
-
-
 End of Document — Career Connect AI  |  HR Recruiter Portal PRD v1.0
-
 SRM Institute of Science and Technology  •  Department of Computing Technologies
-
-Career Connect AI  •  HR Module  •  SRM Institute of Science and Technology     Page  of

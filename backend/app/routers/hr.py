@@ -429,6 +429,16 @@ def get_hr_analytics(
                     skill_gap_counter[skill] += 1
     top_skills_gap = [{"skill": k, "count": v} for k, v in skill_gap_counter.most_common(10)]
 
+    # Aggregated Emotion Spectrum (Heatmap)
+    emotion_logs = db.query(EmotionLog).filter(EmotionLog.session_id.in_(session_ids)).all()
+    emotion_counts = Counter(log.dominant_emotion for log in emotion_logs if log.dominant_emotion)
+    total_logs = sum(emotion_counts.values()) or 1
+    emotion_heatmap = [
+        {"emotion": k, "percentage": round((v / total_logs) * 100, 1), "raw_count": v}
+        for k, v in emotion_counts.items()
+    ]
+    emotion_heatmap.sort(key=lambda x: x["percentage"], reverse=True)
+
     return HRAnalyticsResponse(
         totalCandidates=total,
         shortlisted=shortlisted,
@@ -449,6 +459,7 @@ def get_hr_analytics(
         flaggedSessions=flagged,
         jdPerformance=jd_performance,
         topSkillsGap=top_skills_gap,
+        emotionHeatmap=emotion_heatmap,
     )
 
 

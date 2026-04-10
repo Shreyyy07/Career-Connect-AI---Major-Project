@@ -20,13 +20,15 @@ interface HRAnalyticsData {
   totalWarnings: number;
   totalCriticals: number;
   flaggedSessions: number;
+  topSkillsGap: { skill: string, count: number }[];
+  emotionHeatmap: { emotion: string, percentage: number, raw_count: number }[];
 }
 
 interface HRCandidateListItem {
   evalID: number;
   candidateName: string;
   jobTitle: string;
-  matchScore: number;
+  similarityScore: number;
   finalScore: number;
   integrityStatus: string;
   hrStatus: string;
@@ -115,7 +117,7 @@ export default function HRDashboard() {
   }));
 
   return (
-    <div className="flex min-h-screen bg-background overflow-hidden relative text-foreground">
+    <div className="flex h-[100dvh] bg-background overflow-hidden relative text-foreground">
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#00e5ff]/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00e5ff]/5 rounded-full blur-[120px] pointer-events-none" />
 
@@ -370,9 +372,9 @@ export default function HRDashboard() {
                        <td className="py-4 text-center">
                          <div className="flex items-center justify-center gap-2">
                            <div className="w-16 h-1.5 bg-secondary rounded-full overflow-hidden">
-                             <div className="h-full bg-[#00e5ff]" style={{ width: `${Math.round(c.matchScore)}%` }}></div>
+                             <div className="h-full bg-[#00e5ff]" style={{ width: `${Math.round(c.similarityScore || 0)}%` }}></div>
                            </div>
-                           <span className="text-[11px] font-bold text-[#00e5ff]">{Math.round(c.matchScore)}%</span>
+                           <span className="text-[11px] font-bold text-[#00e5ff]">{Math.round(c.similarityScore || 0)}%</span>
                          </div>
                        </td>
                        
@@ -408,7 +410,7 @@ export default function HRDashboard() {
                    ))}
                  </tbody>
                </table>
-               {candidates?.length !== 0 && candidates?.length > 5 && (
+               {candidates?.length !== 0 && candidates !== undefined && candidates.length > 5 && (
                  <div className="text-center pt-4 mt-2 border-t border-border/50">
                     <Link to="/hr/candidates" className="text-xs font-bold text-muted-foreground hover:text-[#00e5ff] transition-colors uppercase tracking-widest flex items-center justify-center gap-1">
                       View all {candidates?.length} Candidates <ArrowUpRight className="w-3 h-3" />
@@ -416,7 +418,89 @@ export default function HRDashboard() {
                  </div>
                )}
              </div>
-          </motion.div>
+           </motion.div>
+
+          {/* Row 4: Analytics Additions - Skills Gap & Emotion Spectrum */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 pb-12">
+             {/* Top Skills Gap */}
+             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.6 }} className="glass rounded-2xl p-6 border border-border/50">
+                <div className="flex items-center gap-3 border-b border-border/50 pb-4 mb-4">
+                  <div className="p-2 bg-orange-500/10 rounded-lg">
+                    <Briefcase className="w-5 h-5 text-orange-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg leading-tight">Top Skills Gap</h3>
+                    <span className="text-xs text-muted-foreground">Most frequently missing requirements</span>
+                  </div>
+                </div>
+                
+                <div className="h-[350px] mt-2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart layout="vertical" data={analytics.topSkillsGap} margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
+                      <XAxis type="number" stroke="rgba(255,255,255,0.3)" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis 
+                        dataKey="skill" 
+                        type="category" 
+                        stroke="rgba(255,255,255,0.8)" 
+                        fontSize={11} 
+                        tickLine={false} 
+                        axisLine={false} 
+                        width={160}
+                        tickFormatter={(val) => val.length > 20 ? val.substring(0, 20) + '...' : val}
+                      />
+                      <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                      <Bar dataKey="count" fill="#fb923c" radius={[0, 4, 4, 0]} barSize={16} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+             </motion.div>
+
+             {/* Emotion Spectrum */}
+             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.7 }} className="glass rounded-2xl p-6 border border-border/50">
+                <div className="flex items-center gap-3 border-b border-border/50 pb-4 mb-6">
+                  <div className="p-2 bg-[#00e5ff]/10 rounded-lg">
+                    <Activity className="w-5 h-5 text-[#00e5ff]" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg leading-tight">Macro Emotion Spectrum</h3>
+                    <span className="text-xs text-muted-foreground">Aggregate stress & confidence map</span>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {analytics.emotionHeatmap.map((item: { emotion: string, percentage: number }, i: number) => {
+                     const colorMap: Record<string, string> = { happy: '#10b981', neutral: '#475569', sad: '#818cf8', angry: '#f43f5e', surprise: '#00e5ff', fear: '#fb923c', disgust: '#a78bfa' };
+                     const color = colorMap[item.emotion] || '#475569';
+                     return (
+                       <div key={item.emotion} className="relative">
+                         <div className="flex justify-between items-center mb-1">
+                           <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+                             {item.emotion}
+                           </span>
+                           <span className="text-xs font-bold font-mono">{item.percentage}%</span>
+                         </div>
+                         <div className="h-3 w-full bg-secondary/50 rounded-full overflow-hidden">
+                           <motion.div 
+                             initial={{ width: 0 }} 
+                             animate={{ width: `${item.percentage}%` }}
+                             transition={{ duration: 1, delay: 0.8 + (i * 0.1) }}
+                             className="h-full rounded-full" 
+                             style={{ backgroundColor: color }} 
+                           />
+                         </div>
+                       </div>
+                     );
+                  })}
+                  {analytics.emotionHeatmap.length === 0 && (
+                    <div className="text-center text-muted-foreground text-sm py-10">
+                      Not enough data collected yet.
+                    </div>
+                  )}
+                </div>
+             </motion.div>
+          </div>
 
         </div>
       </div>

@@ -321,6 +321,8 @@ class HRAnalyticsResponse(BaseModel):
     jdPerformance: list[dict]
     # Top missing skills [{skill, count}]
     topSkillsGap: list[dict]
+    # Macro emotional distribution [{emotion, percentage, raw_count}]
+    emotionHeatmap: list[dict]
 
 
 # ── Anti-Cheat ─────────────────────────────────────────────────────────────────

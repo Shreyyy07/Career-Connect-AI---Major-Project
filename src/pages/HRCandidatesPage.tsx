@@ -6,11 +6,12 @@ import TopbarProfile from "@/components/TopbarProfile";
 import ScoreGauge from "@/components/ScoreGauge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, Briefcase, Eye, User, ShieldAlert, Award, FileText, FileDown, Activity, Mic, Brain } from "lucide-react";
+import { Search, Filter, Briefcase, Eye, User, ShieldAlert, Award, FileText, FileDown, Activity, Mic, Brain, CheckCircle, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from "recharts";
+import EmotionTimeline from "@/components/EmotionTimeline";
 
 // TypeScript interfaces matching backend models
 interface CandidateList {
@@ -44,6 +45,7 @@ export default function HRCandidatesPage() {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [showFlaggedOnly, setShowFlaggedOnly] = useState(false);
   const [selectedEvalID, setSelectedEvalID] = useState<number | null>(null);
 
   const { data: candidates, isLoading } = useQuery<CandidateList[]>({
@@ -74,11 +76,18 @@ export default function HRCandidatesPage() {
     },
   });
 
-  const filteredCandidates = candidates?.filter((c) => {
+  const sortedCandidates = candidates ? [...candidates].sort((a, b) => {
+    if (a.isFlagged && !b.isFlagged) return -1;
+    if (!a.isFlagged && b.isFlagged) return 1;
+    return 0; 
+  }) : [];
+
+  const filteredCandidates = sortedCandidates?.filter((c) => {
     const matchesQuery = c.candidateName.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          c.jobTitle.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || c.hrStatus === statusFilter;
-    return matchesQuery && matchesStatus;
+    const matchesFlagged = !showFlaggedOnly || c.isFlagged;
+    return matchesQuery && matchesStatus && matchesFlagged;
   });
 
   const handleDownloadReport = async (evalId: number) => {
@@ -115,7 +124,19 @@ export default function HRCandidatesPage() {
               />
             </div>
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-muted-foreground" />
+              <Button
+                variant={showFlaggedOnly ? "default" : "outline"}
+                onClick={() => setShowFlaggedOnly((prev) => !prev)}
+                className={`h-9 mr-2 text-xs font-semibold uppercase tracking-wider transition-all 
+                  ${showFlaggedOnly 
+                    ? "bg-red-500 hover:bg-red-600 text-white border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]" 
+                    : "border-border/50 bg-secondary/50 hover:bg-red-500/10 hover:text-red-500 text-muted-foreground"
+                  }`}
+              >
+                <ShieldAlert className="w-3.5 h-3.5 mr-1.5" />
+                Integrity Risk
+              </Button>
+              <Filter className="w-4 h-4 text-muted-foreground mr-1" />
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[180px] bg-secondary/50 border-border/50">
                   <SelectValue placeholder="All Statuses" />
@@ -275,22 +296,112 @@ export default function HRCandidatesPage() {
                       </div>
                     )}
 
-                    {/* Insights */}
+                    {/* Emotion Dynamics */}
+                    {detailData.emotionTimeline && detailData.emotionTimeline.length > 0 && (
+                       <EmotionTimeline timeline={detailData.emotionTimeline} />
+                    )}
+
+                    {/* Speech Analysis Card */}
+                    {(detailData.wpm != null || detailData.fillerCount != null) && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                        className="glass rounded-3xl p-8 shadow-lg"
+                      >
+                        <div className="flex items-center gap-3 mb-6">
+                          <Mic className="w-6 h-6 text-emerald-400" />
+                          <h3 className="text-xl font-display font-bold text-foreground">Speech Analysis</h3>
+                          <span className="ml-auto text-xs font-bold uppercase tracking-widest text-muted-foreground bg-secondary/60 px-3 py-1 rounded-full border border-border">
+                            Transcript-Based
+                          </span>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                          <div className="bg-background/40 rounded-2xl p-5 border border-border text-center">
+                            <p className="text-3xl font-display font-bold mb-1"
+                               style={{ color: (detailData.wpm || 0) >= 100 && (detailData.wpm || 0) <= 170 ? '#10b981' : '#f59e0b' }}>
+                              {Math.round(detailData.wpm || 0)}
+                            </p>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Words / Min</p>
+                            <p className="text-[10px] text-muted-foreground/60 mt-1">Ideal: 100–170</p>
+                          </div>
+                          
+                          <div className="bg-background/40 rounded-2xl p-5 border border-border text-center">
+                            <p className="text-3xl font-display font-bold mb-1"
+                               style={{ color: (detailData.fillerCount || 0) <= 5 ? '#10b981' : (detailData.fillerCount || 0) <= 15 ? '#f59e0b' : '#f43f5e' }}>
+                              {detailData.fillerCount ?? 0}
+                            </p>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Filler Words</p>
+                            <p className="text-[10px] text-muted-foreground/60 mt-1">
+                              {(detailData.fillerPercentage || 0).toFixed(1)}% of speech
+                            </p>
+                          </div>
+                          
+                          <div className="bg-background/40 rounded-2xl p-5 border border-border text-center">
+                            <p className="text-3xl font-display font-bold text-sky-400 mb-1">{detailData.wordCount ?? 0}</p>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Total Words</p>
+                          </div>
+                          
+                          <div className="bg-background/40 rounded-2xl p-5 border border-border text-center">
+                            <p className="text-3xl font-display font-bold mb-1"
+                               style={{ color: detailData.audioScore >= 70 ? '#10b981' : detailData.audioScore >= 45 ? '#f59e0b' : '#f43f5e' }}>
+                              {Math.round(detailData.audioScore)}%
+                            </p>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Clarity Score</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-5">
+                          <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
+                            <span>Speaking Pace</span>
+                            <span className="font-mono font-bold">{Math.round(detailData.wpm || 0)} WPM</span>
+                          </div>
+                          <div className="h-2 bg-secondary/80 rounded-full overflow-hidden border border-border">
+                            <div
+                              className="h-full rounded-full transition-all duration-1000"
+                              style={{
+                                width: `${Math.min(100, ((detailData.wpm || 0) / 250) * 100)}%`,
+                                background: (detailData.wpm || 0) >= 100 && (detailData.wpm || 0) <= 170
+                                  ? 'linear-gradient(90deg, #10b981, #34d399)'
+                                  : 'linear-gradient(90deg, #f59e0b, #fbbf24)'
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* AI Assessment (Advanced Insights) */}
                     {detailData.insightsJson && (
-                      <div className="space-y-3">
-                         <h3 className="font-semibold flex items-center gap-2"><Brain className="w-4 h-4 text-[#00e5ff]"/> AI Assessment</h3>
-                         <div className="glass p-4 rounded-xl prose prose-invert prose-sm max-w-none">
-                           <pre className="whitespace-pre-wrap font-sans bg-transparent border-0 p-0 m-0">
-                             {(() => {
-                               try {
-                                 const parsed = JSON.parse(detailData.insightsJson);
-                                 return parsed?.summary || "AI Analysis unavailable.";
-                               } catch {
-                                 return "AI Analysis unavailable (legacy data format).";
-                               }
-                             })()}
-                           </pre>
-                         </div>
+                      <div className="glass rounded-3xl p-8 shadow-lg">
+                        <div className="flex items-center gap-3 mb-6">
+                           <Brain className="w-6 h-6 text-[#00e5ff]" />
+                           <h3 className="text-xl font-display font-bold text-foreground">Actionable Insights</h3>
+                           <span className="ml-auto text-[10px] font-bold uppercase tracking-widest text-[#00e5ff] bg-[#00e5ff]/10 px-2.5 py-1 rounded-full border border-[#00e5ff]/20">
+                             AI Generated
+                           </span>
+                        </div>
+                        {(() => {
+                           try {
+                             const parsed = JSON.parse(detailData.insightsJson);
+                             const strength = parsed?.topStrength || "Maintained strong communication and engagement throughout.";
+                             const improvement = parsed?.toImprove || "Focus on tailoring answers using specific vocabulary from the Job Description.";
+                             
+                             return (
+                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                 <div className="bg-emerald-500/10 border border-emerald-500/20 p-5 rounded-2xl">
+                                   <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><CheckCircle size={14}/> Top Strength</p>
+                                   <p className="text-sm text-foreground/90 font-medium">{strength}</p>
+                                 </div>
+                                 <div className="bg-amber-500/10 border border-amber-500/20 p-5 rounded-2xl">
+                                   <p className="text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><RefreshCw size={14}/> To Improve</p>
+                                   <p className="text-sm text-foreground/90 font-medium">{improvement}</p>
+                                 </div>
+                               </div>
+                             );
+                           } catch {
+                             return <p className="text-muted-foreground text-sm">AI Analysis unavailable (legacy data format).</p>;
+                           }
+                        })()}
                       </div>
                     )}
 

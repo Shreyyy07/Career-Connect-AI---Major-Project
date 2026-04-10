@@ -3,7 +3,7 @@ import {
   TrendingUp, FileText, Target, Mic, Calendar,
   Clock, CheckCircle2, AlertCircle, ArrowRight,
   Activity, BookOpen, Play, ChevronRight, Flame,
-  LogOut, User, Settings
+  LogOut, User, Settings, Sparkles
 } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import TopbarProfile from "@/components/TopbarProfile";
@@ -16,8 +16,18 @@ import { useAuth } from "../context/AuthContext";
 import { apiFetch } from "../lib/api";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  AreaChart, Area, BarChart, Bar, CartesianGrid
+  AreaChart, Area, BarChart, Bar, CartesianGrid,
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
 } from "recharts";
+
+const radarData = [
+  { subject: 'React', value: 85 },
+  { subject: 'Node.js', value: 65 },
+  { subject: 'TypeScript', value: 88 },
+  { subject: 'System Design', value: 55 },
+  { subject: 'DSA', value: 70 },
+  { subject: 'Communication', value: 80 },
+];
 
 const performanceTrend = [
   { session: "S1", score: 58, semantic: 55, jd: 60, emotion: 50, comm: 52 },
@@ -294,7 +304,7 @@ export default function CandidateDashboard() {
           )}
 
           {/* Row 1: Performance Trend + Score Breakdown */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
             {/* Performance Trend Chart */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -330,6 +340,43 @@ export default function CandidateDashboard() {
                   <Line type="monotone" dataKey="jd" stroke="hsl(270,80%,65%)" strokeWidth={1.5} dot={false} name="JD Match" />
                 </AreaChart>
               </ResponsiveContainer>
+            </motion.div>
+
+            {/* Skill Radar Chart */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.12 }}
+              className="lg:col-span-1 glass rounded-xl p-6"
+            >
+              <div className="flex items-center justify-between mb-4">
+                 <div className="flex items-center gap-3">
+                   <div className="p-2 bg-[#00e5ff]/10 rounded-lg">
+                     <Sparkles className="w-5 h-5 text-[#00e5ff]" />
+                   </div>
+                   <div>
+                     <h3 className="font-display font-semibold text-foreground leading-tight">Skill Radar</h3>
+                     <span className="text-xs text-muted-foreground">Your competency map</span>
+                   </div>
+                 </div>
+               </div>
+              <div className="flex justify-center -mt-4">
+                <ResponsiveContainer width="100%" height={240}>
+                  <RadarChart cx="50%" cy="50%" outerRadius="65%" data={radarData}>
+                    <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                    <PolarAngleAxis dataKey="subject" tick={{ fill: "hsl(215,15%,55%)", fontSize: 10 }} />
+                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                    <Radar
+                      name="Skill"
+                      dataKey="value"
+                      stroke="#00e5ff"
+                      strokeWidth={2}
+                      fill="#00e5ff"
+                      fillOpacity={0.15}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
             </motion.div>
 
             {/* Score Breakdown Gauges */}
