@@ -2,7 +2,7 @@
 
 # 🚀 Career Connect AI
 
-### AI-Powered Recruitment Automation Platform
+### An Enterprise-Grade AI Recruitment Automation Platform
 
 **Semantic Resume Screening · Skill Gap Analysis · AI Interviews · Multimodal Evaluation**
 
@@ -18,202 +18,149 @@
 
 ## 📌 Overview
 
-**Career Connect AI** is a full-stack recruitment automation platform that replaces manual resume screening with an AI-driven pipeline. It uses **Doc2Vec embeddings**, **GPT-4.1 semantic reasoning**, and upcoming **multimodal analysis** (emotion, speech, identity) to give HR teams objective, data-backed hiring decisions — and gives candidates a personalised roadmap to close their skill gaps.
+**Career Connect AI** is a full-stack recruitment automation platform that completely digitises the hiring bottleneck. It replaces manual screening with an AI-driven pipeline using **Doc2Vec embeddings**, **Gemini/GPT LLM semantic reasoning**, and robust **multimodal analysis** (DeepFace Emotion, Praat Speech, YOLO Anti-Cheat) to give HR teams objective, data-backed hiring parameters — whilst supplying candidates with a bespoke roadmap to close their exact skill gaps.
 
 ---
 
-## ✨ Features
+## ✨ Features (Fully Implemented)
 
-### ✅ Implemented (Phase 1 & 2)
-
-| Module | Feature |
+### 👨‍💼 Candidate Module
+| Feature | Description |
 |---|---|
-| 🔐 **Auth** | JWT-based register/login, role-based access (Candidate / HR / Admin) |
-| 📄 **Resume Upload** | PDF & DOCX parsing, Doc2Vec embedding on upload |
-| 💼 **Job Descriptions** | HR creates JDs with title, description & required skills; auto-embedded |
-| 🧠 **Semantic Matching** | Doc2Vec cosine similarity + GPT-4.1 hybrid score (FR-4.1, 4.4) |
-| 🎨 **Match Score UI** | Circular progress rings, colour-coded tier (Green / Amber / Red) (FR-4.2) |
-| 🔍 **Skill Overlap** | Matched, missing, and extra skills (FR-4.3) |
-| 📊 **Recruiter View** | Sortable and filterable ranked candidate table (FR-4.5) |
-| 🗺️ **Skill Gap Analysis** | AI-detected missing skills with impact ranking (FR-5.1, 5.3) |
-| 📚 **Learning Recommendations** | GPT-4.1 course names, topic descriptions, estimated time (FR-5.2) |
-| 📖 **Smart Article Redirect** | Start Learning opens best GPT-chosen tutorial in new tab |
-| ✅ **Progress Tracking** | Mark skills In Progress / Completed; full event history (FR-5.4) |
-| 🤖 **AI Interview** | Dynamic JD-contextualised question generation via GPT-4.1 RAG |
+| 🔐 **OTP Auth Flow** | High-security email token verifications & forgotten password reset. |
+| 📄 **Resume Pipeline** | PDF/DOCX multi-modal uploads parsed natively and stored directly into Vector DBs. |
+| 🧠 **Semantic Matching** | Doc2Vec cosine similarity + LLM semantic reasoning creating a 0-100 hybrid compatibility scale. |
+| 🗺️ **Skill Gap Engine** | Identifies critical weaknesses, mapping them to a **Personalised Learning Path** (with "Mark as Done" UI trackers). |
+| 🤖 **AI Interview Agent** | Dynamically crafts logic questions based specifically on the users Resume context + JD requirements. |
+| 📊 **Candidate Reports** | Real-time AI evaluation, PDF ReportLab generation, and visual component breakdown (Semantic, Emotion, Speech). |
 
-### 🔜 Roadmap (Phase 3+)
-
-| Module | Status |
+### 🏢 HR Recruiter Module
+| Feature | Description |
 |---|---|
-| 😐 **Emotion Analysis** | DeepFace integration during interview — planned |
-| 🔊 **Speech Analysis** | Librosa + RAVDESS tone/sentiment — planned |
-| 🛡️ **Anti-Cheat Engine** | YOLOv8 multi-person detection + tab-switch guards — planned |
-| 🪪 **Identity Verification** | Face-match against uploaded ID — planned |
-| 📄 **PDF Reports** | ReportLab evaluation reports — planned |
-| 📨 **Event-Driven Pipeline** | RabbitMQ / Kafka for async processing — planned |
-| 🐳 **Containerisation** | Docker + Kubernetes deployment — planned |
+| 💼 **JD Management** | HRs dynamically create Job Descriptions with Title, specific Requirements, and Auto-Embeddings. |
+| 🕵️ **Shortlist Pipeline** | Granular visual table allowing recruiters to easily filter heavily ranked candidates. |
+| 📉 **Analytics Dashboard** | Live overall funnel, **Top Skills Gap** visualisation bar charts, and a **Macro Emotion Spectrum** heat-map. |
+| 🗣️ **Detailed Telemetry** | View candidate timeline showcasing stress-levels versus confidence, alongside WPM (Words Per Minute) calculations. |
+| 🛡️ **Integrity Risk Monitor** | Anti-cheat log that forces AI-Proctor flagged candidates to the absolute top of the shortlist priority queue. |
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Technical Architectures
+
+### 1️⃣ Candidate Pipeline (Assessment & Data)
+
+```mermaid
+sequenceDiagram
+    participant C as Candidate
+    participant API as FastAPI
+    participant D2V as Doc2Vec/Gensim
+    participant GPT as LLM Core
+    participant DB as PostGreSQL
+    participant M as Multimodal (DeepFace/Praat)
+
+    C->>API: 1. POST Resume (PDF/DOCX)
+    API->>D2V: Extract text & infer embedding
+    D2V-->>API: 100-dim Float Vector
+    API->>DB: Store Resume Payload
+
+    C->>API: 2. Request Hybrid Match (Resume + JD)
+    API->>API: Compute Cosine Similarity
+    API->>GPT: Execute Semantic Reasoning Filter
+    GPT-->>API: Hybrid Accuracy [0-100] + Missing Skill Strings
+    API->>DB: Persist Learning Path Trackers
+    API-->>C: Serve Dashboard Match Visualisations
+
+    C->>API: 3. Initiate AI Interview 
+    API->>GPT: Pass [Resume] + [JD] context mapping
+    GPT-->>API: Render Unique Interrogation Parameter
+    
+    par Async Proctoring Loop
+        C->>M: Dispatch Webcam/Audio Blob (Intervals)
+        M-->>DB: Push Emotion Arrays / WPM Logs / Anti-Cheat Flags
+    end
+```
+
+### 2️⃣ HR Recruiter Flow & Dashboard Architecture
 
 ```mermaid
 graph TB
-    subgraph FE["Frontend - React + Vite + Tailwind"]
-        UI_Auth[Auth Pages]
-        UI_Dashboard[Dashboard]
-        UI_Match[Resume Match]
-        UI_Interview[AI Interview]
-        UI_Reports[Reports]
+    subgraph HR["🏢 HR Frontend Client"]
+        DASH[Macro Dashboard]
+        JD[Job Configurator]
+        CAND[Candidate Scrutiny Panel]
+        AC[Integrity Flag Matrix]
     end
 
-    subgraph BE["Backend - FastAPI"]
-        API[REST API port 8000]
-
-        subgraph Routers["Routers"]
-            R_Auth["auth"]
-            R_Resume["resume"]
-            R_JD["jd"]
-            R_Match["match"]
-            R_Interview["interview"]
-            R_Rec["recommendations"]
-            R_HR["hr"]
-        end
-
-        subgraph AIServices["AI Services"]
-            SVC_AI["ai_service.py - GPT-4.1"]
-            SVC_D2V["doc2vec_service.py"]
-            SVC_GEM["gemini_service.py shim"]
-        end
-
-        subgraph CoreLayer["Core"]
-            SEC["security.py - JWT"]
-            CFG["config.py - Settings"]
-            MODELS["models.py - ORM"]
+    subgraph Backend["⚙️ FASTAPI Core Server"]
+        API_HR[HR Router Services]
+        
+        subgraph Aggregation["Data Aggregators"]
+            EMO_AGG[Emotion Heatmap Compiler]
+            SKILL_AGG[Top Skill Gap Counter]
+            RPT_GEN[PDF ReportLab Engine]
         end
     end
 
-    subgraph Storage["Storage"]
-        DB[(SQLite or PostgreSQL)]
-        FS[Doc2Vec Artifacts]
+    subgraph DB["💾 Database"]
+        DB_MAIN[(Primary PostgreSQL)]
     end
 
-    subgraph ExtAI["External AI"]
-        GHAI["GitHub AI - GPT-4.1"]
+    subgraph Future["🚀 Phase 4 Pipeline (Upcoming)"]
+        N8N[n8n Automation Webhook]
+        VAPI[Vapi / Bland Voice AI Agent]
+        CELL((Candidate Cellphone))
     end
 
-    FE -->|HTTP + JWT| API
-    API --> Routers
-    Routers --> AIServices
-    Routers --> CoreLayer
-    AIServices --> GHAI
-    AIServices --> SVC_D2V
-    CoreLayer --> MODELS
-    MODELS --> DB
-    SVC_D2V --> FS
+    %% Flow Dynamics
+    DASH & JD & CAND & AC -->|Secure JWT| API_HR
+    API_HR --> DB_MAIN
+    API_HR <--> Aggregation
+    Aggregation --> DB_MAIN
+
+    %% Voice Integration Flow
+    CAND -.->|Trigger Reminder| N8N
+    N8N -.-> VAPI
+    VAPI -.->|Telephony Call| CELL
 ```
 
 ---
 
-## 🔄 Resume Matching Pipeline
+## 🚀 Future Roadmap: n8n Voice Agent Integration
 
-```mermaid
-sequenceDiagram
-    participant C as Candidate
-    participant API as FastAPI
-    participant D2V as Doc2Vec
-    participant GPT as GPT-4.1
-    participant DB as Database
-
-    C->>API: POST resume upload PDF or DOCX
-    API->>D2V: Extract text and infer embedding
-    D2V-->>API: 100-dim vector
-    API->>DB: Store resume and embedding
-
-    C->>API: POST match with resumeID and jobID
-    API->>DB: Fetch both embeddings
-    API->>API: Compute cosine similarity
-    API->>GPT: Semantic reasoning prompt
-    GPT-->>API: score 0 to 100
-    API->>API: hybrid = cosine 70pct + GPT 30pct
-    API->>GPT: ai_skill_recommendations for missing skills
-    GPT-->>API: courses and descriptions
-    API->>DB: Persist SkillRecommendation rows
-    API-->>C: hybridScore + tier + skillOverlap + recommendations
-```
-
----
-
-## 🤖 AI Interview Flow
-
-```mermaid
-sequenceDiagram
-    participant C as Candidate
-    participant API as FastAPI
-    participant GPT as GPT-4.1
-    participant DB as Database
-
-    C->>API: POST interview start with jobID and experience
-    API->>GPT: ai_generate_question with JD context
-    GPT-->>API: contextual first question
-    API->>DB: Store session and transcript
-    API-->>C: sessionID and firstQuestion
-
-    loop Each answer turn
-        C->>API: POST interview answer with transcript
-        API->>GPT: ai_generate_question with history
-        GPT-->>API: next contextual question
-        API-->>C: nextQuestion
-    end
-
-    C->>API: POST interview end
-    API->>API: create evaluation for session
-    API-->>C: evalID and estimatedReady
-```
+Our immediate target for Phase 4 is to deploy **n8n Automation + Real-World Voice AI**.
+- **The Concept:** When a candidate is shortlisted or scheduled via the HR Dashboard, the FastAPI backend will trigger an outgoing webhook to an `n8n` cloud workflow.
+- **The Call:** `n8n` will connect to a Telephony/Voice AI endpoint (e.g., Bland AI, Vapi) to physically ring the candidate's personal cellphone grid. 
+- **The Loop:** The system will hold a seamless LLM-voice conversation, actively remind the candidate of their impending Career Connect AI interview, and ping the result back to the HR dashboard dynamically in real-time.
 
 ---
 
 ## 🗂️ Project Structure
 
-```
+```text
 Career-Connect-AI/
 ├── src/
 │   ├── pages/
-│   │   ├── ResumeMatch.tsx         # Full matching and skill gap UI
-│   │   ├── InterviewSelection.tsx
-│   │   ├── Dashboard.tsx
-│   │   ├── Reports.tsx
-│   │   └── Profile.tsx
-│   ├── context/AuthContext.tsx
-│   ├── lib/api.ts
+│   │   ├── CandidateDashboard.tsx  &  CandidateSkills.tsx
+│   │   ├── AIInterview.tsx         &  EvaluationResult.tsx
+│   │   ├── HRDashboard.tsx         &  HRJobsPage.tsx
+│   │   ├── HRCandidatesPage.tsx    &  HRAntiCheatPage.tsx
+│   ├── components/                 # Shared logic (EmotionTimeline, etc.)
+│   ├── lib/api.ts                  # Axios/Fetch interceptors
 │   └── index.css
 │
 └── backend/
     ├── app/
-    │   ├── main.py
-    │   ├── models.py
-    │   ├── schemas.py
-    │   ├── db.py
-    │   ├── deps.py
-    │   ├── security.py
-    │   ├── ai_service.py           # GPT-4.1 unified service
-    │   ├── doc2vec_service.py
-    │   ├── gemini_service.py
-    │   ├── utils.py
-    │   ├── core/config.py
-    │   ├── artifacts/
-    │   └── routers/
-    │       ├── auth.py
-    │       ├── resume.py
-    │       ├── jd.py
-    │       ├── match.py
-    │       ├── interview.py
-    │       ├── evaluation.py
-    │       ├── recommendations.py
-    │       ├── report.py
-    │       ├── dashboard.py
-    │       ├── history.py
-    │       └── profile.py
+    │   ├── main.py                 # FastAPI Gateway
+    │   ├── models.py               # SQLAlchemy ORM
+    │   ├── schemas.py              # Pydantic Typing
+    │   ├── ai_service.py           # Unified LLM Service
+    │   ├── doc2vec_service.py      # Resuming Parsing Logic
+    │   ├── routers/
+    │   │   ├── match.py            # Cosine + LLM routes
+    │   │   ├── interview.py        # Interview state engines
+    │   │   ├── evaluation.py       # Math composite compilers
+    │   │   ├── report.py           # PDF generation routes
+    │   │   └── hr.py               # Aggregations & Anti-cheat
     ├── requirements.txt
     └── .env
 ```
@@ -224,33 +171,30 @@ Career-Connect-AI/
 
 | Layer | Technology |
 |---|---|
-| **Frontend** | React 18, Vite, TypeScript, Tailwind CSS, Lucide Icons |
-| **Backend** | FastAPI, Uvicorn, Python 3.11+ |
-| **Database** | SQLite (dev) / PostgreSQL (prod) via SQLAlchemy |
-| **AI — Primary** | GPT-4.1 via [GitHub AI Inference](https://github.com/marketplace/models) |
-| **AI — Embeddings** | Doc2Vec (Gensim) |
-| **AI — Fallback** | TF-IDF cosine similarity |
-| **Auth** | JWT (python-jose) + bcrypt (passlib) |
-| **File Parsing** | PyPDF2, python-docx |
+| **Frontend UI** | React 18, Vite, TypeScript, Tailwind CSS, Recharts |
+| **Backend Core** | FastAPI, Uvicorn, Python 3.11+ |
+| **Database** | SQLite (Dev) / PostgreSQL (Prod) via SQLAlchemy |
+| **LLM Core** | GPT-4.1 / Gemini (Semantic matching + Interview scripting) |
+| **Embeddings** | Doc2Vec (Gensim) |
+| **Face & Speech AI**| DeepFace (Emotion), OpenCV/YOLO (YOLOv8 Object Detect) |
+| **Authentication**| JWT (python-jose) + bcrypt (passlib) |
+| **Report Engine** | PyPDF2, python-docx, ReportLab (PDF Synthesis) |
 
 ---
 
-## ⚡ Quick Start
+## ⚡ Quick Start & Deployment
 
 ### Prerequisites
-
 - Python 3.11+, Node.js 18+
-- A [GitHub PAT](https://github.com/settings/tokens) with model access
+- Active API Key via GitHub Models or Google Gemini LLM.
 
-### 1. Clone
-
+### 1. Repository
 ```bash
 git clone https://github.com/Shreyyy07/Career-Connect-AI---Major-Project1.git
 cd Career-Connect-AI---Major-Project1
 ```
 
 ### 2. Backend
-
 ```bash
 cd backend
 python -m venv venv
@@ -259,90 +203,41 @@ pip install -r requirements.txt
 ```
 
 Create `backend/.env`:
-
 ```env
 DATABASE_URL=sqlite+pysqlite:///./career_connect_ai.db
 JWT_SECRET=your-secret-key-here
 CORS_ORIGINS=http://localhost:5173
-GITHUB_TOKEN=github_pat_xxxxxxxxxxxx
-GITHUB_AI_ENDPOINT=https://models.github.ai/inference
-GITHUB_AI_MODEL=openai/gpt-4.1
 ```
 
+Run the Server:
 ```bash
 python -m uvicorn app.main:app --reload
-# API: http://localhost:8000
-# Swagger: http://localhost:8000/docs
+# Rest API: http://localhost:8000
+# Swagger : http://localhost:8000/docs
 ```
 
 ### 3. Frontend
-
 ```bash
 cd ..
 npm install
 npm run dev
-# App: http://localhost:5173
+# App Interface: http://localhost:5173
 ```
 
 ---
 
 ## 📡 Key API Endpoints
 
-| Method | Endpoint | Description |
+| Method | Endpoint | Internal Description |
 |---|---|---|
-| `POST` | `/api/v1/auth/register` | Register user |
-| `POST` | `/api/v1/auth/login` | Login and get JWT |
-| `POST` | `/api/v1/resume/upload` | Upload PDF or DOCX |
-| `POST` | `/api/v1/jd/upload` | Create JD (HR only) |
-| `POST` | `/api/v1/match` | Run hybrid AI match |
-| `GET` | `/api/v1/hr/matches` | Recruiter ranked view |
-| `GET` | `/api/v1/recommendations/{id}/resource-url` | GPT article URL |
-| `POST` | `/api/v1/recommendations/{id}/status` | Update learning status |
-| `POST` | `/api/v1/interview/start` | Start AI interview |
-| `POST` | `/api/v1/interview/answer` | Submit answer and get next question |
-| `POST` | `/api/v1/interview/end` | End session and trigger evaluation |
-| `GET` | `/api/v1/health` | Health check |
-
----
-
-## 🧠 AI Service Functions
-
-All in `backend/app/ai_service.py` with graceful offline fallbacks:
-
-| Function | Purpose | Fallback |
-|---|---|---|
-| `ai_semantic_score()` | Resume–JD match score 0 to 100 | TF-IDF cosine |
-| `ai_generate_question()` | Dynamic interview question from JD | Static question bank |
-| `ai_evaluate_answer()` | Score answer quality | 50.0 default |
-| `ai_skill_recommendations()` | Courses, descriptions, time estimates | Empty list |
-| `ai_find_resource_url()` | Best tutorial URL for a skill | Google search URL |
-
----
-
-## 🗃️ Database Schema
-
-```
-User ──────────┬───── Resume (embedding_csv)
-               ├───── JobDescription (embedding_csv, skills_csv)
-               ├───── InterviewSession ── Evaluation
-               ├───── Assessment
-               └───── SkillRecommendation ── SkillRecommendationEvent
-```
-
----
-
-## 🔒 Security
-
-- Bearer JWT required on all endpoints except `/auth/*`
-- Passwords hashed with bcrypt
-- Role-based access: `candidate` | `hr` | `admin`
-- CORS restricted to configured origins
-
----
-
-## 📄 License
-
-MIT — see [LICENSE](LICENSE) for details.
+| `POST` | `/api/v1/auth/register` | Initial candidate / hr creation & logic map |
+| `POST` | `/api/v1/resume/upload` | Extracts text and forces 100-dim Vector injection |
+| `POST` | `/api/v1/jd/upload` | Core JD insertion logic |
+| `POST` | `/api/v1/match` | Fires hybrid AI execution array |
+| `GET`  | `/api/v1/hr/analytics` | Mass aggregates entire DB rows for Dashboard arrays |
+| `POST` | `/api/v1/interview/start` | Establishes RAG context & pre-loads first target |
+| `PATCH`| `/api/v1/recommendations/status`| Progress state manipulation |
+| `GET`  | `/api/v1/report/download` | Initiates realtime PDF generation buffer |
 
 ---
 
