@@ -1,1 +1,0 @@
-﻿                        <RecCard key={r.recID || i} r={r} index={i} />

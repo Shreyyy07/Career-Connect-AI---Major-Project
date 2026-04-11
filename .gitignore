@@ -24,3 +24,38 @@ dist-ssr
 
 # Bolt (AI scaffold tool — not needed in repo)
 .bolt/
+
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+
+# Databases
+*.db
+*.sqlite3
+
+# ML Weights & Artifacts
+*.pt
+backend/app/artifacts/doc2vec.model*
+
+# Agent & Output directories
+.agents/
+.claude/
+scratch/
+backend/reports/*.pdf
+
+# Temp text scripts
+*.txt
+!requirements.txt
+!README.md
+!backend/README.md
+extract_docx.py
+read_docx.py
+patch.py
+fix_db.py
+tmp_mapper.py
+backend/regenerate.py
+backend/create_hr.py
+backend/create_test_hr.py
