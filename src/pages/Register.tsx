@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Brain, Mail, Lock, User, ArrowRight, Eye, EyeOff, CheckCircle2, XCircle } from "lucide-react";
+import { Brain, Mail, Lock, User, ArrowRight, Eye, EyeOff, CheckCircle2, XCircle, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -57,6 +57,7 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [companyName, setCompanyName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -91,7 +92,7 @@ export default function Register() {
     setLoading(true);
     setGlobalErr("");
     try {
-      await signUp(email, password, name, selectedRole, isHr ? companyName : undefined);
+      await signUp(email, password, name, selectedRole, isHr ? companyName : undefined, phoneNumber || undefined);
       navigate(`/verify-email?email=${encodeURIComponent(email)}`);
     } catch (e: any) {
       const msg = e.message || "";
@@ -241,6 +242,26 @@ export default function Register() {
               </div>
               {fieldErrors.email && <p className="text-xs text-destructive mt-1">{fieldErrors.email}</p>}
             </div>
+
+            {/* Phone Number (Candidates only) — optional, used for Voice AI call reminders */}
+            {!isHr && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}>
+                <label className="text-sm text-foreground font-medium mb-1.5 block">
+                  Phone Number <span className="text-muted-foreground font-normal">(Optional — for interview reminders)</span>
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    type="tel"
+                    placeholder="+91 98765 43210"
+                    className="pl-10 bg-secondary/50 border-border/60 focus:border-[#00e5ff] h-11"
+                  />
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">Include country code (e.g. +91). Used only for AI call reminders.</p>
+              </motion.div>
+            )}
 
             {/* Password */}
             <div>

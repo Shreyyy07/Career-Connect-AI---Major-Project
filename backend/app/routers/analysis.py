@@ -26,7 +26,7 @@ except ImportError:
 
 from ..db import get_db
 from ..deps import get_current_user
-from ..models import EmotionLog, SpeechFeatures, InterviewSession, User
+from ..models import EmotionLog, SpeechFeatures, InterviewSession, User, AntiCheatEvent
 
 logger = logging.getLogger(__name__)
 
@@ -212,6 +212,14 @@ class EmotionTimelineItem(BaseModel):
     emotions: dict[str, float]
 
 
+class AntiCheatEventRequest(BaseModel):
+    session_id: str
+    event_type: str      # e.g. "tab_switch", "multiple_persons", "face_absent"
+    severity: str = "WARNING"  # WARNING | CRITICAL | LOW
+    timestamp_sec: int = 0
+    details: dict | None = None
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Endpoints
 # ─────────────────────────────────────────────────────────────────────────────
@@ -292,7 +300,30 @@ def submit_emotion_frame(
         except Exception as exc:
             logger.warning(f"YOLO detection error: {exc}")
 
-    # Always persist (even fallback neutral entry keeps timeline populated)
+    # ── Build multi-person / face-absent events from browser face count ──────\_
+    faces_detected: int | None = getattr(payload, 'faces_detected', None)
+    if faces_detected is not None:
+        event_type = None
+        severity = "WARNING"
+        if faces_detected == 0:
+            event_type = "face_absent"
+            severity = "WARNING"
+        elif faces_detected >= 2:
+            event_type = "multiple_persons"
+            severity = "CRITICAL"
+            cheat_warning = f"🚨 Multiple people detected ({faces_detected} faces)! Only the candidate should be visible."
+
+        if event_type:
+            ace = AntiCheatEvent(
+                session_id=payload.session_id,
+                event_type=event_type,
+                severity=severity,
+                timestamp_sec=payload.timestamp_sec,
+                details_json="{}",
+            )
+            db.add(ace)
+
+    # Always persist emotion log
     log = EmotionLog(
         session_id=payload.session_id,
         timestamp_sec=payload.timestamp_sec,
@@ -343,3 +374,33 @@ def get_emotion_timeline(
         )
         for log in logs
     ]
+
+
+@router.post("/anticheat-event", status_code=201)
+def submit_anticheat_event(
+    payload: AntiCheatEventRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """
+    Receives discrete anti-cheat events from the browser (tab switch, etc.)
+    and persists them to AntiCheatEvent table so HR can view them.
+    """
+    session = (
+        db.query(InterviewSession)
+        .filter(InterviewSession.session_id == payload.session_id)
+        .one_or_none()
+    )
+    if not session or session.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Session not found or not yours")
+
+    ace = AntiCheatEvent(
+        session_id=payload.session_id,
+        event_type=payload.event_type,
+        severity=payload.severity,
+        timestamp_sec=payload.timestamp_sec,
+        details_json=json.dumps(payload.details or {}),
+    )
+    db.add(ace)
+    db.commit()
+    return {"ok": True, "event_type": payload.event_type}

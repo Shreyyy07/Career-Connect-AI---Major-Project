@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     smtp_email: str = ""
     smtp_password: str = ""
 
+    # --- n8n Voice Agent Integration ---
+    n8n_webhook_url: str = ""       # e.g. http://localhost:5678/webhook/care-connect-remind
+    vapi_api_key: str = ""          # Vapi.ai API key (optional — for direct calls)
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

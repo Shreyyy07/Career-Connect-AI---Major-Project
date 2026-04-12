@@ -79,10 +79,38 @@ export default function AIInterview() {
   const sessionIdRef = useRef(sessionID); // always fresh inside interval
   const elapsedRef = useRef(0);
   const faceApiReadyRef = useRef(false);
+  const tabSwitchRef = useRef(false); // prevents duplicate firing
 
   // Keep refs in sync
   useEffect(() => { sessionIdRef.current = sessionID; }, [sessionID]);
   useEffect(() => { elapsedRef.current = totalElapsed; }, [totalElapsed]);
+
+  // ── Tab-switch detection (Bug #3 fix) ────────────────────────────────────
+  useEffect(() => {
+    if (!started) return;
+    const handleVisibility = async () => {
+      if (document.hidden && !tabSwitchRef.current) {
+        tabSwitchRef.current = true;
+        setCheatWarning('⚠️ Tab switch detected! Please stay on this page.');
+        setTimeout(() => setCheatWarning(''), 4000);
+        try {
+          await apiFetch('/api/v1/analysis/anticheat-event', {
+            method: 'POST',
+            body: JSON.stringify({
+              session_id: sessionIdRef.current,
+              event_type: 'tab_switch',
+              severity: 'WARNING',
+              timestamp_sec: elapsedRef.current,
+            }),
+          });
+        } catch (_) { /* non-fatal */ }
+      } else if (!document.hidden) {
+        tabSwitchRef.current = false;
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [started]);
 
   // ── Load face-api.js models once on mount ─────────────────────────────────
   useEffect(() => {
@@ -138,21 +166,37 @@ export default function AIInterview() {
 
       let dominant = 'neutral';
       let emotions: Record<string, number> = { neutral: 1.0 };
+      let facesDetected = 0;
 
       // ── face-api.js (browser-side, instant) ─────────────────────────────
       if (faceApiReadyRef.current) {
         try {
-          const detection = await faceapi
-            .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.3 }))
+          // Use detectAllFaces at a HIGHER threshold to avoid false positives
+          // from complex backgrounds, phones, posters, etc.
+          const detections = await faceapi
+            .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.55 }))
             .withFaceExpressions();
 
-          if (detection?.expressions) {
-            const raw = detection.expressions as unknown as Record<string, number>;
-            const total = Object.values(raw).reduce((s, v) => s + v, 0) || 1;
-            emotions = Object.fromEntries(
-              Object.entries(raw).map(([k, v]) => [k, parseFloat((v / total).toFixed(4))])
-            );
-            dominant = Object.entries(emotions).sort(([, a], [, b]) => b - a)[0][0];
+          // Filter out tiny false-positive blobs (must be at least 60×60 px)
+          const validDetections = detections.filter(
+            (d) => d.detection.box.width > 60 && d.detection.box.height > 60
+          );
+
+          facesDetected = validDetections.length;
+
+          if (validDetections.length >= 1) {
+            // Use the largest (most prominent) face for emotion
+            const primary = validDetections.sort(
+              (a, b) => b.detection.box.area - a.detection.box.area
+            )[0];
+            if (primary?.expressions) {
+              const raw = primary.expressions as unknown as Record<string, number>;
+              const total = Object.values(raw).reduce((s, v) => s + v, 0) || 1;
+              emotions = Object.fromEntries(
+                Object.entries(raw).map(([k, v]) => [k, parseFloat((v / total).toFixed(4))])
+              );
+              dominant = Object.entries(emotions).sort(([, a], [, b]) => b - a)[0][0];
+            }
           }
         } catch (_) { /* non-fatal */ }
       }
@@ -161,11 +205,11 @@ export default function AIInterview() {
       const display = EMOTION_DISPLAY[dominant] ?? { label: dominant, color: 'text-foreground', emoji: '😐' };
       setLiveEmotion({ dominant, ...display });
 
-      // ── Priority 3: YOLOv8 Anti-Cheat (Send frame to backend) ─────────
+      // ── Build frame base64 for backend ───────────────────────────────────
       let frameB64 = '';
       try {
         const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth / 2; // scale down to save bandwidth
+        canvas.width = video.videoWidth / 2;
         canvas.height = video.videoHeight / 2;
         const ctx = canvas.getContext('2d');
         if (ctx) {
@@ -176,7 +220,7 @@ export default function AIInterview() {
         console.warn("Failed to grab base64 frame", e);
       }
 
-      // Persist to backend (send precomputed scores and frame)
+      // ── Persist to backend ────────────────────────────────────────────────
       try {
         const res = await apiFetch<any>('/api/v1/analysis/emotion-frame', {
           method: 'POST',
@@ -185,13 +229,14 @@ export default function AIInterview() {
             frame_b64: frameB64,
             timestamp_sec: elapsedRef.current,
             precomputed_emotions: emotions,
+            // Pass face count so backend can log multi-person events
+            faces_detected: facesDetected,
           }),
         });
         
         // Handle Anti-Cheat YOLO Response
         if (res?.cheat_warning) {
           setCheatWarning(res.cheat_warning);
-          // clear it after 4 seconds
           setTimeout(() => setCheatWarning(""), 4000);
         }
       } catch (_) { /* Non-fatal */ }

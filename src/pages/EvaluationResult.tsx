@@ -28,6 +28,14 @@ interface EvalData {
   insightsJson?: string;
 }
 
+// ── Utility function ────────────────────────────────────────────────────────
+const tierFor = (score: number) => {
+  if (score >= 85) return { color: '#10b981', label: 'EXCELLENT', glow: 'bg-emerald-500/20' };
+  if (score >= 70) return { color: '#00e5ff', label: 'GOOD', glow: 'bg-cyan-500/20' };
+  if (score >= 50) return { color: '#f59e0b', label: 'AVERAGE', glow: 'bg-amber-500/20' };
+  return { color: '#f43f5e', label: 'NEEDS WORK', glow: 'bg-rose-500/20' };
+};
+
 // ── Main component ───────────────────────────────────────────────────────────
 export const EvaluationResult = () => {
   const { user } = useAuth();

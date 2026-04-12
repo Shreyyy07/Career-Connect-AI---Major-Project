@@ -18,6 +18,7 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=8, max_length=128)
     role: UserRole
     company_name: Optional[str] = Field(default="", max_length=200)  # required for HR role
+    phone_number: Optional[str] = Field(default=None, max_length=20)  # optional for Voice AI callbacks
 
 
 class AuthResponse(BaseModel):

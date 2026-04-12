@@ -13,7 +13,7 @@ interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<string>;
-  signUp: (email: string, password: string, fullName: string, role: 'candidate' | 'hr', companyName?: string) => Promise<string>;
+  signUp: (email: string, password: string, fullName: string, role: 'candidate' | 'hr', companyName?: string, phoneNumber?: string) => Promise<string>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ message: string }>;
   confirmResetPassword: (email: string, otp: string, newPassword: string) => Promise<void>;
@@ -85,10 +85,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return role;
   };
 
-  const signUp = async (email: string, password: string, fullName: string, role: 'candidate' | 'hr', companyName?: string) => {
+  const signUp = async (email: string, password: string, fullName: string, role: 'candidate' | 'hr', companyName?: string, phoneNumber?: string) => {
     await apiFetch<{ token: string; userID: number }>('/api/v1/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name: fullName, email, password, role, company_name: companyName }),
+      body: JSON.stringify({ name: fullName, email, password, role, company_name: companyName, phone_number: phoneNumber }),
     });
     return role;
   };

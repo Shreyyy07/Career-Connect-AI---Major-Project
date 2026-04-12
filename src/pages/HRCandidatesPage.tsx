@@ -6,7 +6,7 @@ import TopbarProfile from "@/components/TopbarProfile";
 import ScoreGauge from "@/components/ScoreGauge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, Briefcase, Eye, User, ShieldAlert, Award, FileText, FileDown, Activity, Mic, Brain, CheckCircle, RefreshCw } from "lucide-react";
+import { Search, Filter, Briefcase, Eye, User, ShieldAlert, Award, FileText, FileDown, Activity, Mic, Brain, CheckCircle, RefreshCw, Phone } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -74,6 +74,12 @@ export default function HRCandidatesPage() {
       queryClient.invalidateQueries({ queryKey: ["hr-candidate-detail", selectedEvalID] });
       toast.success("Notes saved");
     },
+  });
+
+  const reminderMutation = useMutation({
+    mutationFn: (evalID: number) => apiFetch(`/api/v1/hr/candidates/${evalID}/remind`, { method: "POST" }),
+    onSuccess: () => toast.success("📞 Voice reminder triggered via n8n!"),
+    onError: (e: any) => toast.error(e?.message || "Reminder failed. Check phone number or n8n config."),
   });
 
   const sortedCandidates = candidates ? [...candidates].sort((a, b) => {
@@ -192,11 +198,21 @@ export default function HRCandidatesPage() {
                           {cand.hrStatus.charAt(0).toUpperCase() + cand.hrStatus.slice(1)}
                         </span>
                     </div>
-                    <div className="text-right">
-                      <Button variant="outline" size="sm" onClick={() => setSelectedEvalID(cand.evalID)}>
-                        View Details
-                      </Button>
-                    </div>
+                     <div className="text-right flex items-center justify-end gap-2">
+                       <Button
+                         variant="outline" size="sm"
+                         onClick={() => reminderMutation.mutate(cand.evalID)}
+                         disabled={reminderMutation.isPending}
+                         className="border-[#00e5ff]/30 text-[#00e5ff] hover:bg-[#00e5ff]/10 hidden sm:flex items-center gap-1.5"
+                         title="Trigger n8n voice call reminder"
+                       >
+                         <Phone className="w-3.5 h-3.5" />
+                         <span className="text-xs">Call</span>
+                       </Button>
+                       <Button variant="outline" size="sm" onClick={() => setSelectedEvalID(cand.evalID)}>
+                         View Details
+                       </Button>
+                     </div>
                   </div>
                 ))
               )}

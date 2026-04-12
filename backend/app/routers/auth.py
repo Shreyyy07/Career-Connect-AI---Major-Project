@@ -45,7 +45,8 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
         company_name=payload.company_name.strip() if payload.company_name else "",
         role=payload.role.value,
         password_hash=hash_password(payload.password),
-        is_verified=False
+        is_verified=False,
+        phone_number=payload.phone_number.strip() if payload.phone_number else None,
     )
     db.add(user)
     db.commit()

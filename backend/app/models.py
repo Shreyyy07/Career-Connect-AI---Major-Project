@@ -25,6 +25,7 @@ class User(Base):
     role: Mapped[UserRole] = mapped_column(SAEnum(UserRole), index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    phone_number: Mapped[str | None] = mapped_column(String(20), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
 
     resumes: Mapped[list["Resume"]] = relationship(back_populates="user")

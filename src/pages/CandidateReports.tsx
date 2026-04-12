@@ -150,14 +150,7 @@ export default function CandidateReports() {
                     <div className="w-px h-12 bg-border/60 hidden md:block"></div>
                     
                     <div className="flex items-center gap-2">
-                      {r.evalID && (
-                        <Link 
-                          to={`/candidate/evaluation/${r.evalID}`}
-                          className="flex items-center gap-2 px-4 py-2.5 bg-secondary hover:bg-secondary/80 text-foreground text-sm font-semibold rounded-lg transition-colors border border-border"
-                        >
-                          <Eye className="w-4 h-4" /> View full dashboard
-                        </Link>
-                      )}
+                      {/* Button Removed */}
                       {r.reportURL && (
                         <button 
                           onClick={() => downloadAuthorizedFile(r.reportURL!, `Report_${r.sessionID.slice(0,8)}.pdf`)}

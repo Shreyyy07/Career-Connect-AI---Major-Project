@@ -56,25 +56,7 @@ const recentInterviews = [
   { role: "Node.js Backend Dev", date: "Feb 28, 2025", score: 72, status: "completed", semantic: 75, jd: 70, emotion: 68, comm: 66 },
 ];
 
-const skillGaps = [
-  { skill: "System Design", priority: "high", progress: 30, resources: 4, estimatedHours: 12 },
-  { skill: "Docker & K8s", priority: "high", progress: 15, resources: 6, estimatedHours: 20 },
-  { skill: "GraphQL", priority: "medium", progress: 60, resources: 3, estimatedHours: 5 },
-  { skill: "AWS Services", priority: "medium", progress: 45, resources: 5, estimatedHours: 15 },
-  { skill: "TypeScript Advanced", priority: "low", progress: 80, resources: 2, estimatedHours: 3 },
-];
-
-const upcomingInterviews = [
-  { role: "Lead React Engineer", company: "TechCorp", date: "Mar 25, 2025", time: "10:00 AM", type: "AI Interview" },
-  { role: "Senior SDE", company: "InnovateLabs", date: "Mar 28, 2025", time: "2:30 PM", type: "AI Interview" },
-  { role: "Frontend Architect", company: "DataFlow", date: "Apr 2, 2025", time: "11:00 AM", type: "AI Interview" },
-];
-
-const trainingRecommendations = [
-  { title: "System Design Fundamentals", provider: "Educative", duration: "8h", match: 95 },
-  { title: "Docker Mastery", provider: "Udemy", duration: "12h", match: 90 },
-  { title: "AWS Solutions Architect", provider: "A Cloud Guru", duration: "20h", match: 85 },
-];
+// Static arrays removed — skill gaps & training are now driven by live API data (recProgress state)
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -445,36 +427,17 @@ export default function CandidateDashboard() {
                 <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Scheduled</span>
               </div>
 
-              <div className="space-y-3">
-                {upcomingInterviews.map((interview, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 + i * 0.1 }}
-                    className="flex items-center justify-between p-4 rounded-lg bg-secondary/30 border border-border/30 hover:border-[#00e5ff]/20 transition-all group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center">
-                        <Calendar className="w-5 h-5 text-accent" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{interview.role}</p>
-                        <p className="text-xs text-muted-foreground">{interview.date} • {interview.time}</p>
-                      </div>
-                    </div>
-                    <Link to="/candidate/interview">
-                      <Button size="sm" variant="ghost" className="h-8 text-[#00e5ff] text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Play className="w-3 h-3 mr-1" /> Join
-                      </Button>
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-
-              <div className="mt-4 p-3 rounded-lg bg-[#00e5ff]/5 border border-[#00e5ff]/10 text-center">
-                <p className="text-xs text-muted-foreground">Next interview in</p>
-                <p className="font-display font-bold text-[#00e5ff] text-lg">2d 14h 30m</p>
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="w-14 h-14 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-3">
+                  <Calendar className="w-7 h-7 text-accent" />
+                </div>
+                <p className="text-sm font-medium text-foreground mb-1">No Upcoming Interviews</p>
+                <p className="text-xs text-muted-foreground mb-4">Start an AI interview to practice and build your score</p>
+                <Link to="/candidate/interview">
+                  <Button size="sm" className="bg-[#00e5ff]/10 text-[#00e5ff] border border-[#00e5ff]/20 hover:bg-[#00e5ff]/20 text-xs">
+                    <Play className="w-3 h-3 mr-1" /> Start Interview
+                  </Button>
+                </Link>
               </div>
             </motion.div>
           </div>
@@ -521,8 +484,8 @@ export default function CandidateDashboard() {
                     </div>
                   </div>
                   <div className="mt-3 flex gap-2">
-                    <Link to={`/candidate/evaluation/${interview.evalID}`}>
-                      <Button variant="outline" size="sm" className="h-7 text-xs">View Report</Button>
+                    <Link to={`/candidate/reports`}>
+                      <Button variant="outline" size="sm" className="h-7 text-xs">View All</Button>
                     </Link>
                   </div>
                 </motion.div>
@@ -558,41 +521,53 @@ export default function CandidateDashboard() {
               </div>
 
               <div className="space-y-3">
-                {skillGaps.map((gap, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 + i * 0.08 }}
-                    className="p-4 rounded-lg bg-secondary/20 border border-border/30"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <AlertCircle className={`w-4 h-4 ${gap.priority === "high" ? "text-destructive" : gap.priority === "medium" ? "text-warning" : "text-success"}`} />
-                        <p className="text-sm font-medium text-foreground">{gap.skill}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-muted-foreground">{gap.resources} resources • ~{gap.estimatedHours}h</span>
-                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
-                          gap.priority === "high" ? "bg-destructive/10 text-destructive" : gap.priority === "medium" ? "bg-warning/10 text-warning" : "bg-success/10 text-success"
-                        }`}>
-                          {gap.priority}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${gap.progress}%` }}
-                          transition={{ duration: 1, delay: 0.5 + i * 0.1 }}
-                          className="h-full rounded-full bg-[#00e5ff]"
-                        />
-                      </div>
-                      <span className="text-xs font-display font-bold text-foreground w-10 text-right">{gap.progress}%</span>
-                    </div>
-                  </motion.div>
-                ))}
+                {recProgress.total === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <AlertCircle className="w-8 h-8 text-muted-foreground mb-3 opacity-40" />
+                    <p className="text-sm text-muted-foreground">No skill gap data yet.</p>
+                    <Link to="/candidate/resume" className="text-xs text-[#00e5ff] mt-2 hover:underline">Run a Resume Match to generate your skill plan →</Link>
+                  </div>
+                ) : (
+                  recProgress.skills.map((gap, i) => {
+                    const status = gap.status || 'pending';
+                    const progress = status === 'completed' ? 100 : status === 'in_progress' ? 50 : 10;
+                    const barColor = status === 'completed' ? 'bg-emerald-500' : status === 'in_progress' ? 'bg-amber-400' : 'bg-[#00e5ff]';
+                    return (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.4 + i * 0.08 }}
+                        className="p-4 rounded-lg bg-secondary/20 border border-border/30"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <AlertCircle className={`w-4 h-4 ${i < 2 ? 'text-destructive' : i < 4 ? 'text-warning' : 'text-success'}`} />
+                            <p className="text-sm font-medium text-foreground">{gap.skill}</p>
+                          </div>
+                          <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
+                            status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' :
+                            status === 'in_progress' ? 'bg-amber-400/10 text-amber-400' :
+                            'bg-muted text-muted-foreground'
+                          }`}>
+                            {status === 'in_progress' ? 'In Progress' : status === 'completed' ? 'Done ✓' : 'Pending'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${progress}%` }}
+                              transition={{ duration: 1, delay: 0.5 + i * 0.1 }}
+                              className={`h-full rounded-full ${barColor}`}
+                            />
+                          </div>
+                          <span className="text-xs font-display font-bold text-foreground w-10 text-right">{progress}%</span>
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                )}
               </div>
             </motion.div>
 
@@ -609,25 +584,37 @@ export default function CandidateDashboard() {
               </div>
 
               <div className="space-y-3">
-                {trainingRecommendations.map((rec, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.45 + i * 0.1 }}
-                    className="p-3 rounded-lg bg-secondary/20 border border-border/30 hover:border-[#00e5ff]/20 transition-all cursor-pointer group"
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-sm font-medium text-foreground">{rec.title}</p>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-[#00e5ff] transition-colors" />
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>{rec.provider}</span>
-                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{rec.duration}</span>
-                      <span className="text-[#00e5ff] font-medium">{rec.match}% match</span>
-                    </div>
-                  </motion.div>
-                ))}
+                {recProgress.total === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-6 text-center">
+                    <BookOpen className="w-7 h-7 text-muted-foreground mb-2 opacity-40" />
+                    <p className="text-xs text-muted-foreground">Complete a resume match to<br/>unlock course recommendations.</p>
+                  </div>
+                ) : (
+                  recProgress.skills
+                    .filter((s) => s.status !== 'completed')
+                    .slice(0, 3)
+                    .map((rec, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.45 + i * 0.1 }}
+                        className="p-3 rounded-lg bg-secondary/20 border border-border/30 hover:border-[#00e5ff]/20 transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-sm font-medium text-foreground">{rec.skill}</p>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-[#00e5ff] transition-colors" />
+                        </div>
+                        <div className="text-xs">
+                          <span className={`font-medium ${
+                            rec.status === 'in_progress' ? 'text-amber-400' : 'text-[#00e5ff]'
+                          }`}>
+                            {rec.status === 'in_progress' ? 'In Progress' : 'Start Learning'}
+                          </span>
+                        </div>
+                      </motion.div>
+                    ))
+                )}
               </div>
 
               <Button variant="ghost" className="w-full mt-3 text-[#00e5ff] text-xs border border-[#00e5ff]/10 hover:bg-[#00e5ff]/10">

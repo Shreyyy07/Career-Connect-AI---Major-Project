@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
 from pathlib import Path
 from sqlalchemy.orm import Session
+import httpx
 
 from ..db import get_db
 from ..deps import get_current_user
@@ -271,7 +272,71 @@ def get_hr_candidate_detail(
     )
 
 
-# ─── PATCH /api/v1/hr/candidate-status ────────────────────────────────────────
+# ─── POST /api/v1/hr/candidates/{eval_id}/remind ─────────────────────────────
+
+@router.post("/candidates/{eval_id}/remind")
+def trigger_voice_reminder(
+    eval_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """
+    Fires an HTTP POST to the configured n8n Webhook URL, passing the candidate's
+    name, phone number, and job title. n8n then routes this to the Voice AI agent
+    (e.g. Vapi/Bland) to make a real phone call reminder.
+    """
+    from ..core.config import settings
+    _require_hr(user)
+
+    ev = db.query(Evaluation).filter(Evaluation.id == eval_id).one_or_none()
+    if not ev:
+        raise HTTPException(status_code=404, detail="Evaluation not found")
+
+    session = db.query(InterviewSession).filter(InterviewSession.id == ev.interview_session_id).one_or_none()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    jd = db.query(JobDescription).filter(JobDescription.id == session.job_id).one_or_none()
+    if not jd or (jd.hr_user_id != user.id and user.role != UserRole.admin):
+        raise HTTPException(status_code=403, detail="Not authorised")
+
+    candidate = db.query(User).filter(User.id == session.user_id).one_or_none()
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Candidate user not found")
+
+    if not candidate.phone_number:
+        raise HTTPException(
+            status_code=422,
+            detail="This candidate has not provided a phone number. They cannot be called."
+        )
+
+    if not settings.n8n_webhook_url:
+        raise HTTPException(
+            status_code=503,
+            detail="n8n webhook URL is not configured. Set N8N_WEBHOOK_URL in backend/.env."
+        )
+
+    payload = {
+        "candidateName": candidate.full_name or "Candidate",
+        "phoneNumber": candidate.phone_number,
+        "jobTitle": jd.title,
+        "evalID": eval_id,
+        "hrName": user.full_name or "Your Recruiter",
+        "companyName": user.company_name or "Career Connect AI",
+    }
+
+    try:
+        resp = httpx.post(settings.n8n_webhook_url, json=payload, timeout=10.0)
+        resp.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(status_code=502, detail=f"n8n returned error: {exc.response.status_code}")
+    except httpx.RequestError:
+        raise HTTPException(status_code=503, detail="Could not reach n8n. Is it running?")
+
+    return {"ok": True, "message": f"Voice reminder triggered for {candidate.full_name}."}
+
+
+# ─── PATCH /api/v1/hr/candidate-status ───────────────────────────────────────
 
 @router.patch("/candidate-status")
 def set_candidate_status(

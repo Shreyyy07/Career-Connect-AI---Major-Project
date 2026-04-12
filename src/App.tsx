@@ -24,6 +24,10 @@ import CandidateProfile from "./pages/CandidateProfile.tsx";
 import CandidateReports from "./pages/CandidateReports.tsx";
 import CandidateSkills from "./pages/CandidateSkills.tsx";
 import { VanAgent } from "./components/VoiceAgent/VanAgent";
+import AboutAuthor from "./pages/AboutAuthor.tsx";
+import GuideCandidate from "./pages/GuideCandidate.tsx";
+import GuideRecruiter from "./pages/GuideRecruiter.tsx";
+import FAQs from "./pages/FAQs.tsx";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +40,10 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/about" element={<AboutAuthor />} />
+          <Route path="/guide-candidate" element={<GuideCandidate />} />
+          <Route path="/guide-recruiter" element={<GuideRecruiter />} />
+          <Route path="/faqs" element={<FAQs />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -51,7 +59,6 @@ const App = () => (
           <Route path="/hr/dashboard" element={<HRDashboard />} />
           <Route path="/hr/jobs" element={<HRJobsPage />} />
           <Route path="/hr/candidates" element={<HRCandidatesPage />} />
-          <Route path="/hr/interviews" element={<HRCandidatesPage />} />
           <Route path="/hr/anticheat" element={<HRAntiCheatPage />} />
           <Route path="/hr/profile" element={<HRProfile />} />
           <Route path="*" element={<NotFound />} />

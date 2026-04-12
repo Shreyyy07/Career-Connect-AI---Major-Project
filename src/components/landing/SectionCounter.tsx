@@ -10,7 +10,7 @@ export default function SectionCounter({ total }: SectionCounterProps) {
 
   return (
     <motion.div className="fixed left-6 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col items-center gap-3">
-      <motion.span className="text-xs font-display text-[#00e5ff] font-bold tracking-widest writing-vertical">
+      <motion.span className="text-xs font-display text-primary font-bold tracking-widest writing-vertical">
         <motion.span>
           {Array.from({ length: total }, (_, i) => (
             <motion.span
@@ -31,7 +31,7 @@ export default function SectionCounter({ total }: SectionCounterProps) {
       </motion.span>
       <div className="w-px h-16 bg-border/40 relative overflow-hidden">
         <motion.div
-          className="absolute inset-x-0 top-0 bg-[#00e5ff]"
+          className="absolute inset-x-0 top-0 bg-primary"
           style={{ height: useTransform(scrollYProgress, [0, 1], ["0%", "100%"]) }}
         />
       </div>

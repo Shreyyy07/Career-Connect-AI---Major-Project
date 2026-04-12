@@ -23,7 +23,6 @@ const hrLinks = [
   { href: "/hr/dashboard",   icon: LayoutDashboard, label: "Dashboard" },
   { href: "/hr/jobs",        icon: Briefcase,        label: "Job Descriptions" },
   { href: "/hr/candidates",  icon: Users,            label: "Candidates" },
-  { href: "/hr/interviews",  icon: Mic,              label: "Interviews" },
   { href: "/hr/anticheat",   icon: Shield,           label: "Anti-Cheat" },
 ];
 
@@ -32,7 +31,7 @@ export default function DashboardSidebar({ role }: SidebarProps) {
   const navigate  = useNavigate();
   const { signOut } = useAuth();
   const links     = role === "candidate" ? candidateLinks : hrLinks;
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   const handleLogout = async () => {
     await signOut();
@@ -40,20 +39,15 @@ export default function DashboardSidebar({ role }: SidebarProps) {
   };
 
   return (
-    /* sticky full-height sidebar — does NOT scroll with the page */
+    /* sticky full-height sidebar — does NOT scroll with the page, expands on hover */
     <aside
+      onMouseEnter={() => setCollapsed(false)}
+      onMouseLeave={() => setCollapsed(true)}
       className={cn(
-        "sticky top-0 h-screen bg-card/50 border-r border-border/50 flex flex-col transition-all duration-300 ease-in-out overflow-hidden",
+        "sticky top-0 h-screen bg-card/50 border-r border-border/50 flex flex-col transition-all duration-300 ease-in-out overflow-hidden z-40",
         collapsed ? "w-[68px]" : "w-64"
       )}
     >
-      {/* Collapse toggle */}
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3.5 top-6 z-20 w-7 h-7 rounded-full bg-card border border-border/60 flex items-center justify-center text-muted-foreground hover:text-[#00e5ff] hover:border-[#00e5ff]/40 transition-all shadow-md"
-      >
-        {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
-      </button>
 
       {/* Logo — flex-shrink-0 so it never compresses */}
       <div className={cn("flex-shrink-0 border-b border-border/50 flex items-center", collapsed ? "p-4 justify-center" : "p-5")}>

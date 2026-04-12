@@ -144,13 +144,17 @@ const RecCard = ({ r, index, onStatusChange }: { r: any, index: number, onStatus
 export default function CandidateSkills() {
   const { user } = useAuth();
   const location = useLocation();
+
+  // Scope the localStorage key to the logged-in user's ID
+  // This prevents stale data from a previous user session bleeding in
+  const storageKey = `matchResult_${user?.id ?? 'guest'}`;
+
   const [matchResult, setMatchResult] = useState(() => {
     if (location.state?.matchResult) {
-      localStorage.setItem('latestMatchResult', JSON.stringify(location.state.matchResult));
       return location.state.matchResult;
     }
     try {
-      const saved = localStorage.getItem('latestMatchResult');
+      const saved = localStorage.getItem(storageKey);
       return saved ? JSON.parse(saved) : null;
     } catch { return null; }
   });
@@ -158,9 +162,18 @@ export default function CandidateSkills() {
   useEffect(() => {
     if (location.state?.matchResult) {
       setMatchResult(location.state.matchResult);
-      localStorage.setItem('latestMatchResult', JSON.stringify(location.state.matchResult));
+      localStorage.setItem(storageKey, JSON.stringify(location.state.matchResult));
     }
-  }, [location.state]);
+  }, [location.state, storageKey]);
+
+  // When user ID is available, sync state from user-scoped storage
+  useEffect(() => {
+    if (!user?.id || location.state?.matchResult) return;
+    try {
+      const saved = localStorage.getItem(`matchResult_${user.id}`);
+      if (saved) setMatchResult(JSON.parse(saved));
+    } catch { /* non-fatal */ }
+  }, [user?.id]);
 
   if (!matchResult) {
     return (
