@@ -1,10 +1,11 @@
 import secrets
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
+from pathlib import Path
 
-from ..db import get_db
+from ..db import get_db, SessionLocal
 from ..deps import get_current_user
 from ..models import InterviewSession, InterviewStatus, InterviewType, JobDescription, Resume, User
 from ..schemas import (
@@ -132,8 +133,41 @@ def answer(payload: InterviewAnswerRequest, db: Session = Depends(get_db), user:
     return InterviewAnswerResponse(nextQuestion=next_q)
 
 
+async def handle_post_evaluation(user_id: int, email: str, name: str, job_title: str, eval_id: int, hr_user_id: int | None, job_id: int | None):
+    from ..core.email import send_report_email
+    from ..routers.evaluation import REPORTS_DIR
+    
+    report_path = REPORTS_DIR / f"{eval_id}.pdf"
+    
+    # Send email to candidate
+    await send_report_email(email, name, job_title, report_path)
+    
+    with SessionLocal() as db:
+        from ..models import Notification
+        # 1. Notify the candidate that their report is ready
+        notif_candidate = Notification(
+            user_id=user_id,
+            title="Report Generated ✅",
+            message=f"Your AI interview report for '{job_title}' is ready. We have also emailed you a copy.",
+            type="report_ready",
+        )
+        db.add(notif_candidate)
+
+        # 2. Notify the HR that a candidate completed an interview for their JD
+        if hr_user_id:
+            notif_hr = Notification(
+                user_id=hr_user_id,
+                title="New Interview Completed 🎙️",
+                message=f"{name} ({email}) has completed an AI interview for the '{job_title}' role. View their results in the Candidates section.",
+                type="interview_completed",
+            )
+            db.add(notif_hr)
+
+        db.commit()
+
+
 @router.post("/end", response_model=InterviewEndResponse, status_code=202)
-def end(payload: InterviewEndRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def end(payload: InterviewEndRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     s = db.query(InterviewSession).filter(InterviewSession.session_id == payload.sessionID).one_or_none()
     if not s:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -147,4 +181,26 @@ def end(payload: InterviewEndRequest, db: Session = Depends(get_db), user: User 
     db.refresh(s)
 
     eval_id = create_evaluation_for_session(db=db, session=s)
+    
+    job_title, _ = _get_jd_text(db, s.job_id)
+    
+    # Find the HR who owns this JD
+    hr_user_id = None
+    if s.job_id:
+        jd = db.query(JobDescription).filter(JobDescription.id == s.job_id).one_or_none()
+        if jd:
+            hr_user_id = jd.hr_user_id
+
+    background_tasks.add_task(
+        handle_post_evaluation,
+        user_id=user.id,
+        email=user.email,
+        name=user.full_name or user.email,
+        job_title=job_title or "General Interview",
+        eval_id=eval_id,
+        hr_user_id=hr_user_id,
+        job_id=s.job_id,
+    )
+
     return InterviewEndResponse(evalID=eval_id, estimatedReady=10)
+

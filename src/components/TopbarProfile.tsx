@@ -112,7 +112,7 @@ export default function TopbarProfile() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.95 }}
               transition={{ duration: 0.15 }}
-              className="absolute right-0 top-14 z-50 w-80 bg-card/95 backdrop-blur-sm border border-border/60 shadow-2xl rounded-xl overflow-hidden"
+              className="absolute right-0 top-14 z-50 w-96 bg-card/95 backdrop-blur-sm border border-border/60 shadow-2xl rounded-xl overflow-hidden"
             >
               <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
                 <span className="text-sm font-semibold text-foreground">Notifications</span>
@@ -159,11 +159,11 @@ export default function TopbarProfile() {
                           >
                             {n.title}
                           </p>
-                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                          <p className="text-xs text-muted-foreground mt-0.5">
                             {n.message}
                           </p>
                           <p className="text-[10px] text-muted-foreground/50 mt-1">
-                            {new Date(n.created_at).toLocaleString()}
+                            {new Date(n.created_at + 'Z').toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
                           </p>
                         </div>
                         {!n.is_read && (

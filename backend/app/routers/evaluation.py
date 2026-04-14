@@ -393,8 +393,21 @@ def create_evaluation_for_session(db: Session, session: InterviewSession) -> int
 
     similarity = _compute_similarity_score(db, session)
 
-    # ── Real semantic score via Gemini-based stable hash (v1 placeholder) ──
-    semantic = round(stable_hash_score(session.transcript) * 0.9, 2)
+    # ── Real audio/speech score from transcript analysis ─────────────────────
+    transcript_text = session.transcript or ""
+    duration_sec = 0
+    if session.completed_at and session.created_at:
+        duration_sec = int((session.completed_at - session.created_at).total_seconds())
+
+    speech_data = analyse_transcript(transcript_text, duration_sec)
+    audio = speech_data["communication_score"]
+    word_count = speech_data["word_count"]
+
+    # ── Real semantic score via heuristic (v1) ─────────────────────────────
+    # Reward thorough answers (cap at 200 words = 80 points) + 20 points deterministic jitter
+    wc_score = min(word_count / 200.0, 1.0) * 80.0
+    jitter = (stable_hash_score(transcript_text) / 100.0) * 20.0
+    semantic = round(wc_score + jitter, 2)
 
     # ── Real emotion score from DeepFace logs ────────────────────────────────
     emotion_logs = (
@@ -405,14 +418,16 @@ def create_evaluation_for_session(db: Session, session: InterviewSession) -> int
     )
     emotion = compute_emotion_score_from_logs(emotion_logs)
 
-    # ── Real audio/speech score from transcript analysis ─────────────────────
-    transcript_text = session.transcript or ""
-    duration_sec = 0
-    if session.completed_at and session.created_at:
-        duration_sec = int((session.completed_at - session.created_at).total_seconds())
-
-    speech_data = analyse_transcript(transcript_text, duration_sec)
-    audio = speech_data["communication_score"]
+    # ── Completeness Penalty ──────────────────────────────────────────────────
+    # If the candidate barely spoke (skipped questions), drastically reduce all scores.
+    # At 0 words => penalty=0.1 (10% of scores)
+    # At 150 words (roughly answers to 2-3 questions) => penalty=1.0 (100% of scores)
+    penalty = max(0.1, min(1.0, word_count / 150.0))
+    semantic = round(semantic * penalty, 2)
+    audio = round(audio * penalty, 2)
+    emotion = round(emotion * penalty, 2)
+    # Also penalise similarity — resume match doesn't matter if you skipped the interview
+    similarity = round(similarity * penalty, 2)
 
     # Persist speech features (upsert — replace if session re-evaluated)
     existing_sf = (
@@ -421,7 +436,7 @@ def create_evaluation_for_session(db: Session, session: InterviewSession) -> int
         .one_or_none()
     )
     if existing_sf:
-        existing_sf.word_count = speech_data["word_count"]
+        existing_sf.word_count = word_count
         existing_sf.filler_count = speech_data["filler_count"]
         existing_sf.filler_percentage = speech_data["filler_percentage"]
         existing_sf.wpm = speech_data["wpm"]
@@ -430,7 +445,7 @@ def create_evaluation_for_session(db: Session, session: InterviewSession) -> int
     else:
         sf = SpeechFeatures(
             session_id=session.session_id,
-            word_count=speech_data["word_count"],
+            word_count=word_count,
             filler_count=speech_data["filler_count"],
             filler_percentage=speech_data["filler_percentage"],
             wpm=speech_data["wpm"],

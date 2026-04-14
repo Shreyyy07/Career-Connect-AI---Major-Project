@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle, Download, RefreshCw, BarChart2, ArrowLeft, BrainCircuit } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch, downloadAuthorizedFile } from '../lib/api';
 import {
@@ -34,6 +35,26 @@ const tierFor = (score: number) => {
   if (score >= 70) return { color: '#00e5ff', label: 'GOOD', glow: 'bg-cyan-500/20' };
   if (score >= 50) return { color: '#f59e0b', label: 'AVERAGE', glow: 'bg-amber-500/20' };
   return { color: '#f43f5e', label: 'NEEDS WORK', glow: 'bg-rose-500/20' };
+};
+
+const glass = "bg-background/40 backdrop-blur-md border border-border/50 shadow-xl";
+
+const CircleRing = ({ pct, size = 120, stroke = 9, color = '#6366f1', label, sublabel }: any) => {
+  const r = (size - stroke) / 2;
+  const c = Math.PI * r * 2;
+  const offset = c - (pct / 100) * c;
+  return (
+    <div style={{ width: size, height: size }} className="relative flex items-center justify-center">
+      <svg width={size} height={size} className="transform -rotate-90 origin-center">
+        <circle cx={size/2} cy={size/2} r={r} fill="none" strokeWidth={stroke} stroke="currentColor" className="text-muted/20" />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" strokeWidth={stroke} stroke={color} strokeDasharray={c} strokeDashoffset={offset} strokeLinecap="round" className="transition-all duration-1000 ease-out" />
+      </svg>
+      <div className="absolute flex flex-col items-center justify-center">
+        <span className="font-display font-bold text-foreground" style={{ fontSize: size * 0.25, lineHeight: 1 }}>{label}</span>
+        {sublabel && <span className="text-muted-foreground font-bold tracking-widest mt-1" style={{ fontSize: size * 0.08 }}>{sublabel}</span>}
+      </div>
+    </div>
+  );
 };
 
 // ── Main component ───────────────────────────────────────────────────────────
@@ -100,8 +121,8 @@ export const EvaluationResult = () => {
 
           {loading && (
              <div className="space-y-6">
-               <Shimmer className="w-full h-80 rounded-3xl" />
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><Shimmer className="h-64 rounded-3xl" /><Shimmer className="h-64 rounded-3xl" /></div>
+               <Skeleton className="w-full h-80 rounded-3xl" />
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><Skeleton className="h-64 rounded-3xl" /><Skeleton className="h-64 rounded-3xl" /></div>
              </div>
           )}
 

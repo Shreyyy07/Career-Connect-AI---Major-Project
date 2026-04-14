@@ -273,55 +273,72 @@ def submit_emotion_frame(
         except Exception as exc:
             logger.warning(f"Frame decode/analysis error: {exc}")
 
-    # ── Priority 3: Anti-Cheat YOLOv8 Detections ─────────────────────────────
+    # ── Priority 3: Anti-Cheat YOLOv8 Detections ──────────────────────────────
     cheat_warning = None
     if _yolo_model and payload.frame_b64:
         try:
-            import numpy as np
-            from PIL import Image
-            import base64
-            import io
-            
+            from PIL import Image as PILImage
             raw = base64.b64decode(payload.frame_b64)
-            img = Image.open(io.BytesIO(raw)).convert("RGB")
+            img = PILImage.open(io.BytesIO(raw)).convert("RGB")
             results = _yolo_model(img, verbose=False)
-            
-            # Count classes: 0 is person, 67 is cell phone
+
             if len(results) > 0:
                 boxes = results[0].boxes
                 classes = boxes.cls.cpu().numpy()
-                person_count = (classes == 0).sum()
-                cell_phone_count = (classes == 67).sum()
+                person_count = int((classes == 0).sum())   # COCO class 0 = person
+                cell_phone_count = int((classes == 67).sum())  # COCO class 67 = cell phone
 
-                if person_count > 1:
-                    cheat_warning = "Multiple faces detected in frame!"
-                elif cell_phone_count > 0:
-                    cheat_warning = "Cell phone detected in frame!"
+                if cell_phone_count > 0:
+                    cheat_warning = "⚠️ Mobile phone detected! Please put it away."
+                    ace = AntiCheatEvent(
+                        session_id=payload.session_id,
+                        candidate_id=session.user_id,
+                        event_type="mobile_phone",
+                        severity="CRITICAL",
+                        timestamp_sec=payload.timestamp_sec,
+                        details_json=json.dumps({"source": "yolo", "count": cell_phone_count}),
+                    )
+                    db.add(ace)
+                    logger.info("[AntiCheat] Phone detected by YOLO – session %s", payload.session_id)
+
+                elif person_count > 1:
+                    cheat_warning = f"🚨 Multiple people detected ({person_count})! Only the candidate should be visible."
+                    ace = AntiCheatEvent(
+                        session_id=payload.session_id,
+                        candidate_id=session.user_id,
+                        event_type="multiple_persons",
+                        severity="CRITICAL",
+                        timestamp_sec=payload.timestamp_sec,
+                        details_json=json.dumps({"source": "yolo", "person_count": person_count}),
+                    )
+                    db.add(ace)
+
         except Exception as exc:
-            logger.warning(f"YOLO detection error: {exc}")
+            logger.warning("YOLO detection error: %s", exc)
 
-    # ── Build multi-person / face-absent events from browser face count ──────\_
-    faces_detected: int | None = getattr(payload, 'faces_detected', None)
+    # ── Build face-absent / multi-person events from browser face-api count ────
+    faces_detected: int | None = getattr(payload, "faces_detected", None)
     if faces_detected is not None:
-        event_type = None
-        severity = "WARNING"
         if faces_detected == 0:
-            event_type = "face_absent"
-            severity = "WARNING"
-        elif faces_detected >= 2:
-            event_type = "multiple_persons"
-            severity = "CRITICAL"
-            cheat_warning = f"🚨 Multiple people detected ({faces_detected} faces)! Only the candidate should be visible."
-
-        if event_type:
-            ace = AntiCheatEvent(
+            db.add(AntiCheatEvent(
                 session_id=payload.session_id,
-                event_type=event_type,
-                severity=severity,
+                candidate_id=session.user_id,
+                event_type="face_absent",
+                severity="WARNING",
                 timestamp_sec=payload.timestamp_sec,
-                details_json="{}",
-            )
-            db.add(ace)
+                details_json=json.dumps({"source": "face_api"}),
+            ))
+        elif faces_detected >= 2 and not cheat_warning:
+            # Only add if YOLO didn't already catch it above
+            cheat_warning = f"🚨 Multiple people detected ({faces_detected} faces)!"
+            db.add(AntiCheatEvent(
+                session_id=payload.session_id,
+                candidate_id=session.user_id,
+                event_type="multiple_persons",
+                severity="CRITICAL",
+                timestamp_sec=payload.timestamp_sec,
+                details_json=json.dumps({"source": "face_api", "faces": faces_detected}),
+            ))
 
     # Always persist emotion log
     log = EmotionLog(
@@ -333,6 +350,7 @@ def submit_emotion_frame(
     db.add(log)
     db.commit()
     stored = True
+
 
     return EmotionFrameResponse(
         stored=stored, 
@@ -396,6 +414,7 @@ def submit_anticheat_event(
 
     ace = AntiCheatEvent(
         session_id=payload.session_id,
+        candidate_id=session.user_id,
         event_type=payload.event_type,
         severity=payload.severity,
         timestamp_sec=payload.timestamp_sec,

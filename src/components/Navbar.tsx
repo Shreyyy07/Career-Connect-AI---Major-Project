@@ -1,44 +1,51 @@
-import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, UserPlus, LogIn, LayoutDashboard, Sparkles, UserCircle } from "lucide-react";
+import { Home, LogIn, LayoutDashboard, Sparkles, UserCircle, UserPlus } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [hovered, setHovered] = useState(false);
-  
-  const dashboardLink = user?.role === "hr" || user?.role === "admin" 
-    ? "/hr/dashboard" 
-    : "/candidate/dashboard";
 
-  // Build the nav items dynamically based on auth
-  const navItems = user ? [
-    { href: "/", icon: Home, label: "Home" },
-    { href: "/#capabilities", icon: Sparkles, label: "Capabilities" },
-    { href: "/about", icon: UserCircle, label: "About" },
-    { href: dashboardLink, icon: LayoutDashboard, label: "Dashboard" }
-  ] : [
-    { href: "/", icon: Home, label: "Home" },
-    { href: "/#capabilities", icon: Sparkles, label: "Capabilities" },
-    { href: "/about", icon: UserCircle, label: "About" },
-    { href: "/login", icon: LogIn, label: "Login" },
-    { href: "/register", icon: UserPlus, label: "Register" },
-  ];
+  const dashboardLink =
+    user?.role === "hr" || user?.role === "admin"
+      ? "/hr/dashboard"
+      : "/candidate/dashboard";
 
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  const navItems = user
+    ? [
+        { href: "/", icon: Home, label: "Home" },
+        { href: "/#capabilities", icon: Sparkles, label: "Capabilities" },
+        { href: "/about", icon: UserCircle, label: "About" },
+        { href: dashboardLink, icon: LayoutDashboard, label: "Dashboard" },
+      ]
+    : [
+        { href: "/", icon: Home, label: "Home" },
+        { href: "/#capabilities", icon: Sparkles, label: "Capabilities" },
+        { href: "/about", icon: UserCircle, label: "About" },
+        { href: "/login", icon: LogIn, label: "Login" },
+        { href: "/register", icon: UserPlus, label: "Register" },
+      ];
+
+  const handleNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    href: string
+  ) => {
     if (href.startsWith("/#")) {
       e.preventDefault();
       const targetId = href.substring(2);
       if (location.pathname !== "/") {
         navigate("/");
         setTimeout(() => {
-          document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" });
+          document.getElementById(targetId)?.scrollIntoView({
+            behavior: "smooth",
+          });
         }, 100);
       } else {
-        document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" });
+        document.getElementById(targetId)?.scrollIntoView({
+          behavior: "smooth",
+        });
       }
     }
   };
@@ -48,14 +55,20 @@ export default function Navbar() {
       <motion.nav
         initial={{ y: 50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        className="flex items-center rounded-full bg-[#111116]/95 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.8)] overflow-hidden transition-colors hover:bg-[#181820] p-1.5 gap-2"
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="flex items-center rounded-full bg-[#111116]/95 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.8)] p-1.5 gap-2 group/nav"
       >
         {/* Logo / Brand Name */}
-        <Link to="/" className="flex items-center gap-2 pl-3 pr-2 py-2 shrink-0 group">
+        <Link
+          to="/"
+          className="flex items-center gap-2 pl-3 pr-2 py-2 shrink-0"
+        >
           <div className="w-8 h-8 rounded-lg bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center glow-primary shrink-0">
-            <img src="/logo.png" alt="Logo" className="w-5 h-5 object-contain rounded-sm" />
+            <img
+              src="/logo.png"
+              alt="Logo"
+              className="w-5 h-5 object-contain rounded-sm"
+            />
           </div>
           <span className="font-display font-bold text-sm sm:text-base text-foreground whitespace-nowrap hidden sm:block">
             Career<span className="text-[#00e5ff]">Connect</span> AI
@@ -63,43 +76,73 @@ export default function Navbar() {
         </Link>
 
         {/* Divider */}
-        <div className="w-px h-8 bg-white/10 shrink-0 mx-1"></div>
+        <div className="w-px h-8 bg-white/10 shrink-0 mx-1" />
 
         {/* Nav Items */}
-        <div className="flex items-center gap-1.5 pr-2">
+        <div className="flex items-center gap-1 pr-2">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.href || (item.href !== "/" && !item.href.startsWith("/#") && location.pathname.startsWith(item.href));
+            const isActive =
+              location.pathname === item.href ||
+              (item.href !== "/" &&
+                !item.href.startsWith("/#") &&
+                location.pathname.startsWith(item.href));
             const Icon = item.icon;
-            
+
             return (
               <Link
                 key={item.href}
                 to={item.href}
-                className={`relative flex items-center justify-center gap-2 rounded-full transition-all duration-300 py-2 overflow-hidden ${
-                  isActive 
-                    ? "bg-gradient-to-tr from-[#00e5ff] to-purple-600 text-white shadow-[0_0_20px_rgba(0,229,255,0.4)]" 
-                    : "text-zinc-300 hover:text-white hover:bg-white/10"
-                } ${hovered ? "px-4" : "px-0 w-11"}`}
                 onClick={(e) => handleNavClick(e, item.href)}
+                className={`
+                  relative flex items-center justify-center gap-0 rounded-full py-2 px-3
+                  transition-[background,color,box-shadow] duration-300 ease-in-out
+                  overflow-hidden
+                  ${
+                    isActive
+                      ? "bg-gradient-to-tr from-[#00e5ff] to-purple-600 text-white shadow-[0_0_18px_rgba(0,229,255,0.35)]"
+                      : "text-zinc-300 hover:text-white hover:bg-white/10"
+                  }
+                `}
               >
-                <Icon size={isActive ? 18 : 20} strokeWidth={isActive ? 2.5 : 2} className="shrink-0" />
-                <AnimatePresence>
-                  {hovered && (
-                    <motion.span
-                      initial={{ width: 0, opacity: 0 }}
-                      animate={{ width: "auto", opacity: 1 }}
-                      exit={{ width: 0, opacity: 0 }}
-                      className="text-sm font-semibold whitespace-nowrap overflow-hidden"
-                    >
-                      {item.label}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
+                <Icon
+                  size={isActive ? 18 : 19}
+                  strokeWidth={isActive ? 2.5 : 2}
+                  className="shrink-0 transition-all duration-300"
+                />
+                {/* Label — expands on parent group hover with smooth transition */}
+                <motion.span
+                  className="text-sm font-semibold whitespace-nowrap overflow-hidden leading-none"
+                  initial={false}
+                  variants={{
+                    collapsed: { width: 0, opacity: 0, marginLeft: 0 },
+                    expanded: { width: "auto", opacity: 1, marginLeft: 6 },
+                  }}
+                  animate="collapsed"
+                  whileHover="expanded"
+                  // Apply the animation to the whole group (nav) hover not just this item
+                  // We handle it via a CSS group class below
+                  transition={{
+                    width: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
+                    opacity: { duration: 0.25, delay: 0.05 },
+                    marginLeft: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
+                  }}
+                >
+                  {item.label}
+                </motion.span>
               </Link>
             );
           })}
         </div>
       </motion.nav>
+
+      {/* Global CSS for group-hover on the nav */}
+      <style>{`
+        .group\\/nav:hover a span {
+          width: auto !important;
+          opacity: 1 !important;
+          margin-left: 6px !important;
+        }
+      `}</style>
     </div>
   );
 }

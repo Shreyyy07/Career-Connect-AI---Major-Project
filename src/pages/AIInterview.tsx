@@ -10,6 +10,8 @@ import {
 import { Button } from "@/components/ui/button";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import * as faceapi from "face-api.js";
+import * as tf from "@tensorflow/tfjs";
+import * as cocoSsd from "@tensorflow-models/coco-ssd";
 
 const TOTAL_QUESTIONS = 5;
 const TIME_PER_Q = 120;
@@ -63,6 +65,7 @@ export default function AIInterview() {
   const [totalElapsed, setTotalElapsed] = useState(0);
   const [ending, setEnding] = useState(false);
   const [cheatWarning, setCheatWarning] = useState(""); // Anti-cheat warning from backend
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   // Emotion tracking state
   const [liveEmotion, setLiveEmotion] = useState<{
@@ -79,7 +82,9 @@ export default function AIInterview() {
   const sessionIdRef = useRef(sessionID); // always fresh inside interval
   const elapsedRef = useRef(0);
   const faceApiReadyRef = useRef(false);
+  const cocoSsdModelRef = useRef<cocoSsd.ObjectDetection | null>(null);
   const tabSwitchRef = useRef(false); // prevents duplicate firing
+  const lastPhoneEventRef = useRef(0); // timestamp of last phone-detected event (debounce)
 
   // Keep refs in sync
   useEffect(() => { sessionIdRef.current = sessionID; }, [sessionID]);
@@ -112,7 +117,7 @@ export default function AIInterview() {
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [started]);
 
-  // ── Load face-api.js models once on mount ─────────────────────────────────
+  // ── Load face-api.js and coco-ssd models once on mount ─────────────────────────────────
   useEffect(() => {
     const MODEL_URL = '/models';
     Promise.all([
@@ -121,6 +126,11 @@ export default function AIInterview() {
     ])
       .then(() => { faceApiReadyRef.current = true; console.log('[face-api.js] Models loaded'); })
       .catch((err) => console.warn('[face-api.js] Model load failed:', err));
+    
+    cocoSsd.load().then(model => {
+      cocoSsdModelRef.current = model;
+      console.log('[coco-ssd] Model loaded');
+    }).catch(err => console.warn('[coco-ssd] Model load failed:', err));
   }, []);
 
   useEffect(() => {
@@ -199,6 +209,40 @@ export default function AIInterview() {
             }
           }
         } catch (_) { /* non-fatal */ }
+      }
+
+      // ── coco-ssd Mobile Phone Detection ──────────────────────────────
+      if (cocoSsdModelRef.current) {
+        try {
+          const preds = await cocoSsdModelRef.current.detect(video);
+          // Lower threshold to 0.35 so a briefly-flashed phone is caught
+          const phone = preds.find(p => p.class === 'cell phone' && p.score > 0.35);
+          if (phone) {
+            setCheatWarning('⚠️ Mobile phone detected! Please put it away.');
+            setTimeout(() => setCheatWarning(''), 5000);
+
+            // Debounce: only send one event per 10 seconds to avoid DB spam
+            const now = Date.now();
+            if (now - lastPhoneEventRef.current > 10_000) {
+              lastPhoneEventRef.current = now;
+              apiFetch('/api/v1/analysis/anticheat-event', {
+                method: 'POST',
+                body: JSON.stringify({
+                  session_id: sessionIdRef.current,   // always fresh via ref
+                  event_type: 'mobile_phone',
+                  severity: 'CRITICAL',
+                  timestamp_sec: elapsedRef.current,
+                  details: { score: Math.round(phone.score * 100) / 100 }
+                })
+              }).then(res => {
+                if (!res) console.warn('[AntiCheat] Phone event API returned empty response');
+              }).catch(err => console.warn('[AntiCheat] Phone event failed:', err));
+            }
+          }
+        } catch (err) {
+          // coco-ssd can throw if model not ready — non-fatal
+          console.debug('[AntiCheat] coco-ssd error:', err);
+        }
       }
 
       // Update live badge immediately (no round-trip delay)
@@ -380,6 +424,7 @@ export default function AIInterview() {
   const submitAndEnd = async (finalTranscript: string) => {
     setEnding(true);
     stopFrameCapture(); // Stop capturing frames before ending
+    setIsGeneratingReport(true); // show calculating screen
     try {
       await apiFetch("/api/v1/interview/answer", {
         method: "POST",
@@ -392,6 +437,7 @@ export default function AIInterview() {
       navigate(`/candidate/evaluation/${res.evalID}`);
     } catch (e: any) {
       setEnding(false);
+      setIsGeneratingReport(false);
       alert(e.message || "Failed to finalize interview");
     }
   };
@@ -528,6 +574,24 @@ export default function AIInterview() {
   }
 
   // ── Active interview screen ──────────────────────────────────────────────
+  if (isGeneratingReport) {
+    return (
+      <div className="flex min-h-screen bg-background items-center justify-center">
+        <div className="text-center space-y-6">
+          <div className="w-24 h-24 mx-auto relative glow-primary rounded-full flex items-center justify-center bg-secondary/50 border border-border/50">
+            <Loader2 className="w-8 h-8 text-[#00e5ff] animate-spin" />
+          </div>
+          <div>
+            <h2 className="font-display font-bold text-2xl text-foreground mb-2">Calculating results...</h2>
+            <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+              Our AI is analyzing your semantic accuracy, emotional signals, and communication flow. Your report will be sent to your email shortly!
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-background">
       {/* Hidden canvas for frame capture — never shown */}
