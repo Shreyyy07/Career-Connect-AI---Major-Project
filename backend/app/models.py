@@ -251,3 +251,25 @@ class AntiCheatSummary(Base):
     integrity_score: Mapped[float] = mapped_column(Float, default=100.0)  # 0–100
     is_flagged: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+
+class NotificationType(str, Enum):
+    hr_decision = "hr_decision"
+    report_ready = "report_ready"
+    interview_completed = "interview_completed"
+
+
+class Notification(Base):
+    """
+    One row per notification for a user (candidate or HR).
+    """
+    __tablename__ = "notifications"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    title: Mapped[str] = mapped_column(String(200))
+    message: Mapped[str] = mapped_column(Text, default="")
+    type: Mapped[str] = mapped_column(String(50), default="general")
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+

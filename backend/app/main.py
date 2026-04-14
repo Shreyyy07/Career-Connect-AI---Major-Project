@@ -5,7 +5,7 @@ from .core.config import settings
 from sqlalchemy import inspect, text
 
 from .db import Base, engine
-from .routers import auth, resume, jd, match, interview, evaluation, report, profile, assessments, dashboard, history, recommendations, analysis, agent, hr
+from .routers import auth, resume, jd, match, interview, evaluation, report, profile, assessments, dashboard, history, recommendations, analysis, agent, hr, notifications
 
 
 Base.metadata.create_all(bind=engine)
@@ -73,6 +73,7 @@ app.include_router(recommendations.router)
 app.include_router(analysis.router)
 app.include_router(agent.router)
 app.include_router(hr.router)
+app.include_router(notifications.router)
 
 
 @app.get("/api/v1/health")

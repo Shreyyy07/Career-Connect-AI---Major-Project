@@ -19,7 +19,7 @@ from ..deps import get_current_user
 from ..models import (
     AntiCheatEvent, AntiCheatSummary,
     Evaluation, InterviewSession, JobDescription,
-    SpeechFeatures, EmotionLog, User, UserRole,
+    Notification, SpeechFeatures, EmotionLog, User, UserRole,
 )
 from ..schemas import (
     AntiCheatEventOut, AntiCheatSessionSummary,
@@ -363,6 +363,19 @@ def set_candidate_status(
     ev.hr_status = payload.hrStatus
     db.add(ev)
     db.commit()
+
+    # ── Create notification for the candidate ──────────────────────────────
+    status_label = {"shortlisted": "Shortlisted ✅", "rejected": "Not Selected ❌", "pending": "Under Review 🔄"}.get(payload.hrStatus, payload.hrStatus)
+    jd_title = jd.title if jd else "your interview"
+    notif = Notification(
+        user_id=session.user_id,
+        title=f"Application Update: {status_label}",
+        message=f"The recruiter from {jd.company_name or 'Career Connect AI'} has reviewed your performance for '{jd_title}' and marked you as: {status_label}.",
+        type="hr_decision",
+    )
+    db.add(notif)
+    db.commit()
+
     return {"ok": True, "evalID": ev.id, "hrStatus": ev.hr_status}
 
 

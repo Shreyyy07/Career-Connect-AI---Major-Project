@@ -225,6 +225,50 @@ export default function CandidateDashboard() {
             <StatCard icon={Mic} label="Interviews Done" value={String(stats.done)} change="Live" positive />
           </div>
 
+          {/* Application Status Section */}
+          {history.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="glass rounded-2xl p-6 mb-8"
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-display font-semibold text-base text-foreground">Application Status</h3>
+                  <p className="text-xs text-muted-foreground">Recruiter decisions on your interview submissions</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {history.slice(0, 5).map((item: any, idx: number) => {
+                  const statusConfig: Record<string, { label: string; color: string; dot: string }> = {
+                    shortlisted: { label: "Shortlisted ✅", color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", dot: "bg-emerald-400" },
+                    rejected:    { label: "Not Selected ❌", color: "bg-red-500/10 text-red-400 border-red-500/20",         dot: "bg-red-400" },
+                    pending:     { label: "Under Review 🔄", color: "bg-amber-500/10 text-amber-400 border-amber-500/20",   dot: "bg-amber-400" },
+                  };
+                  const cfg = statusConfig[item.hrStatus || "pending"] || statusConfig.pending;
+                  return (
+                    <div key={item.sessionID || idx} className="flex items-center justify-between p-3 rounded-xl bg-secondary/20 border border-border/30 hover:border-border/60 transition-colors">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.dot}`} />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{item.jobTitle || "General Interview"}</p>
+                          <p className="text-xs text-muted-foreground">{item.jobCompany || ""} • Score: {Math.round(item.score || 0)}%</p>
+                        </div>
+                      </div>
+                      <span className={`text-[10px] font-bold uppercase tracking-wide px-3 py-1 rounded-full border flex-shrink-0 ml-3 ${cfg.color}`}>
+                        {cfg.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+
           {/* Skill Progress Tracker — shown when rec data loaded */}
           {recProgress.total > 0 && (
             <motion.div

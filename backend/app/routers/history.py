@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import get_current_user
-from ..models import Evaluation, InterviewSession, User
+from ..models import Evaluation, InterviewSession, JobDescription, User
 
 
 router = APIRouter(prefix="/api/v1", tags=["history"])
@@ -21,6 +21,7 @@ def candidate_history(db: Session = Depends(get_db), user: User = Depends(get_cu
 
     out = []
     for session, ev in rows:
+        jd = db.query(JobDescription).filter(JobDescription.id == session.job_id).one_or_none() if session.job_id else None
         out.append(
             {
                 "sessionID": session.session_id,
@@ -30,7 +31,12 @@ def candidate_history(db: Session = Depends(get_db), user: User = Depends(get_cu
                 "feedback": "v1 evaluation generated",
                 "evalID": ev.id if ev else None,
                 "reportURL": ev.report_url if ev else None,
+                "hrStatus": ev.hr_status if ev else "pending",
+                "hrNotes": ev.hr_notes if ev else "",
+                "jobTitle": jd.title if jd else "General Interview",
+                "jobCompany": jd.company_name if jd else "",
             }
         )
     return out
+
 
