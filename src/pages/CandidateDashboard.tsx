@@ -102,16 +102,13 @@ export default function CandidateDashboard() {
       } catch (e) {
         console.error("Failed to load history", e);
       }
-      // Load skill recommendations progress
+      // Load skill recommendations progress instantly from localStorage
       try {
-        // Fetch latest resume + job to get rec list
-        const resumes = await apiFetch<any[]>('/api/v1/resume/list');
-        const jobs = await apiFetch<any[]>('/api/v1/jd/active');
-        if (resumes?.length && jobs?.length) {
-          const recs = await apiFetch<any[]>(
-            `/api/v1/recommendations?resumeID=${resumes[0].resumeID}&jobID=${jobs[0].jobID}`
-          );
-          if (recs && recs.length) {
+        const saved = localStorage.getItem(`matchResult_${user.id}`);
+        if (saved) {
+          const matchResult = JSON.parse(saved);
+          const recs = matchResult?.details?.recommendations || [];
+          if (recs.length > 0) {
             const done = recs.filter((r: any) => r.status === 'completed').length;
             const inProg = recs.filter((r: any) => r.status === 'in_progress').length;
             setRecProgress({

@@ -40,7 +40,6 @@ export default function DashboardSidebar({ role }: SidebarProps) {
   const navigate  = useNavigate();
   const { signOut } = useAuth();
   const links     = role === "candidate" ? candidateLinks : hrLinks;
-  const [collapsed, setCollapsed] = useState(true);
 
   const handleLogout = async () => {
     await signOut();
@@ -49,81 +48,74 @@ export default function DashboardSidebar({ role }: SidebarProps) {
 
   return (
     <aside
-      onMouseEnter={() => setCollapsed(false)}
-      onMouseLeave={() => setCollapsed(true)}
       className={cn(
-        "sticky top-0 h-screen bg-card/50 border-r border-border/50 flex flex-col transition-all duration-300 ease-in-out overflow-hidden z-40",
-        collapsed ? "w-[68px]" : "w-64"
+        "group sticky top-0 h-screen bg-card/50 border-r border-border/50 flex flex-col z-40 overflow-hidden",
+        "w-[68px] hover:w-64",
+        "transition-[width] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
+        "delay-150 hover:delay-75" // Delay to prevent accidental expansion when moving mouse across
       )}
     >
-
       {/* Logo */}
-      <div className={cn("flex-shrink-0 border-b border-border/50 flex items-center", collapsed ? "p-4 justify-center" : "p-5")}>
-        <Link to="/" className="flex items-center gap-2 min-w-0">
+      <div className="flex-shrink-0 border-b border-border/50 flex items-center p-4 h-[73px] transition-all duration-500">
+        <Link to="/" className="flex items-center gap-3 overflow-hidden whitespace-nowrap w-full">
           <div className="w-8 h-8 rounded-lg bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center flex-shrink-0">
             <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain rounded-md" />
           </div>
-          {!collapsed && (
-            <span className="font-display font-bold text-sm text-foreground truncate">
-              Career<span className="text-[#00e5ff]">Connect</span> AI
-            </span>
-          )}
+          <span className="font-display font-bold text-sm text-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-0 group-hover:delay-200">
+            Career<span className="text-[#00e5ff]">Connect</span> AI
+          </span>
         </Link>
       </div>
 
       {/* Nav links */}
-      <nav className={cn("flex-1 overflow-y-auto space-y-1", collapsed ? "p-2" : "p-4")}>
-        {!collapsed && (
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3 px-3">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-1 mt-2">
+        <div className="h-6 mb-2 px-2 overflow-hidden whitespace-nowrap">
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-0 group-hover:delay-200">
             {role === "candidate" ? "Candidate" : "Recruiter"} Panel
           </p>
-        )}
+        </div>
+        
         {links.map((link) => {
           const active = location.pathname === link.href;
           return (
             <Link
               key={link.href}
               to={link.href}
-              title={collapsed ? link.label : undefined}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all",
-                collapsed && "justify-center px-2",
+                "flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-sm transition-colors duration-300 overflow-hidden whitespace-nowrap",
                 active
                   ? "bg-[#00e5ff]/10 text-[#00e5ff] border border-[#00e5ff]/20 glow-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50 border border-transparent"
               )}
             >
-              <link.icon className="w-[18px] h-[18px] flex-shrink-0" />
-              {!collapsed && <span>{link.label}</span>}
+              <link.icon className="w-5 h-5 flex-shrink-0" />
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-0 group-hover:delay-200 font-medium">
+                {link.label}
+              </span>
             </Link>
           );
         })}
       </nav>
 
       {/* Bottom actions */}
-      <div className={cn("flex-shrink-0 border-t border-border/50 space-y-1", collapsed ? "p-2" : "p-4")}>
-
+      <div className="flex-shrink-0 border-t border-border/50 p-3 space-y-1">
         <button
           onClick={() => navigate(`/${role}/profile`)}
-          title={collapsed ? "Settings" : undefined}
-          className={cn(
-            "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/50 w-full transition-all",
-            collapsed && "justify-center px-2"
-          )}
+          className="flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/50 w-full transition-colors overflow-hidden whitespace-nowrap"
         >
-          <Settings className="w-[18px] h-[18px] flex-shrink-0" />
-          {!collapsed && "Settings"}
+          <Settings className="w-5 h-5 flex-shrink-0" />
+          <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-0 group-hover:delay-200 font-medium">
+            Settings
+          </span>
         </button>
         <button
           onClick={handleLogout}
-          title={collapsed ? "Logout" : undefined}
-          className={cn(
-            "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-destructive hover:bg-destructive/10 w-full transition-all",
-            collapsed && "justify-center px-2"
-          )}
+          className="flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-sm text-destructive hover:bg-destructive/10 w-full transition-colors overflow-hidden whitespace-nowrap"
         >
-          <LogOut className="w-[18px] h-[18px] flex-shrink-0" />
-          {!collapsed && "Logout"}
+          <LogOut className="w-5 h-5 flex-shrink-0" />
+          <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-0 group-hover:delay-200 font-medium tracking-wide">
+            Logout
+          </span>
         </button>
       </div>
     </aside>

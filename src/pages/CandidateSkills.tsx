@@ -218,6 +218,23 @@ export default function CandidateSkills() {
 
   const handleStatusChange = (recID: string | number, newStatus: string) => {
     setRecStatuses(prev => ({ ...prev, [String(recID ?? '')]: newStatus }));
+    
+    // Sync the status change directly into localStorage so Dashboard sees it instantly
+    if (matchResult && matchResult.details && matchResult.details.recommendations) {
+      const updatedRecs = matchResult.details.recommendations.map((r: any) => 
+        (r.recID === recID || r.skill === recID) ? { ...r, status: newStatus } : r
+      );
+      const updatedResult = { 
+        ...matchResult, 
+        details: { ...matchResult.details, recommendations: updatedRecs } 
+      };
+      setMatchResult(updatedResult);
+      if (user?.id) localStorage.setItem(`matchResult_${user.id}`, JSON.stringify(updatedResult));
+      if (location.state?.matchResult) {
+         // Also update location state if possible (mostly for current session history)
+         window.history.replaceState({ ...window.history.state, usr: { matchResult: updatedResult } }, '');
+      }
+    }
   };
 
   return (

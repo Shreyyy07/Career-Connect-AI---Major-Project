@@ -194,8 +194,8 @@ def ai_skill_recommendations(missing_skills: list[str], job_title: str) -> list[
 def ai_find_resource_url(skill: str, job_title: str, resource_type: str = "") -> str:
     """
     Ask GPT-4.1 for the single best, publicly accessible learning URL for this skill.
-    Returns a direct URL string.  Falls back to a Google search if the AI is unavailable
-    or returns something that isn't a valid URL.
+    To prevent 404 errors, the AI is instructed to return canonical, highly stable tag 
+    or category pages from authoritative sites rather than hallucinated specific article paths.
     """
     import re
 
@@ -205,21 +205,29 @@ def ai_find_resource_url(skill: str, job_title: str, resource_type: str = "") ->
         return fallback
 
     system_prompt = (
-        "You are a career coach who recommends the single BEST publicly accessible learning resource. "
-        "Reply ONLY with a valid HTTPS URL — no explanation, no markdown, just the URL. "
-        "Prefer: official docs, MDN, freeCodeCamp, dev.to, GeeksForGeeks, Real Python, YouTube, Coursera, or similar reputable sites."
+        "You are a tech career coach who recommends the single BEST publicly accessible learning article or course. "
+        "CRITICAL: You must NEVER return a 404 broken link. Do NOT guess long or specific article URL slugs. "
+        "Instead, provide highly stable, canonical category or tag pages from authoritative sites. "
+        "Valid examples of indestructible formats: "
+        "- https://dev.to/t/react\n"
+        "- https://www.freecodecamp.org/news/tag/python/\n"
+        "- https://developer.mozilla.org/en-US/docs/Learn\n"
+        "- https://react.dev/learn\n"
+        "Reply ONLY with a valid HTTPS URL — no explanation, no markdown, just the URL."
     )
     user_prompt = (
         f"Skill to learn: {skill}\n"
-        f"Target job role: {job_title}\n"
-        f"Preferred resource type: {resource_type or 'any'}\n\n"
-        "Give me the single best URL to start learning this skill right now."
+        f"Target job role: {job_title}\n\n"
+        "Give me the single best, guaranteed-to-work URL to start learning this skill."
     )
 
     try:
-        url = _chat(system_prompt, user_prompt, temperature=0.2, max_tokens=60).strip()
+        url = _chat(system_prompt, user_prompt, temperature=0.1, max_tokens=60).strip()
+        # Clean quotes if any
+        url = url.strip("\"'")
+        
         # Basic URL sanity check
-        if re.match(r"https?://", url) and len(url) < 400:
+        if re.match(r"^https?://", url) and len(url) < 300:
             return url
     except Exception:
         pass

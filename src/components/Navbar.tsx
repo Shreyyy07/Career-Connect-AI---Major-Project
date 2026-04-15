@@ -109,40 +109,17 @@ export default function Navbar() {
                   strokeWidth={isActive ? 2.5 : 2}
                   className="shrink-0 transition-all duration-300"
                 />
-                {/* Label — expands on parent group hover with smooth transition */}
-                <motion.span
-                  className="text-sm font-semibold whitespace-nowrap overflow-hidden leading-none"
-                  initial={false}
-                  variants={{
-                    collapsed: { width: 0, opacity: 0, marginLeft: 0 },
-                    expanded: { width: "auto", opacity: 1, marginLeft: 6 },
-                  }}
-                  animate="collapsed"
-                  whileHover="expanded"
-                  // Apply the animation to the whole group (nav) hover not just this item
-                  // We handle it via a CSS group class below
-                  transition={{
-                    width: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
-                    opacity: { duration: 0.25, delay: 0.05 },
-                    marginLeft: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
-                  }}
+                {/* Label — expands on parent group hover with smooth CSS transition */}
+                <span
+                  className="text-sm font-semibold whitespace-nowrap overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] max-w-0 opacity-0 ml-0 group-hover/nav:max-w-[100px] group-hover/nav:opacity-100 group-hover/nav:ml-1.5 delay-150 group-hover/nav:delay-75"
                 >
                   {item.label}
-                </motion.span>
+                </span>
               </Link>
             );
           })}
         </div>
       </motion.nav>
-
-      {/* Global CSS for group-hover on the nav */}
-      <style>{`
-        .group\\/nav:hover a span {
-          width: auto !important;
-          opacity: 1 !important;
-          margin-left: 6px !important;
-        }
-      `}</style>
     </div>
   );
 }
