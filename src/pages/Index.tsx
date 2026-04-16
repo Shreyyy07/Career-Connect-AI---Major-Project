@@ -22,6 +22,7 @@ import ShareReport from "@/components/landing/ShareReport";
 import FloatingParticles from "@/components/landing/FloatingParticles";
 import AnimatedCounter from "@/components/landing/AnimatedCounter";
 import { motion } from "framer-motion";
+import CustomCursor from "@/components/landing/CustomCursor";
 
 const features = [
   { icon: FileSearch, title: "Semantic Resume Matching", desc: "Doc2Vec embeddings + cosine similarity for meaning-based matching, not keyword filtering." },
@@ -49,6 +50,7 @@ const steps = [
 export default function Index() {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
+      <CustomCursor />
       <Navbar />
       <SectionCounter total={12} />
 
@@ -141,7 +143,15 @@ export default function Index() {
           </ScrollSection>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((f, i) => (
-              <FadeInView key={f.title} delay={i * 0.1}>
+              <motion.div
+                key={f.title}
+                initial={{ opacity: 0, rotateY: -180, z: -200, scale: 0.8 }}
+                whileInView={{ opacity: 1, rotateY: 0, z: 0, scale: 1 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 1.2, delay: i * 0.12, type: "spring", stiffness: 70, damping: 15 }}
+                style={{ perspective: 1000 }}
+                className="h-full"
+              >
                 <motion.div
                   className="glass rounded-2xl p-8 h-full hover:border-primary/30 transition-all duration-500 group cursor-default relative overflow-hidden"
                   whileHover={{ y: -8, boxShadow: "0 20px 60px -15px hsl(187 100% 50% / 0.15)" }}
@@ -169,7 +179,7 @@ export default function Index() {
                     transition={{ duration: 1.5, repeat: Infinity }}
                   />
                 </motion.div>
-              </FadeInView>
+              </motion.div>
             ))}
           </div>
         </div>

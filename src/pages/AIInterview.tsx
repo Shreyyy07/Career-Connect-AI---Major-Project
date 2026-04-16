@@ -465,7 +465,7 @@ export default function AIInterview() {
             className="glass rounded-2xl p-10 max-w-lg w-full text-center"
           >
             <div className="w-20 h-20 rounded-2xl bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center mx-auto mb-6 glow-primary animate-glow-pulse">
-              <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain rounded-xl" />
+              <img src="/L1.png" alt="Logo" className="w-12 h-12 object-contain rounded-xl" />
             </div>
             <h1 className="font-display font-bold text-2xl text-foreground mb-3">
               AI Interview Session

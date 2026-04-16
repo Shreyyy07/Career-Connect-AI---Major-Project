@@ -59,7 +59,7 @@ export default function DashboardSidebar({ role }: SidebarProps) {
       <div className="flex-shrink-0 border-b border-border/50 flex items-center p-4 h-[73px] transition-all duration-500">
         <Link to="/" className="flex items-center gap-3 overflow-hidden whitespace-nowrap w-full">
           <div className="w-8 h-8 rounded-lg bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center flex-shrink-0">
-            <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain rounded-md" />
+            <img src="/L1.png" alt="Logo" className="w-6 h-6 object-contain rounded-md" />
           </div>
           <span className="font-display font-bold text-sm text-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-0 group-hover:delay-200">
             Career<span className="text-[#00e5ff]">Connect</span> AI

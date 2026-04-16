@@ -121,7 +121,7 @@ export default function Register() {
           className="relative z-10 text-center px-12"
         >
           <div className="w-20 h-20 rounded-2xl bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center mx-auto mb-8 glow-primary">
-            <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain rounded-xl" />
+            <img src="/L1.png" alt="Logo" className="w-12 h-12 object-contain rounded-xl relative z-10" />
           </div>
           <h2 className="font-display font-bold text-3xl text-foreground mb-4">
             {isHr ? "Hire Top Talent" : "Join Career Connect AI"}
@@ -155,7 +155,7 @@ export default function Register() {
         >
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <div className="w-9 h-9 rounded-lg bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center">
-              <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain rounded-md" />
+              <img src="/L1.png" alt="Logo" className="w-6 h-6 object-contain rounded-md" />
             </div>
             <span className="font-display font-bold text-lg">Career<span className="text-[#00e5ff]">Connect</span> AI</span>
           </div>

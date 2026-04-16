@@ -108,7 +108,7 @@ export default function VerifyEmail() {
         {/* Brand */}
         <div className="flex items-center justify-center gap-2 mb-8">
           <div className="w-9 h-9 rounded-lg bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center">
-            <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain rounded-md" />
+            <img src="/L1.png" alt="Logo" className="w-6 h-6 object-contain rounded-md" />
           </div>
           <span className="font-display font-bold text-lg">Career<span className="text-[#00e5ff]">Connect</span> AI</span>
         </div>

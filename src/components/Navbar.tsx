@@ -65,7 +65,7 @@ export default function Navbar() {
         >
           <div className="w-8 h-8 rounded-lg bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center glow-primary shrink-0">
             <img
-              src="/logo.png"
+              src="/L1.png"
               alt="Logo"
               className="w-5 h-5 object-contain rounded-sm"
             />
