@@ -177,7 +177,6 @@ Career-Connect-AI/
 | **LLM Core** | GPT-4.1 / Gemini (Semantic matching + Interview scripting) |
 | **Embeddings** | Doc2Vec (Gensim) |
 | **Face & Speech AI**| DeepFace (Emotion), OpenCV/YOLO (YOLOv8 Object Detect) |
-| **Authentication**| JWT (python-jose) + bcrypt (passlib) |
 | **Report Engine** | PyPDF2, python-docx, ReportLab (PDF Synthesis) |
 
 ---
