@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { FileText, Download, Eye, Calendar, Award } from "lucide-react";
 import { motion } from "framer-motion";
 import DashboardSidebar from "@/components/DashboardSidebar";
-import { apiFetch, downloadAuthorizedFile } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
+import { generatePdfReport } from "@/components/pdfGenerator";
+import { toast } from "sonner";
 import { Link } from "react-router-dom";
 
 type HistoryItem = {
@@ -151,9 +153,19 @@ export default function CandidateReports() {
                     
                     <div className="flex items-center gap-2">
                       {/* Button Removed */}
-                      {r.reportURL && (
+                      {r.evalID && (
                         <button 
-                          onClick={() => downloadAuthorizedFile(r.reportURL!, `Report_${r.sessionID.slice(0,8)}.pdf`)}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              toast.loading("Generating beautiful report...", { id: `pdf-${r.evalID}` });
+                              const pdfData = await apiFetch<any>(`/api/v1/evaluation/${r.evalID}/pdf-data`);
+                              await generatePdfReport(pdfData);
+                              toast.success("PDF Downloaded!", { id: `pdf-${r.evalID}` });
+                            } catch (error) {
+                              toast.error("PDF generation failed", { id: `pdf-${r.evalID}` });
+                            }
+                          }}
                           className="flex items-center gap-2 px-4 py-2.5 bg-[#00e5ff]/10 hover:bg-[#00e5ff]/20 text-[#00e5ff] text-sm font-semibold border border-[#00e5ff]/30 rounded-lg transition-colors"
                         >
                           <Download className="w-4 h-4" /> Download PDF

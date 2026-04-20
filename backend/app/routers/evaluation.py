@@ -603,3 +603,117 @@ def get_evaluation(id: int, db: Session = Depends(get_db), user: User = Depends(
         dominantEmotion=dominant_emotion,
         insightsJson=ev.insights_json,
     )
+
+
+@router.get("/evaluation/{id}/pdf-data")
+def get_evaluation_pdf_data(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Returns the full rich payload needed to render the PDF on the frontend."""
+    ev = db.query(Evaluation).filter(Evaluation.id == id).one_or_none()
+    if not ev:
+        raise HTTPException(status_code=404, detail="Evaluation not found")
+
+    session = db.query(InterviewSession).filter(InterviewSession.id == ev.interview_session_id).one_or_none()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    if session.user_id != user.id:
+        user_role_str = user.role.value if hasattr(user.role, 'value') else str(user.role)
+        if user_role_str not in ("admin", "hr", "moderator", "analyst"):
+            raise HTTPException(status_code=403, detail="Not allowed")
+        
+        # Verify HR owns the job description
+        if user_role_str == "hr":
+            from ..models import JobDescription
+            # Check if session has a job_id attached and if the HR user owns that job
+            jd = db.query(JobDescription).filter(JobDescription.id == session.job_id).one_or_none()
+            if not jd or jd.hr_user_id != user.id:
+                raise HTTPException(status_code=403, detail="Not allowed to view this candidate")
+    candidate_user = db.query(User).filter(User.id == session.user_id).one_or_none()
+    candidate_name = candidate_user.full_name if candidate_user else "Candidate"
+    candidate_email = candidate_user.email if candidate_user else ""
+
+    from ..models import JobDescription, SpeechFeatures, EmotionLog
+    import json
+
+    job_title = "N/A"
+    if session.job_id:
+        job = db.query(JobDescription).filter(JobDescription.id == session.job_id).one_or_none()
+        if job:
+            job_title = job.title
+
+    transcript_lines = []
+    if session.transcript:
+        lines = session.transcript.splitlines()
+        current_q = None
+        for line in lines:
+            if line.startswith("Q:"):
+                current_q = line[2:].strip()
+            elif line.startswith("A:") and current_q:
+                transcript_lines.append({"q": current_q, "a": line[2:].strip()})
+                current_q = None
+
+    sf = db.query(SpeechFeatures).filter(SpeechFeatures.session_id == session.session_id).one_or_none()
+    speech_data = {
+        "wpm": sf.wpm if sf else 130.0,
+        "filler_count": sf.filler_count if sf else 0,
+        "filler_percentage": sf.filler_percentage if sf else 0.0
+    }
+
+    emotion_logs = db.query(EmotionLog).filter(EmotionLog.session_id == session.session_id).all()
+    dominant_emotion = "neutral"
+    if emotion_logs:
+        from collections import Counter
+        dom_counts = Counter(log.dominant_emotion for log in emotion_logs)
+        dominant_emotion = dom_counts.most_common(1)[0][0]
+
+    matched_skills = []
+    missing_skills = []
+    if session.job_id:
+        jd = db.query(JobDescription).filter(JobDescription.id == session.job_id).one_or_none()
+        if jd:
+            jd_skills = {s.strip().lower() for s in (jd.skills_csv or "").split(",") if s.strip()}
+            from ..models import Resume
+            resume = db.query(Resume).filter(Resume.user_id == session.user_id).order_by(Resume.id.desc()).first()
+            if resume and resume.raw_text:
+                from ..utils import extract_tokens
+                resume_tokens = extract_tokens(resume.raw_text)
+                matched_skills = [s for s in jd_skills if s in resume_tokens]
+                missing_skills = [s for s in jd_skills if s not in resume_tokens]
+
+    idate = (session.completed_at or session.created_at).strftime("%d %b %Y, %H:%M") if (session.completed_at or session.created_at) else "-"
+    
+    # Parse insights JSON for Strengths and Weaknesses
+    strengths = []
+    watch_areas = []
+    if ev.insights_json:
+        try:
+            ij = json.loads(ev.insights_json)
+            s = ij.get("topStrength", "")
+            if s: strengths.append(s)
+            w = ij.get("toImprove", "")
+            if w: watch_areas.append(w)
+        except:
+            pass
+
+    return {
+        "candidate_name":    candidate_name,
+        "candidate_email":   candidate_email,
+        "job_title":         job_title,
+        "interview_date":    idate,
+        "session_id":        session.session_id,
+        "semantic_score":    ev.semantic_score,
+        "similarity_score":  ev.similarity_score,
+        "emotion_score":     ev.emotion_score,
+        "audio_score":       ev.audio_score,
+        "final_score":       ev.final_score,
+        "wpm":               speech_data["wpm"],
+        "filler_count":      speech_data["filler_count"],
+        "filler_percentage": speech_data["filler_percentage"],
+        "dominant_emotion":  dominant_emotion,
+        "emotion_frames":    len(emotion_logs),
+        "transcript_lines":  transcript_lines,
+        "matched_skills":    matched_skills,
+        "missing_skills":    missing_skills,
+        "strengths":         strengths,
+        "watch_areas":       watch_areas
+    }

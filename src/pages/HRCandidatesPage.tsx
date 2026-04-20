@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiFetch, downloadAuthorizedFile } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
+import { generatePdfReport } from "@/components/pdfGenerator";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import TopbarProfile from "@/components/TopbarProfile";
 import ScoreGauge from "@/components/ScoreGauge";
@@ -98,9 +99,12 @@ export default function HRCandidatesPage() {
 
   const handleDownloadReport = async (evalId: number) => {
     try {
-      await downloadAuthorizedFile(`/api/v1/hr/report/${evalId}/download`, `evaluation_${evalId}.pdf`);
+      toast.loading("Generating beautiful report...", { id: `hr-pdf-${evalId}` });
+      const pdfData = await apiFetch<any>(`/api/v1/evaluation/${evalId}/pdf-data`);
+      await generatePdfReport(pdfData);
+      toast.success("PDF Downloaded!", { id: `hr-pdf-${evalId}` });
     } catch {
-      toast.error("Failed to download report");
+      toast.error("Failed to download report", { id: `hr-pdf-${evalId}` });
     }
   };
 

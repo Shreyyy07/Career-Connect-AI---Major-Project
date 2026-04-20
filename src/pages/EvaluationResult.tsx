@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { CheckCircle, Download, RefreshCw, BarChart2, ArrowLeft, BrainCircuit } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useParams, useNavigate } from 'react-router-dom';
-import { apiFetch, downloadAuthorizedFile } from '../lib/api';
+import { apiFetch } from '../lib/api';
+import { generatePdfReport } from '@/components/pdfGenerator';
+import { toast } from 'sonner';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Cell
 } from 'recharts';
@@ -310,9 +312,20 @@ export const EvaluationResult = () => {
                         Review your full AI-generated dossier PDF, or head over to the Resume Match section to compute specific skill gaps for this profile.
                       </p>
                       <div className="flex flex-wrap gap-3 mt-1">
-                         {data.reportURL && (
-                           <button onClick={() => downloadAuthorizedFile(data.reportURL!, `CCAI_Report_${data.sessionID.slice(0,8)}.pdf`)}
-                             className="flex-1 text-center py-2.5 rounded-xl font-bold text-sm bg-indigo-500 hover:bg-indigo-600 text-white transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2">
+                         {data.id && (
+                           <button 
+                            disabled={loading}
+                            onClick={async () => {
+                              try {
+                                toast.loading("Generating beautiful report...", { id: "pdf" });
+                                const pdfData = await apiFetch<any>(`/api/v1/evaluation/${data.evalID || data.id}/pdf-data`);
+                                await generatePdfReport(pdfData);
+                                toast.success("PDF Downloaded!", { id: "pdf" });
+                              } catch (e) {
+                                toast.error("PDF generation failed", { id: "pdf" });
+                              }
+                            }}
+                             className="flex-1 text-center py-2.5 rounded-xl font-bold text-sm bg-indigo-500 hover:bg-indigo-600 text-white transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 disabled:opacity-50">
                              <Download size={16} /> Download Full PDF
                            </button>
                          )}
