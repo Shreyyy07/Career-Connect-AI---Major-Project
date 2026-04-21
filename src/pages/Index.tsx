@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import {
   Brain, FileSearch, Target, Mic, Shield, BarChart3,
-  ArrowRight, ArrowUpRight,
+  ArrowRight, ArrowUpRight, PhoneCall
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
@@ -240,6 +240,42 @@ export default function Index() {
               </FadeInView>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* 09.5 — n8n Automation Callout */}
+      <section className="py-16 sm:py-24 border-y border-border/30 relative overflow-hidden bg-primary/5">
+        <div className="absolute inset-0 bg-dots opacity-20" />
+        <div className="container mx-auto px-6 relative z-10">
+          <FadeInView direction="up">
+            <div className="max-w-4xl mx-auto glass rounded-3xl p-8 sm:p-12 border border-primary/20 flex flex-col md:flex-row items-center gap-8 md:gap-12 relative overflow-hidden">
+              {/* Background glow */}
+              <div className="absolute -top-32 -right-32 w-64 h-64 bg-primary/20 blur-[80px] rounded-full" />
+              <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-accent/20 blur-[80px] rounded-full" />
+              
+              {/* Icon / Visual */}
+              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-background border-2 border-primary/30 flex items-center justify-center flex-shrink-0 shadow-[0_0_40px_-10px_hsl(187_100%_50%_/_0.3)] relative z-10">
+                <PhoneCall className="w-10 h-10 sm:w-14 sm:h-14 text-primary animate-pulse" />
+              </div>
+              
+              {/* Content */}
+              <div className="text-center md:text-left relative z-10">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold tracking-widest uppercase mb-4">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                  </span>
+                  Automated Outreach
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-3">
+                  n8n Call Automation Integration
+                </h3>
+                <p className="text-muted-foreground leading-relaxed sm:text-lg">
+                  Career Connect AI seamlessly bridges the gap between digital evaluations and human interaction. Utilizing our custom <strong>n8n workflow automation</strong>, candidates are automatically placed into phone-screening queues, ensuring instant, seamless voice-call scheduling and follow-ups without manual recruiter intervention.
+                </p>
+              </div>
+            </div>
+          </FadeInView>
         </div>
       </section>
 

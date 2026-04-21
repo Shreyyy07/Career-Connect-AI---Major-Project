@@ -51,8 +51,8 @@ const SeverityBadge = ({ severity }: { severity: string }) => (
   </span>
 );
 
-function CandidateCard({ candidateID, candidateName, events }: {
-  candidateID: number;
+function CandidateCard({ sessionID, candidateName, events }: {
+  sessionID: string;
   candidateName: string;
   events: AntiCheatEvent[];
 }) {
@@ -85,6 +85,9 @@ function CandidateCard({ candidateID, candidateName, events }: {
         <div className="flex-1 text-left min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-foreground text-sm">{candidateName}</span>
+            <span className="text-xs text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded-full border border-border/40">
+              Session: {sessionID.substring(0, 8).toUpperCase()} • {events.length > 0 ? new Date(events[0].createdAt + "Z").toLocaleDateString("en-IN", { dateStyle: "medium" }) : ""}
+            </span>
             {isFlagged && (
               <span className="text-[10px] font-bold tracking-widest bg-red-500/15 text-red-400 border border-red-500/25 px-2 py-0.5 rounded-full">
                 🚩 FLAGGED
@@ -203,13 +206,13 @@ export default function HRAntiCheatPage() {
     e.candidateName.toLowerCase().includes(searchQuery.toLowerCase())
   ) ?? [];
 
-  // Group by candidateID → keep insertion order (latest events first per candidate)
-  const grouped = new Map<number, { name: string; events: AntiCheatEvent[] }>();
+  // Group by sessionID → keep insertion order (latest events first per interview)
+  const grouped = new Map<string, { candidateID: number; name: string; events: AntiCheatEvent[] }>();
   for (const ev of filtered) {
-    if (!grouped.has(ev.candidateID)) {
-      grouped.set(ev.candidateID, { name: ev.candidateName, events: [] });
+    if (!grouped.has(ev.sessionID)) {
+      grouped.set(ev.sessionID, { candidateID: ev.candidateID, name: ev.candidateName, events: [] });
     }
-    grouped.get(ev.candidateID)!.events.push(ev);
+    grouped.get(ev.sessionID)!.events.push(ev);
   }
 
   const totalEvents   = filtered.length;
@@ -304,10 +307,10 @@ export default function HRAntiCheatPage() {
                 <p className="text-muted-foreground mt-1">No integrity violations detected for these filters.</p>
               </div>
             ) : (
-              Array.from(grouped.entries()).map(([candidateID, { name, events: cevents }]) => (
+              Array.from(grouped.entries()).map(([sessionID, { name, events: cevents }]) => (
                 <CandidateCard
-                  key={candidateID}
-                  candidateID={candidateID}
+                  key={sessionID}
+                  sessionID={sessionID}
                   candidateName={name}
                   events={cevents}
                 />
