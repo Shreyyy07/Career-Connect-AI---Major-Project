@@ -8,12 +8,29 @@ import { motion } from 'framer-motion';
 
 const glass = 'bg-card/50 backdrop-blur-xl border border-border/50 shadow-lg';
 
-// ─── Utility to extract keywords from long sentences ───────────────────────────
-const summarizeSkill = (s: string) => {
-  if (!s || s.length < 25) return s;
-  let text = s.replace(/(good to have skills|must have skills|prior experience with|prior experience in|knowledge of|expertise in|understanding of|familiarity with|etc\.|etc)/gi, '').replace(/[:;-]/g, '').trim();
-  if (text.length > 40) return text.substring(0, 40).trim() + '...';
-  return text || s.substring(0, 30) + '...';
+// ─── Extract a short, punchy keyword label from a skill sentence ─────────────
+const summarizeSkill = (s: string): string => {
+  if (!s) return s;
+  // Clean common filler phrases
+  let text = s
+    .replace(/(knowledge of|proficiency in|experience with|experience in|understanding of|familiarity with|ability to|strong ability to|good to have|must have|prior experience|etc\.|or similar|and similar|comfortable working|independently|with strong attention to detail\.?)/gi, ' ')
+    .replace(/[:;,.-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // If what remains is a compound like "react typescript node" split and take first 2-3 keywords
+  const words = text.split(/\s+/).filter(w => w.length > 1);
+  if (words.length === 0) return s.substring(0, 30);
+
+  // If there is one clear technology keyword (no filler), just return it capitalized
+  if (words.length <= 3) return words.join(' ');
+
+  // Otherwise, keep between 1-3 most distinctive words (usually first meaningful ones)
+  // Heuristic: skip generic words
+  const generic = new Set(['and', 'or', 'the', 'in', 'of', 'to', 'a', 'an', 'for', 'on', 'with', 'by', 'reason', 'read', 'write', 'use', 'work', 'build', 'create', 'production', 'grade', 'code', 'system', 'level', 'about', 'learn', '2+', '3+', 'years']);
+  const keywords = words.filter(w => !generic.has(w.toLowerCase()));
+  const selected = keywords.slice(0, 3).join(' ');
+  return selected || words.slice(0, 2).join(' ');
 };
 
 // ─── SVG Circular Progress Ring ───────────────────────────────────────────────

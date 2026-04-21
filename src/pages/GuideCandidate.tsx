@@ -1,8 +1,10 @@
 import { ArrowLeft, User, UploadCloud, Brain, FileOutput, Target, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
 import Footer from "@/components/Footer";
 
 export default function GuideCandidate() {
+  useEffect(() => { window.scrollTo(0, 0); }, []);
   const steps = [
     {
       icon: <UploadCloud className="w-5 h-5 text-primary" />,

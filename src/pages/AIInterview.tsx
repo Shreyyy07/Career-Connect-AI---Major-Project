@@ -85,6 +85,8 @@ export default function AIInterview() {
   const cocoSsdModelRef = useRef<cocoSsd.ObjectDetection | null>(null);
   const tabSwitchRef = useRef(false); // prevents duplicate firing
   const lastPhoneEventRef = useRef(0); // timestamp of last phone-detected event (debounce)
+  const lastFaceWarnRef = useRef(0);   // debounce multi-face warnings (show max 1 per 15s)
+  const lastFaceEventRef = useRef(0);  // backend event debounce for faces
 
   // Keep refs in sync
   useEffect(() => { sessionIdRef.current = sessionID; }, [sessionID]);
@@ -181,15 +183,16 @@ export default function AIInterview() {
       // ── face-api.js (browser-side, instant) ─────────────────────────────
       if (faceApiReadyRef.current) {
         try {
-          // Use detectAllFaces at a HIGHER threshold to avoid false positives
-          // from complex backgrounds, phones, posters, etc.
+          // HIGH threshold (0.75) to avoid false positives from complex backgrounds,
+          // posters, dark rooms, cluttered desks, etc.
           const detections = await faceapi
-            .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.55 }))
+            .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.75 }))
             .withFaceExpressions();
 
-          // Filter out tiny false-positive blobs (must be at least 60×60 px)
+          // Filter: face box must be at least 100×100 px (real human faces at webcam distance)
+          // This aggressively eliminates background artifacts, pictures, or objects
           const validDetections = detections.filter(
-            (d) => d.detection.box.width > 60 && d.detection.box.height > 60
+            (d) => d.detection.box.width > 100 && d.detection.box.height > 100
           );
 
           facesDetected = validDetections.length;
@@ -208,6 +211,16 @@ export default function AIInterview() {
               dominant = Object.entries(emotions).sort(([, a], [, b]) => b - a)[0][0];
             }
           }
+
+          // ── Multi-face warning (debounced: max 1 every 15s) ──────────────
+          if (facesDetected >= 2) {
+            const nowMs = Date.now();
+            if (nowMs - lastFaceWarnRef.current > 15_000) {
+              lastFaceWarnRef.current = nowMs;
+              setCheatWarning('⚠️ Multiple faces detected! Only you should be visible.');
+              setTimeout(() => setCheatWarning(''), 5000);
+            }
+          }
         } catch (_) { /* non-fatal */ }
       }
 
@@ -218,29 +231,25 @@ export default function AIInterview() {
           // Lower threshold to 0.35 so a briefly-flashed phone is caught
           const phone = preds.find(p => p.class === 'cell phone' && p.score > 0.35);
           if (phone) {
-            setCheatWarning('⚠️ Mobile phone detected! Please put it away.');
-            setTimeout(() => setCheatWarning(''), 5000);
-
-            // Debounce: only send one event per 10 seconds to avoid DB spam
             const now = Date.now();
-            if (now - lastPhoneEventRef.current > 10_000) {
+            // Debounce warning display: max 1 every 15s
+            if (now - lastPhoneEventRef.current > 15_000) {
               lastPhoneEventRef.current = now;
+              setCheatWarning('⚠️ Mobile phone detected! Please put it away.');
+              setTimeout(() => setCheatWarning(''), 3500); // Only pop it for 3.5 seconds
               apiFetch('/api/v1/analysis/anticheat-event', {
                 method: 'POST',
                 body: JSON.stringify({
-                  session_id: sessionIdRef.current,   // always fresh via ref
+                  session_id: sessionIdRef.current,
                   event_type: 'mobile_phone',
                   severity: 'CRITICAL',
                   timestamp_sec: elapsedRef.current,
                   details: { score: Math.round(phone.score * 100) / 100 }
                 })
-              }).then(res => {
-                if (!res) console.warn('[AntiCheat] Phone event API returned empty response');
               }).catch(err => console.warn('[AntiCheat] Phone event failed:', err));
             }
           }
         } catch (err) {
-          // coco-ssd can throw if model not ready — non-fatal
           console.debug('[AntiCheat] coco-ssd error:', err);
         }
       }
@@ -357,13 +366,14 @@ export default function AIInterview() {
 
       if ("SpeechRecognition" in window || "webkitSpeechRecognition" in window) {
         const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-        const rec = new SR();
+        let rec = new SR();
         rec.continuous = true;
         rec.interimResults = true;
         rec.lang = "en-US";
+        rec.maxAlternatives = 1;
+
         rec.onresult = (e: any) => {
-          let interim = "",
-            final = "";
+          let interim = "", final = "";
           for (let i = e.resultIndex; i < e.results.length; i++) {
             const t = e.results[i][0].transcript;
             if (e.results[i].isFinal) final += t;
@@ -372,8 +382,45 @@ export default function AIInterview() {
           setLiveTranscript(interim);
           if (final) setTranscript((prev) => (prev + " " + final).trim());
         };
-        rec.start();
-        recognitionRef.current = rec;
+
+        // ── Mic reliability: auto-restart on abort/network error ─────────────
+        rec.onerror = (e: any) => {
+          if (e.error === 'aborted' || e.error === 'network') {
+            // SpeechRecognition sometimes stops spontaneously — restart it silently
+            try { rec.stop(); } catch (_) {}
+            setTimeout(() => {
+              if (recognitionRef.current === rec) {
+                // Still in the same question, restart
+                try {
+                  rec = new SR();
+                  Object.assign(rec, {
+                    continuous: true, interimResults: true, lang: 'en-US', maxAlternatives: 1,
+                    onresult: recognitionRef.current?.onresult,
+                    onerror: recognitionRef.current?.onerror,
+                    onend: recognitionRef.current?.onend,
+                  });
+                  rec.start();
+                  recognitionRef.current = rec;
+                } catch (_) {}
+              }
+            }, 200);
+          }
+        };
+
+        // ── Auto-restart if SpeechRecognition ends unexpectedly (common on Chrome) ───
+        rec.onend = () => {
+          // If recognitionRef still points to this instance, we are still recording
+          if (recognitionRef.current === rec) {
+            try { rec.start(); } catch (_) {}
+          }
+        };
+
+        try {
+          rec.start();
+          recognitionRef.current = rec;
+        } catch (e) {
+          console.warn('SpeechRecognition start failed:', e);
+        }
       }
     },
     [questions, location.state]

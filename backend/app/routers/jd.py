@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import get_current_user
-from ..models import JobDescription, JDStatus, User, UserRole
+from ..models import JobDescription, JDStatus, Notification, User, UserRole
 from ..schemas import (
     JDCreateResponse, JDListItem, JDUploadRequest,
     JDCreateRequest, JDStatusUpdateRequest, JDDetailItem,
@@ -80,7 +80,26 @@ def upload_jd(payload: JDUploadRequest, db: Session = Depends(get_db), user: Use
     db.commit()
     db.refresh(jd)
     _run_embedding(db, jd)
+    # Notify all active candidates about the new job posting
+    _notify_candidates_new_job(db, jd)
     return JDCreateResponse(jobID=jd.id)
+
+
+def _notify_candidates_new_job(db: Session, jd: JobDescription):
+    """Fan-out a notification to every candidate user for a newly posted active JD."""
+    if jd.status != JDStatus.active:
+        return
+    candidates = db.query(User).filter(User.role == UserRole.candidate).all()
+    for candidate in candidates:
+        db.add(Notification(
+            user_id=candidate.id,
+            title="New Job Posted 🎯",
+            message=f"A new position '{jd.title}' is now open. Check your Resume Match to see how you fit!",
+            type="job_posted",
+            is_read=False,
+        ))
+    if candidates:
+        db.commit()
 
 
 # ─── Full HR JD CRUD ───────────────────────────────────────────────────────────
@@ -107,6 +126,8 @@ def create_jd(payload: JDCreateRequest, db: Session = Depends(get_db), user: Use
     db.commit()
     db.refresh(jd)
     _run_embedding(db, jd)
+    # Notify all candidates if this is an active job
+    _notify_candidates_new_job(db, jd)
     return JDCreateResponse(jobID=jd.id)
 
 

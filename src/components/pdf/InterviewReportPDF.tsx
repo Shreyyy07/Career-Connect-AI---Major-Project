@@ -43,7 +43,7 @@ export const InterviewReportPDF = React.forwardRef<HTMLDivElement, { data: PDFDa
   const isRecommended = final >= 70;
 
   return (
-    <div ref={ref} className="bg-white text-gray-900 p-8 w-[800px] mx-auto box-border" style={{ fontFamily: "Inter, sans-serif" }}>
+    <div ref={ref} className="w-[794px] mx-auto bg-white min-h-screen text-gray-800 font-sans p-8 box-border" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
       {/* Header band */}
       <div className="relative rounded-2xl overflow-hidden mb-6 bg-gradient-to-br from-slate-900 via-slate-800 to-cyan-900 p-6">
         <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-cyan-400/20 blur-xl" />

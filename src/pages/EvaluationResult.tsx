@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle, Download, RefreshCw, BarChart2, ArrowLeft, BrainCircuit } from 'lucide-react';
+import { CheckCircle, Download, RefreshCw, BarChart2, ArrowLeft, BrainCircuit, Mail, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
@@ -70,6 +70,37 @@ export const EvaluationResult = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [retries, setRetries] = useState(0);
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+
+  const handleSendEmail = async () => {
+    if (!data || emailSending || emailSent) return;
+    setEmailSending(true);
+    try {
+      toast.loading("Preparing high-quality PDF...", { id: "email" });
+      const pdfData = await apiFetch<any>(`/api/v1/evaluation/${data.evalID || data.id}/pdf-data`);
+      
+      // We conditionally imported it to avoid SSR issues if this runs in Nextjs, though it's vite.
+      // But we can just import from components
+      const { generatePdfReport } = await import('@/components/pdfGenerator');
+      
+      // This gets base64 literal via html2pdf "datauristring"
+      const b64DataUri = (await generatePdfReport(pdfData, true)) as string;
+      const b64Str = b64DataUri.split(',')[1];
+      
+      toast.loading("Sending email...", { id: "email" });
+      await apiFetch(`/api/v1/evaluation/${evalID}/send-email`, { 
+        method: 'POST',
+        body: JSON.stringify({ pdf_base64: b64Str })
+      });
+      setEmailSent(true);
+      toast.success('Report sent to your registered email! 📬', { id: "email" });
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to send email. Please try again.', { id: "email" });
+    } finally {
+      setEmailSending(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -329,6 +360,24 @@ export const EvaluationResult = () => {
                              <Download size={16} /> Download Full PDF
                            </button>
                          )}
+                         {/* ── Send report via email ── */}
+                         <button
+                           onClick={handleSendEmail}
+                           disabled={emailSending || emailSent}
+                           className={`flex-1 text-center py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+                             emailSent
+                               ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-default'
+                               : 'bg-[#00e5ff]/10 text-[#00e5ff] border border-[#00e5ff]/30 hover:bg-[#00e5ff]/20 disabled:opacity-50'
+                           }`}
+                         >
+                           {emailSending ? (
+                             <><Loader2 size={16} className="animate-spin" /> Sending...</>
+                           ) : emailSent ? (
+                             <><CheckCircle size={16} /> Email Sent!</>
+                           ) : (
+                             <><Mail size={16} /> Email My Report</>
+                           )}
+                         </button>
                          <button onClick={() => navigate('/candidate/interview')} className="flex-1 py-2.5 rounded-xl font-bold text-sm border border-border bg-background hover:bg-secondary text-foreground transition-all flex items-center justify-center gap-2">
                            <RefreshCw size={16} /> Retake
                          </button>

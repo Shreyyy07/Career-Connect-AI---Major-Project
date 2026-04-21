@@ -1,8 +1,10 @@
 import { ArrowLeft, Briefcase, FileSearch, ShieldAlert, BarChart3, Users, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
 import Footer from "@/components/Footer";
 
 export default function GuideRecruiter() {
+  useEffect(() => { window.scrollTo(0, 0); }, []);
   const steps = [
     {
       icon: <FileSearch className="w-5 h-5 text-primary" />,

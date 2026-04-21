@@ -6,8 +6,9 @@
  */
 
 import { NavigateFunction } from "react-router-dom";
-import { downloadAuthorizedFile } from "./api";
 import { toast } from "sonner";
+import { apiFetch } from "./api";
+import { generatePdfReport } from "@/components/pdfGenerator";
 
 export interface AgentAction {
   type: "navigate" | "open_section" | "download_report" | "click_button" | "toggle_theme" | "none";
@@ -43,14 +44,30 @@ export function executeAgentAction(
       break;
 
     case "download_report":
-      if (action.target) {
-        toast.info("Starting your PDF download...");
-        downloadAuthorizedFile(action.target).catch((err) => {
-          toast.error("Failed to download the report.");
-        });
-        return true;
-      }
-      break;
+      // ── Use the new beautiful html2pdf-based design instead of old backend attachment ──
+      (async () => {
+        try {
+          // Try to find the evaluation ID from action.target or current URL
+          let evalId = action.target;
+          if (!evalId) {
+            const match = window.location.pathname.match(/\/evaluation\/(\d+)/);
+            evalId = match ? match[1] : null;
+          }
+          if (!evalId) {
+            // Navigate to reports if we can't find the ID
+            navigate("/candidate/reports");
+            toast.info("Navigate to your report and click Download PDF.");
+            return;
+          }
+          toast.loading("Generating your PDF report...", { id: "van-pdf" });
+          const pdfData = await apiFetch<any>(`/api/v1/evaluation/${evalId}/pdf-data`);
+          await generatePdfReport(pdfData);
+          toast.success("PDF Downloaded! ✅", { id: "van-pdf" });
+        } catch (err) {
+          toast.error("Failed to generate PDF. Please try from the Reports page.", { id: "van-pdf" });
+        }
+      })();
+      return true;
 
     case "click_button":
       if (action.target) {

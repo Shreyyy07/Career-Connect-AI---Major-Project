@@ -22,7 +22,7 @@ import ShareReport from "@/components/landing/ShareReport";
 import FloatingParticles from "@/components/landing/FloatingParticles";
 import AnimatedCounter from "@/components/landing/AnimatedCounter";
 import { motion } from "framer-motion";
-import CustomCursor from "@/components/landing/CustomCursor";
+import { useEffect } from "react";
 
 const features = [
   { icon: FileSearch, title: "Semantic Resume Matching", desc: "Doc2Vec embeddings + cosine similarity for meaning-based matching, not keyword filtering." },
@@ -48,9 +48,9 @@ const steps = [
 ];
 
 export default function Index() {
+  useEffect(() => { window.scrollTo(0, 0); }, []);
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
-      <CustomCursor />
       <Navbar />
       <SectionCounter total={12} />
 

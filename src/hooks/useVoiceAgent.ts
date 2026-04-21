@@ -31,6 +31,26 @@ interface AgentResponse {
   response_text: string;
 }
 
+// ── Normalize Van's name from common speech recognition errors ────────────────
+// The Web Speech API often hears "Van" as "one" (phonetic confusion).
+// We fix this before showing transcript and before sending to the API.
+function normalizeVanTranscript(text: string): string {
+  if (!text) return text;
+  // Replace leading wake word variants: "one ...", "hey one" → "Van"
+  let fixed = text
+    .replace(/^(hey\s+)?one\b/i, (m) => m.replace(/one/i, 'Van'))
+    .replace(/^(hey\s+)?van\b/i, (m) => m); // keep correct usages as-is
+  // Strip only the wake-word prefix before sending to API (keep the command only)
+  return fixed;
+}
+
+// Strip "Hey Van" / "Van" prefix and return only the command portion
+function extractCommand(text: string): string {
+  return text
+    .replace(/^(hey\s+)?(van|one)\s*/i, '')
+    .trim() || text.trim();
+}
+
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
 export function useVoiceAgent() {
@@ -71,8 +91,10 @@ export function useVoiceAgent() {
     };
   }, []);
 
-  // ── Disable Van during AI Interview ──────────────────────────────────────
+  // Disable Van during AI Interview and on all HR pages
   const isOnInterviewPage = location.pathname === "/candidate/interview";
+  const isOnHRPages = location.pathname.startsWith("/hr");
+  const shouldHideVan = isOnInterviewPage || isOnHRPages;
 
   // ── Speak helper ──────────────────────────────────────────────────────────
   const speak = useCallback((text: string, onEnd?: () => void) => {
@@ -165,7 +187,7 @@ export function useVoiceAgent() {
 
   // ── Start listening ────────────────────────────────────────────────────────
   const startListening = useCallback(async () => {
-    if (!isSupported || isOnInterviewPage) return;
+    if (!isSupported || shouldHideVan) return;
     if (state !== "idle") return;
 
     window.speechSynthesis.cancel(); // stop any current speech
@@ -202,16 +224,18 @@ export function useVoiceAgent() {
       for (let i = 0; i < event.results.length; i++) {
         fullTranscript += event.results[i][0].transcript;
       }
-      setTranscript(fullTranscript);
-      (recognitionRef.current as any)._lastTranscript = fullTranscript;
+      // Normalize "one" → "Van" (speech engine misrecognition fix)
+      const normalized = normalizeVanTranscript(fullTranscript);
+      setTranscript(normalized);
+      (recognitionRef.current as any)._lastTranscript = normalized;
     };
 
     recognition.onend = () => {
       const captured = (recognitionRef.current as any)?._lastTranscript;
       if (captured && captured.trim()) {
-        callVanAPI(captured.trim());
+        // Send only the command part (strip "Hey Van" / "Van" prefix)
+        callVanAPI(extractCommand(captured.trim()));
       } else {
-        // Just reset gracefully
         setState("idle");
       }
     };
@@ -242,7 +266,7 @@ export function useVoiceAgent() {
 
   // ── Toggle: click robot to start/stop ─────────────────────────────────────
   const handleRobotClick = useCallback(() => {
-    if (isOnInterviewPage) return;
+    if (shouldHideVan) return;
 
     if (state === "listening") {
       stopListening();
@@ -269,7 +293,7 @@ export function useVoiceAgent() {
     isSupported,
     isPanelOpen,
     setIsPanelOpen,
-    isOnInterviewPage,
+    isOnInterviewPage: shouldHideVan,
     handleRobotClick,
   };
 }

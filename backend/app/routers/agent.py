@@ -205,7 +205,7 @@ def _handle_download(message: str, user: User, db: Session) -> Optional[AgentAct
         
     try:
         target_eval = evals[index]
-        return AgentAction(type="download_report", target=f"/api/v1/report/{target_eval.id}/download")
+        return AgentAction(type="download_report", target=str(target_eval.id))
     except IndexError:
         return None
 

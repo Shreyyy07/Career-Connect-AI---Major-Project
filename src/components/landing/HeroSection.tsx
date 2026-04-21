@@ -1,14 +1,16 @@
 import { lazy, Suspense, useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TextReveal from "./TextReveal";
 import FloatingParticles from "./FloatingParticles";
+import { useAuth } from "@/context/AuthContext";
 
 const NeuralNetwork3D = lazy(() => import("@/components/NeuralNetwork3D"));
 
 export default function HeroSection() {
+  const { user } = useAuth();
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress: heroScroll } = useScroll({
     target: heroRef,
@@ -81,28 +83,51 @@ export default function HeroSection() {
           transition={{ duration: 0.6, delay: 1.2 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-4"
         >
-          <Link to="/register">
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
-              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 glow-primary font-display font-semibold px-8 h-13 text-base group relative overflow-hidden">
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground/10 to-transparent"
-                  animate={{ x: ["-100%", "100%"] }}
-                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-                />
-                <span className="relative z-10 flex items-center">
-                  Start Free
-                  <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </span>
-              </Button>
-            </motion.div>
-          </Link>
-          <Link to="/login">
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
-              <Button size="lg" variant="outline" className="border-border/60 text-foreground hover:bg-secondary font-display px-8 h-13 text-base">
-                Sign In
-              </Button>
-            </motion.div>
-          </Link>
+          {user ? (
+            // ── Logged-in state: single Dashboard button ──
+            <Link to={user.role?.includes('hr') ? '/hr/dashboard' : '/candidate/dashboard'}>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 glow-primary font-display font-semibold px-8 h-13 text-base group relative overflow-hidden">
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground/10 to-transparent"
+                    animate={{ x: ["-100%", "100%"] }}
+                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                  />
+                  <span className="relative z-10 flex items-center">
+                    <LayoutDashboard className="mr-2 w-4 h-4" />
+                    Go to Dashboard
+                    <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                </Button>
+              </motion.div>
+            </Link>
+          ) : (
+            // ── Guest state: Start Free + Sign In ──
+            <>
+              <Link to="/register">
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+                  <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 glow-primary font-display font-semibold px-8 h-13 text-base group relative overflow-hidden">
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground/10 to-transparent"
+                      animate={{ x: ["-100%", "100%"] }}
+                      transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                    />
+                    <span className="relative z-10 flex items-center">
+                      Start Free
+                      <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  </Button>
+                </motion.div>
+              </Link>
+              <Link to="/login">
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
+                  <Button size="lg" variant="outline" className="border-border/60 text-foreground hover:bg-secondary font-display px-8 h-13 text-base">
+                    Sign In
+                  </Button>
+                </motion.div>
+              </Link>
+            </>
+          )}
         </motion.div>
 
         <motion.div

@@ -56,10 +56,10 @@ export default function DashboardSidebar({ role }: SidebarProps) {
       )}
     >
       {/* Logo */}
-      <div className="flex-shrink-0 border-b border-border/50 flex items-center p-4 h-[73px] transition-all duration-500">
+      <div className="flex-shrink-0 border-b border-border/50 flex items-center p-3 h-[73px] transition-all duration-500">
         <Link to="/" className="flex items-center gap-3 overflow-hidden whitespace-nowrap w-full">
-          <div className="w-8 h-8 rounded-lg bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center flex-shrink-0">
-            <img src="/L1.png" alt="Logo" className="w-6 h-6 object-contain rounded-md" />
+          <div className="w-10 h-10 rounded-xl bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center flex-shrink-0">
+            <img src="/L1.png" alt="Logo" className="w-8 h-8 object-contain rounded-lg" />
           </div>
           <span className="font-display font-bold text-sm text-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-0 group-hover:delay-200">
             Career<span className="text-[#00e5ff]">Connect</span> AI
@@ -88,7 +88,7 @@ export default function DashboardSidebar({ role }: SidebarProps) {
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary/50 border border-transparent"
               )}
             >
-              <link.icon className="w-5 h-5 flex-shrink-0" />
+              <link.icon className="w-5 h-5 flex-shrink-0 mx-auto group-hover:mx-0 transition-all duration-300" />
               <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-0 group-hover:delay-200 font-medium">
                 {link.label}
               </span>
@@ -103,7 +103,7 @@ export default function DashboardSidebar({ role }: SidebarProps) {
           onClick={() => navigate(`/${role}/profile`)}
           className="flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/50 w-full transition-colors overflow-hidden whitespace-nowrap"
         >
-          <Settings className="w-5 h-5 flex-shrink-0" />
+          <Settings className="w-5 h-5 flex-shrink-0 mx-auto group-hover:mx-0 transition-all duration-300" />
           <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-0 group-hover:delay-200 font-medium">
             Settings
           </span>
@@ -112,7 +112,7 @@ export default function DashboardSidebar({ role }: SidebarProps) {
           onClick={handleLogout}
           className="flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-sm text-destructive hover:bg-destructive/10 w-full transition-colors overflow-hidden whitespace-nowrap"
         >
-          <LogOut className="w-5 h-5 flex-shrink-0" />
+          <LogOut className="w-5 h-5 flex-shrink-0 mx-auto group-hover:mx-0 transition-all duration-300" />
           <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-0 group-hover:delay-200 font-medium tracking-wide">
             Logout
           </span>

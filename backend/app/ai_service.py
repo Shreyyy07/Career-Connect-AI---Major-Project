@@ -193,40 +193,80 @@ def ai_skill_recommendations(missing_skills: list[str], job_title: str) -> list[
 
 def ai_find_resource_url(skill: str, job_title: str, resource_type: str = "") -> str:
     """
-    Ask GPT-4.1 for the single best, publicly accessible learning URL for this skill.
-    To prevent 404 errors, the AI is instructed to return canonical, highly stable tag 
-    or category pages from authoritative sites rather than hallucinated specific article paths.
+    Return the best, publicly accessible learning URL for this skill.
+    Priority: 1) curated skill map  2) GPT-4.1 with a strict prompt  3) Google search fallback
     """
     import re
 
-    fallback = f"https://www.google.com/search?q={skill.replace(' ', '+')}+tutorial+for+{job_title.replace(' ', '+')}"
+    skill_lower = skill.lower().strip()
+
+    # 1) Curated map — always-valid authoritative URLs for common skills
+    CURATED: dict[str, str] = {
+        "python": "https://docs.python.org/3/tutorial/",
+        "javascript": "https://developer.mozilla.org/en-US/docs/Learn/JavaScript",
+        "typescript": "https://www.typescriptlang.org/docs/",
+        "typescript/javascript": "https://www.typescriptlang.org/docs/",
+        "react": "https://react.dev/learn",
+        "node.js": "https://nodejs.org/en/learn/getting-started/introduction-to-nodejs",
+        "nodejs": "https://nodejs.org/en/learn/getting-started/introduction-to-nodejs",
+        "c++": "https://isocpp.org/get-started",
+        "c#": "https://dotnet.microsoft.com/en-us/learn/csharp",
+        "c#/c++": "https://isocpp.org/get-started",
+        "java": "https://dev.java/learn/",
+        "sql": "https://www.w3schools.com/sql/",
+        "machine learning": "https://developers.google.com/machine-learning/crash-course",
+        "deep learning": "https://www.deeplearning.ai/courses/",
+        "pytorch": "https://pytorch.org/tutorials/beginner/basics/intro.html",
+        "tensorflow": "https://www.tensorflow.org/tutorials",
+        "docker": "https://docs.docker.com/get-started/",
+        "kubernetes": "https://kubernetes.io/docs/tutorials/kubernetes-basics/",
+        "aws": "https://aws.amazon.com/getting-started/",
+        "azure": "https://docs.microsoft.com/en-us/learn/azure/",
+        "git": "https://git-scm.com/docs/gittutorial",
+        "system design": "https://github.com/donnemartin/system-design-primer",
+        "data structures": "https://www.geeksforgeeks.org/data-structures/",
+        "algorithms": "https://www.geeksforgeeks.org/fundamentals-of-algorithms/",
+        "dsa": "https://www.geeksforgeeks.org/data-structures/",
+        "rest api": "https://restfulapi.net/",
+        "graphql": "https://graphql.org/learn/",
+        "mongodb": "https://www.mongodb.com/docs/manual/tutorial/getting-started/",
+        "postgresql": "https://www.postgresql.org/docs/current/tutorial.html",
+        "redis": "https://redis.io/docs/get-started/",
+        "fastapi": "https://fastapi.tiangolo.com/tutorial/",
+        "django": "https://docs.djangoproject.com/en/stable/intro/tutorial01/",
+        "flask": "https://flask.palletsprojects.com/en/stable/quickstart/",
+        "html": "https://developer.mozilla.org/en-US/docs/Learn/HTML",
+        "css": "https://developer.mozilla.org/en-US/docs/Learn/CSS",
+        "linux": "https://linuxjourney.com/",
+        "bash": "https://www.gnu.org/software/bash/manual/bash.html",
+        "communication": "https://www.coursera.org/learn/communication-skills",
+        "agile": "https://www.atlassian.com/agile",
+        "scrum": "https://www.scrum.org/resources/what-is-scrum",
+    }
+
+    # Check for direct match or partial keyword match
+    for key, url in CURATED.items():
+        if key in skill_lower or skill_lower in key:
+            return url
+
+    fallback = f"https://www.google.com/search?q={skill.replace(' ', '+')}+tutorial+{job_title.replace(' ', '+')}"
 
     if not settings.github_token:
         return fallback
 
+    # 2) AI fallback for uncommon skills — strict prompt for canonical pages only
     system_prompt = (
-        "You are a tech career coach who recommends the single BEST publicly accessible learning article or course. "
-        "CRITICAL: You must NEVER return a 404 broken link. Do NOT guess long or specific article URL slugs. "
-        "Instead, provide highly stable, canonical category or tag pages from authoritative sites. "
-        "Valid examples of indestructible formats: "
-        "- https://dev.to/t/react\n"
-        "- https://www.freecodecamp.org/news/tag/python/\n"
-        "- https://developer.mozilla.org/en-US/docs/Learn\n"
-        "- https://react.dev/learn\n"
-        "Reply ONLY with a valid HTTPS URL — no explanation, no markdown, just the URL."
+        "You are a tech career coach. Return the single BEST stable learning resource URL for the skill.\n"
+        "RULES:\n"
+        "- Return ONLY a valid HTTPS URL, no explanation\n"
+        "- Prefer: official docs, MDN, official tutorials, freeCodeCamp, The Odin Project\n"
+        "- NEVER guess specific article slugs — use stable index/category pages\n"
+        "- Examples: https://docs.python.org/3/tutorial/ | https://react.dev/learn | https://developer.mozilla.org/en-US/docs/Learn\n"
     )
-    user_prompt = (
-        f"Skill to learn: {skill}\n"
-        f"Target job role: {job_title}\n\n"
-        "Give me the single best, guaranteed-to-work URL to start learning this skill."
-    )
+    user_prompt = f"Skill: {skill}\nJob Title: {job_title}\nReturn the best canonical learning resource URL:"
 
     try:
-        url = _chat(system_prompt, user_prompt, temperature=0.1, max_tokens=60).strip()
-        # Clean quotes if any
-        url = url.strip("\"'")
-        
-        # Basic URL sanity check
+        url = _chat(system_prompt, user_prompt, temperature=0.0, max_tokens=80).strip().strip("\"'")
         if re.match(r"^https?://", url) and len(url) < 300:
             return url
     except Exception:

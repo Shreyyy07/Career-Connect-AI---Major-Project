@@ -1,8 +1,10 @@
 import { ArrowLeft, MapPin, Mail, FolderGit2, Blocks, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
 import Footer from "@/components/Footer";
 
 export default function AboutAuthor() {
+  useEffect(() => { window.scrollTo(0, 0); }, []);
   return (
     <div className="min-h-screen bg-background pt-24 font-body relative overflow-hidden">
       {/* Background gradients */}

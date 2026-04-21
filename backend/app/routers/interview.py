@@ -134,21 +134,16 @@ def answer(payload: InterviewAnswerRequest, db: Session = Depends(get_db), user:
 
 
 async def handle_post_evaluation(user_id: int, email: str, name: str, job_title: str, eval_id: int, hr_user_id: int | None, job_id: int | None):
-    from ..core.email import send_report_email
     from ..routers.evaluation import REPORTS_DIR
-    
-    report_path = REPORTS_DIR / f"{eval_id}.pdf"
-    
-    # Send email to candidate
-    await send_report_email(email, name, job_title, report_path)
     
     with SessionLocal() as db:
         from ..models import Notification
-        # 1. Notify the candidate that their report is ready
+        
+        # 1. Notify the candidate that their report is ready (Removed email attachment trigger per user request)
         notif_candidate = Notification(
             user_id=user_id,
             title="Report Generated ✅",
-            message=f"Your AI interview report for '{job_title}' is ready. We have also emailed you a copy.",
+            message=f"Your AI interview report for '{job_title}' is ready. You can view or email it from the results page.",
             type="report_ready",
         )
         db.add(notif_candidate)

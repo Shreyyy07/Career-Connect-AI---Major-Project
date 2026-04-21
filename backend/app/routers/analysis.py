@@ -206,6 +206,12 @@ class EmotionFrameResponse(BaseModel):
     cheat_warning: str | None = None
 
 
+# In-memory debounce: {session_id: {event_type: last_timestamp}}
+# Prevents DB spam for repeated face-event warnings
+import time as _time
+_face_event_debounce: dict[str, dict[str, float]] = {}
+
+
 class EmotionTimelineItem(BaseModel):
     timestamp_sec: int
     dominant_emotion: str
@@ -316,29 +322,39 @@ def submit_emotion_frame(
         except Exception as exc:
             logger.warning("YOLO detection error: %s", exc)
 
-    # ── Build face-absent / multi-person events from browser face-api count ────
+    # ── Build face-absent / multi-person events from browser face-api count ─────
+    FACE_EVENT_COOLDOWN = 30  # seconds between DB writes per event type
     faces_detected: int | None = getattr(payload, "faces_detected", None)
     if faces_detected is not None:
+        sess_debounce = _face_event_debounce.setdefault(payload.session_id, {})
+        now_ts = _time.time()
+
         if faces_detected == 0:
-            db.add(AntiCheatEvent(
-                session_id=payload.session_id,
-                candidate_id=session.user_id,
-                event_type="face_absent",
-                severity="WARNING",
-                timestamp_sec=payload.timestamp_sec,
-                details_json=json.dumps({"source": "face_api"}),
-            ))
+            last = sess_debounce.get("face_absent", 0)
+            if now_ts - last > FACE_EVENT_COOLDOWN:
+                sess_debounce["face_absent"] = now_ts
+                db.add(AntiCheatEvent(
+                    session_id=payload.session_id,
+                    candidate_id=session.user_id,
+                    event_type="face_absent",
+                    severity="WARNING",
+                    timestamp_sec=payload.timestamp_sec,
+                    details_json=json.dumps({"source": "face_api"}),
+                ))
         elif faces_detected >= 2 and not cheat_warning:
-            # Only add if YOLO didn't already catch it above
-            cheat_warning = f"🚨 Multiple people detected ({faces_detected} faces)!"
-            db.add(AntiCheatEvent(
-                session_id=payload.session_id,
-                candidate_id=session.user_id,
-                event_type="multiple_persons",
-                severity="CRITICAL",
-                timestamp_sec=payload.timestamp_sec,
-                details_json=json.dumps({"source": "face_api", "faces": faces_detected}),
-            ))
+            last = sess_debounce.get("multiple_persons", 0)
+            if now_ts - last > FACE_EVENT_COOLDOWN:
+                sess_debounce["multiple_persons"] = now_ts
+                # Only add if YOLO didn't already catch it above
+                cheat_warning = f"🚨 Multiple people detected ({faces_detected} faces)!"
+                db.add(AntiCheatEvent(
+                    session_id=payload.session_id,
+                    candidate_id=session.user_id,
+                    event_type="multiple_persons",
+                    severity="CRITICAL",
+                    timestamp_sec=payload.timestamp_sec,
+                    details_json=json.dumps({"source": "face_api", "faces": faces_detected}),
+                ))
 
     # Always persist emotion log
     log = EmotionLog(

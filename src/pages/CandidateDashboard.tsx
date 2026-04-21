@@ -75,6 +75,20 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+// ── Extract short keyword from long skill sentence ────────────────────────────
+const toKeyword = (s: string): string => {
+  if (!s) return s;
+  let text = s
+    .replace(/(knowledge of|proficiency in|experience with|experience in|understanding of|familiarity with|ability to|strong ability to|good to have|must have|prior experience|etc\.|or similar|and similar|comfortable working|independently|with strong attention to detail\.?)/gi, ' ')
+    .replace(/[:;,.-]/g, ' ').replace(/\s+/g, ' ').trim();
+  const words = text.split(/\s+/).filter(w => w.length > 1);
+  if (words.length === 0) return s.substring(0, 25);
+  if (words.length <= 3) return words.join(' ');
+  const generic = new Set(['and','or','the','in','of','to','a','an','for','on','with','by','reason','read','write','use','work','build','production','grade','code','system','level','about','learn','2+','3+','years']);
+  const kws = words.filter(w => !generic.has(w.toLowerCase()));
+  return kws.slice(0, 3).join(' ') || words.slice(0, 2).join(' ');
+};
+
 export default function CandidateDashboard() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -175,8 +189,9 @@ export default function CandidateDashboard() {
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar role="candidate" />
 
-      <main className="flex-1 overflow-auto">
-        <div className="p-8 w-full">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="p-6 lg:p-10 w-full">
+          <div className="max-w-[1400px] mx-auto space-y-8">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -284,7 +299,7 @@ export default function CandidateDashboard() {
                   </span>
                 </div>
                 <Link
-                  to="/candidate/resume-match"
+                  to="/candidate/skills"
                   className="text-xs text-[#00e5ff] hover:underline flex items-center gap-1"
                 >
                   View All <ChevronRight className="w-3 h-3" />
@@ -319,7 +334,7 @@ export default function CandidateDashboard() {
                       s.status === 'completed' ? 'bg-emerald-400' :
                       s.status === 'in_progress' ? 'bg-amber-400' : 'bg-muted-foreground'
                     }`} />
-                    {s.skill}
+                    {toKeyword(s.skill)}
                   </span>
                 ))}
               </div>
@@ -584,7 +599,7 @@ export default function CandidateDashboard() {
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             <AlertCircle className={`w-4 h-4 ${i < 2 ? 'text-destructive' : i < 4 ? 'text-warning' : 'text-success'}`} />
-                            <p className="text-sm font-medium text-foreground">{gap.skill}</p>
+                            <p className="text-sm font-medium text-foreground">{toKeyword(gap.skill)}</p>
                           </div>
                           <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
                             status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' :
@@ -643,7 +658,7 @@ export default function CandidateDashboard() {
                         className="p-3 rounded-lg bg-secondary/20 border border-border/30 hover:border-[#00e5ff]/20 transition-all cursor-pointer group"
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <p className="text-sm font-medium text-foreground">{rec.skill}</p>
+                          <p className="text-sm font-medium text-foreground">{toKeyword(rec.skill)}</p>
                           <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-[#00e5ff] transition-colors" />
                         </div>
                         <div className="text-xs">
@@ -658,10 +673,13 @@ export default function CandidateDashboard() {
                 )}
               </div>
 
-              <Button variant="ghost" className="w-full mt-3 text-[#00e5ff] text-xs border border-[#00e5ff]/10 hover:bg-[#00e5ff]/10">
-                Browse All Courses <ArrowRight className="ml-1 w-3 h-3" />
-              </Button>
+              <Link to="/candidate/skills">
+                <Button variant="ghost" className="w-full mt-3 text-[#00e5ff] text-xs border border-[#00e5ff]/10 hover:bg-[#00e5ff]/10">
+                  View All Skills <ArrowRight className="ml-1 w-3 h-3" />
+                </Button>
+              </Link>
             </motion.div>
+          </div>
           </div>
         </div>
       </main>

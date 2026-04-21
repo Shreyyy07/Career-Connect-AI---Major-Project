@@ -21,7 +21,7 @@ async def send_report_email(to_email: str, candidate_name: str, job_title: str, 
         logger.warning("SMTP not configured. Skipping email to %s", to_email)
         return
 
-    subject = f"Your Career Connect AI Interview Report — {job_title}"
+    subject = f"Your Career Connect AI Interview Report - {job_title}"
 
     html_body = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
@@ -74,3 +74,4 @@ async def send_report_email(to_email: str, candidate_name: str, job_title: str, 
         logger.info("Report email successfully sent to %s", to_email)
     except Exception as e:
         logger.error("Failed to send email to %s: %s", to_email, e)
+        raise e
