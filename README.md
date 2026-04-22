@@ -172,7 +172,7 @@ flowchart LR
 - **JD Similarity Score** — overall answer-to-JD text alignment
 - **Incompleteness Penalty** — strict score reduction if questions are skipped or session ended early
 
-![Evaluation Report](public/images_readme/Evaluation_Report.mp4)
+![Evaluation Report](public/images_readme/Evaluation_Report_.mp4)
 
 ---
 
