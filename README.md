@@ -152,7 +152,7 @@ flowchart LR
 - Google Gemini identifies **Matched Skills** and **Missing Skills** with priority ranking
 - **SerpAPI** auto-discovers the best free learning resource for every skill gap
 
-![Skill & Match Analysis](public/images_readme/Skill_Analysis.png)
+![Skill & Match Analysis](public/images_readme/Skill_Analysis.gif)
 
 ---
 
@@ -172,7 +172,7 @@ flowchart LR
 - **JD Similarity Score** — overall answer-to-JD text alignment
 - **Incompleteness Penalty** — strict score reduction if questions are skipped or session ended early
 
-![Evaluation Report](public/images_readme/Evaluation_Report_.mp4)
+![Evaluation Report](public/images_readme/Evaluation_Report.gif)
 
 ---
 
