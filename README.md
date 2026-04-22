@@ -30,13 +30,106 @@
 
 ### 🎓 Candidate Journey
 
-![Candidate Architecture Diagram](https://storage.googleapis.com/second-petal-295822.appspot.com/elements/elements%3A17250bfd53e39eea06cffb7fd86460082f9100eb072ca52135f2b184facbbecb.png)
+```mermaid
+flowchart LR
+    %% Styles
+    classDef purple fill:#6b21a8,stroke:#d8b4fe,stroke-width:2px,color:#fff,rx:5px,ry:5px
+    classDef blue fill:#1e3a8a,stroke:#93c5fd,stroke-width:2px,color:#fff,rx:5px,ry:5px
+    classDef yellow fill:#b45309,stroke:#fcd34d,stroke-width:2px,color:#fff,rx:5px,ry:5px
+    classDef green fill:#14532d,stroke:#86efac,stroke-width:2px,color:#fff,rx:5px,ry:5px
+    classDef red fill:#7f1d1d,stroke:#fca5a5,stroke-width:2px,color:#fff,rx:5px,ry:5px
+    classDef cyan fill:#164e63,stroke:#67e8f9,stroke-width:2px,color:#fff,rx:5px,ry:5px
 
+    %% Nodes
+    A["👤 Register / Login<br/>Authentication"]:::purple
+    B["✉️ Email OTP<br/>Verification"]:::purple
+    C["🎛️ Candidate<br/>Dashboard"]:::blue
+
+    %% Branch 1: Resume Upload
+    D["📄 Upload Resume<br/>(PDF/DOCX)"]:::yellow
+    E["📋 Paste Job<br/>Description"]:::yellow
+    F["🧠 Doc2Vec Semantic<br/>Matching"]:::green
+    G["🔍 AI Skill Gap<br/>Analysis (Gemini)"]:::green
+    H["📚 Auto-fetch Learning<br/>Resources"]:::green
+
+    %% Branch 2: AI Interview
+    I["🎙️ Start AI<br/>Interview (Van)"]:::yellow
+    J["🤖 Gemini: Generate<br/>Context-Aware Q's"]:::green
+    K["🗣️ Candidate Answers<br/>via Voice (STT)"]:::yellow
+
+    %% Evaluation Engine
+    L["📹 Real-Time Proctoring<br/>(Face-API + COCO)"]:::red
+    M["⚙️ Multimodal<br/>Evaluation Engine"]:::blue
+    
+    N["📊 Semantic Score"]:::cyan
+    O["🗣️ Speech Analysis<br/>(WPM, Fillers)"]:::cyan
+    P["🎭 Emotion Score<br/>(DeepFace)"]:::cyan
+    Q["📝 JD Similarity"]:::cyan
+
+    %% Results
+    R["📑 Interview<br/>Results Page"]:::purple
+    S["📄 HD PDF Report<br/>(html2pdf.js)"]:::purple
+    T["📧 Email Report<br/>(Gmail SMTP)"]:::purple
+
+    %% Connections
+    A --> B --> C
+    
+    C -->|"Selects Job"| D
+    D --> E --> F --> G --> H
+    
+    C -->|"Starts Assessment"| I
+    I --> J --> K
+    
+    K -->|"Analyzes Audio"| M
+    K -->|"Monitors Video"| L
+    
+    M --> N
+    M --> O
+    M --> P
+    M --> Q
+    
+    F --> R
+    L --> R
+    N --> R
+    O --> R
+    P --> R
+    Q --> R
+    
+    R --> S --> T
+```
 
 ### 🏢 HR / Recruiter Journey
 
-![HR Architecture Diagram](https://storage.googleapis.com/second-petal-295822.appspot.com/elements/elements%3A0429ef253f6a86ce2a156d9db171ef367edf444ed8ecc4e92d5d9a0b2130c84d.png)
+```mermaid
+flowchart LR
+    %% Styles
+    classDef purple fill:#6b21a8,stroke:#d8b4fe,stroke-width:2px,color:#fff,rx:5px,ry:5px
+    classDef blue fill:#1e3a8a,stroke:#93c5fd,stroke-width:2px,color:#fff,rx:5px,ry:5px
+    classDef yellow fill:#b45309,stroke:#fcd34d,stroke-width:2px,color:#fff,rx:5px,ry:5px
+    classDef green fill:#14532d,stroke:#86efac,stroke-width:2px,color:#fff,rx:5px,ry:5px
+    classDef red fill:#7f1d1d,stroke:#fca5a5,stroke-width:2px,color:#fff,rx:5px,ry:5px
+    classDef cyan fill:#164e63,stroke:#67e8f9,stroke-width:2px,color:#fff,rx:5px,ry:5px
 
+    A["👤 HR Registration /<br/>Login"]:::purple --> B["🏢 HR Command<br/>Center"]:::blue
+    
+    B --> C["📈 View Pipeline &<br/>Analytics"]:::cyan
+    B --> D["📋 View Job<br/>Descriptions"]:::yellow
+    B --> E["👥 Browse Candidate<br/>Pool"]:::blue
+    
+    E --> F["🔍 Open Candidate<br/>Detail Panel"]:::cyan
+    
+    F --> G["📊 Review AI Scores<br/>& Emotion Data"]:::green
+    F --> H["🛡️ Check Anti-Cheat<br/>Integrity Logs"]:::red
+    
+    G --> I{"✅ Make Hiring<br/>Decision"}:::purple
+    H --> I
+    
+    I -->|"Reject"| J["❌ Send Rejection<br/>Email"]:::red
+    I -->|"Shortlist"| K["⭐ Mark as<br/>Shortlisted"]:::green
+    
+    K --> L["⚡ Trigger n8n<br/>Automation"]:::yellow
+    L --> M["📞 Auto-Schedule<br/>Phone Screen"]:::blue
+```
 
 ---
 
@@ -79,7 +172,7 @@
 - **JD Similarity Score** — overall answer-to-JD text alignment
 - **Incompleteness Penalty** — strict score reduction if questions are skipped or session ended early
 
-![Evaluation Report](public/images_readme/Evaluation_Report.png)
+![Evaluation Report](public/images_readme/Evaluation_Report.mp4)
 
 ---
 
