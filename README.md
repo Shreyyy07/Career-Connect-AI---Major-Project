@@ -22,7 +22,7 @@
 
 **Career Connect AI** is a production-ready, full-stack AI recruitment platform that replaces manual screening pipelines with a fully automated, intelligent hiring engine. It features two dedicated portals — a **Candidate Dashboard** for interviews and skill growth, and an **HR Command Center** for pipeline management and integrity monitoring.
 
-![Landing Page](public/images_readme/Landing_page.png)
+![Landing Page](public/images_readme/Landing_Page.png)
 
 ---
 
@@ -32,13 +32,11 @@
 
 ![Candidate Architecture Diagram](https://storage.googleapis.com/second-petal-295822.appspot.com/elements/elements%3A17250bfd53e39eea06cffb7fd86460082f9100eb072ca52135f2b184facbbecb.png)
 
-[🔗 Edit Candidate Flow in Eraser](https://app.eraser.io/new?requestId=dZ7PPmJiCrrZVyp13SEX&state=YO9HJuTyRadp8OzXothrb)
 
 ### 🏢 HR / Recruiter Journey
 
 ![HR Architecture Diagram](https://storage.googleapis.com/second-petal-295822.appspot.com/elements/elements%3A0429ef253f6a86ce2a156d9db171ef367edf444ed8ecc4e92d5d9a0b2130c84d.png)
 
-[🔗 Edit HR Flow in Eraser](https://app.eraser.io/new?requestId=peZWc3Yhtx1PiD7NzGT5&state=6XKg19fWbUtK42BLC-Soy)
 
 ---
 
@@ -82,7 +80,6 @@
 - **Incompleteness Penalty** — strict score reduction if questions are skipped or session ended early
 
 ![Evaluation Report](public/images_readme/Evaluation_Report.png)
-![Report Content](public/images_readme/Report_content.png)
 
 ---
 
@@ -211,6 +208,23 @@ npm run dev
 
 ---
 
+## 🗺️ Roadmap
+
+- [ ] Mobile responsive layout for Candidate portal
+- [ ] Recruiter bulk-action on candidates (multi-select shortlist)
+- [ ] Custom scoring weight configuration per JD
+- [ ] Webhook-based real-time notification delivery
+- [ ] n8n full integration testing and deployment guide
+- [ ] Multilingual interview support
+
+---
+
+## 👨‍💻 Author
+
+Built with ❤️ by **Shrey**, demonstrating a complete applied-AI engineering stack from NLP and computer vision to full-stack web development.
+
+---
+
 <div align="center">
-  <i>Built with ❤️ — Redefining how talent meets opportunity.</i>
+  <i>Redefining how talent meets opportunity — one AI conversation at a time.</i>
 </div>
