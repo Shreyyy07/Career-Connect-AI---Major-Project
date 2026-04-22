@@ -22,26 +22,7 @@ export default function HeroSection() {
 
   return (
     <section ref={heroRef} className="relative min-h-[110vh] flex items-center justify-center overflow-hidden">
-      <div className="absolute inset-0 bg-grid opacity-40" />
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-primary/5 blur-[150px]" />
-
-      {/* Animated gradient orbs */}
-      <motion.div
-        className="absolute top-[20%] left-[15%] w-[300px] h-[300px] rounded-full bg-accent/10 blur-[120px]"
-        animate={{ x: [0, 40, -20, 0], y: [0, -30, 20, 0], scale: [1, 1.2, 0.9, 1] }}
-        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="absolute bottom-[20%] right-[10%] w-[400px] h-[400px] rounded-full bg-primary/8 blur-[150px]"
-        animate={{ x: [0, -50, 30, 0], y: [0, 40, -20, 0], scale: [1, 0.8, 1.1, 1] }}
-        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-      />
-
       <FloatingParticles count={30} color="mixed" />
-
-      <Suspense fallback={null}>
-        <NeuralNetwork3D />
-      </Suspense>
 
       <motion.div
         style={{ y: heroY, opacity: heroOpacity, scale: heroScale }}

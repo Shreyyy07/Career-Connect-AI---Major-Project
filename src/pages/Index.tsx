@@ -22,7 +22,9 @@ import ShareReport from "@/components/landing/ShareReport";
 import FloatingParticles from "@/components/landing/FloatingParticles";
 import AnimatedCounter from "@/components/landing/AnimatedCounter";
 import { motion } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, Suspense, lazy } from "react";
+
+const NeuralNetwork3D = lazy(() => import("@/components/NeuralNetwork3D"));
 
 const features = [
   { icon: FileSearch, title: "Semantic Resume Matching", desc: "Doc2Vec embeddings + cosine similarity for meaning-based matching, not keyword filtering." },
@@ -50,9 +52,37 @@ const steps = [
 export default function Index() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
-      <Navbar />
-      <SectionCounter total={12} />
+    <div className="min-h-screen bg-background overflow-x-hidden relative">
+      {/* GLOBAL FIXED BACKGROUND LAYER */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-grid opacity-40" />
+        {/* Enhanced Aurora Orbs for Lovable Design */}
+        <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-primary/20 blur-[180px] mix-blend-screen pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 translate-x-1/4 translate-y-1/4 w-[800px] h-[800px] rounded-full bg-[#ff7b00]/15 blur-[180px] mix-blend-screen pointer-events-none" />
+
+        {/* Animated gradient orbs */}
+        <motion.div
+          className="absolute top-[20%] left-[10%] w-[500px] h-[500px] rounded-full bg-primary/30 blur-[150px] mix-blend-screen pointer-events-none"
+          animate={{ x: [0, 50, -30, 0], y: [0, -40, 30, 0], scale: [1, 1.2, 0.9, 1] }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute bottom-[20%] right-[10%] w-[600px] h-[600px] rounded-full bg-[#ff7b00]/20 blur-[180px] mix-blend-screen pointer-events-none"
+          animate={{ x: [0, -60, 40, 0], y: [0, 50, -30, 0], scale: [1, 0.8, 1.1, 1] }}
+          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+        />
+
+        {/* 3D neural network overlay */}
+        <div className="absolute inset-0 mix-blend-screen opacity-80 pointer-events-none">
+          <Suspense fallback={null}>
+            <NeuralNetwork3D />
+          </Suspense>
+        </div>
+      </div>
+
+      <div className="relative z-10">
+        <Navbar />
+        <SectionCounter total={12} />
 
       {/* 01 — Hero */}
       <HeroSection />
@@ -343,6 +373,7 @@ export default function Index() {
       </section>
 
       <Footer />
+      </div>
     </div>
   );
 }
