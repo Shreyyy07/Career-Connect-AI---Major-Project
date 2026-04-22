@@ -110,7 +110,7 @@
 - Performance trend charts powered by Recharts
 - Profile completion tracker with actionable upgrade prompts
 
-![Candidate Dashboard](public/images_readme/Candidate_Dashboard.png)
+![Candidate Dashboard](public/images_readme/Candidate_Dashboard.gif)
 
 ---
 
@@ -120,7 +120,7 @@
 - Hiring funnel visualization, score distribution histogram, top-performer feed
 - Week-on-week session and application trend charts
 
-![HR Dashboard](public/images_readme/Hr_Dashboard.png)
+![HR Dashboard](public/images_readme/HR_Dashboard.gif)
 
 #### Candidate Management
 - Search and filter candidates by name, job, or score
