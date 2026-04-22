@@ -22,7 +22,7 @@
 
 **Career Connect AI** is a production-ready, full-stack AI recruitment platform that replaces manual screening pipelines with a fully automated, intelligent hiring engine. It features two dedicated portals — a **Candidate Dashboard** for interviews and skill growth, and an **HR Command Center** for pipeline management and integrity monitoring.
 
-![Landing Page](public/images_readme/Landing_Page.png)
+![Landing Page](public/images_readme/Landing_Page.gif)
 
 ---
 
