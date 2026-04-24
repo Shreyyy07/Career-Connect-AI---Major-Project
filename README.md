@@ -97,6 +97,7 @@ flowchart LR
     
     R --> S --> T
 ```
+---
 
 ### 🏢 HR / Recruiter Journey
 
