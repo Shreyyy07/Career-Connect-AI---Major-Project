@@ -14,6 +14,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { apiFetch } from "../lib/api";
+import { toast } from "sonner";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   AreaChart, Area, BarChart, Bar, CartesianGrid,
@@ -109,12 +110,14 @@ export default function CandidateDashboard() {
         setStats({ avg: s.average_score || 0, done: s.completed_interviews || 0, pending: s.pending_assessments || 0, total: s.total_sessions || 0 });
       } catch (e) {
         console.error("Failed to load stats", e);
+        toast.error("Failed to load your dashboard statistics.");
       }
       try {
         const h = await apiFetch<any[]>('/api/v1/candidate/history');
         if (h) setHistory(h);
       } catch (e) {
         console.error("Failed to load history", e);
+        toast.error("Failed to load your interview history.");
       }
       // Load skill recommendations progress instantly from localStorage
       try {

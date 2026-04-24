@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+backend
+.git
+.agents
+.bolt
+.claude
+supabase

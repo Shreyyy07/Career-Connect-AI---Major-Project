@@ -63,6 +63,7 @@ COMMON FEATURES & FAQs:
 - Skills tracking: not_started → in_progress → completed
 
 INTENT TYPES you must classify the user's message into:
+- "greeting": user says hello, asks how you are, etc.
 - "navigate": user wants to go to a specific page
 - "download_report": user asks to download a PDF report
 - "click_button": user asks to click a specific button on their current screen
@@ -73,7 +74,7 @@ INTENT TYPES you must classify the user's message into:
 
 RESPONSE FORMAT — You MUST reply with ONLY a valid JSON object:
 {
-  "intent": "navigate" | "download_report" | "click_button" | "toggle_theme" | "fetch_data" | "answer_faq" | "unknown",
+  "intent": "greeting" | "navigate" | "download_report" | "click_button" | "toggle_theme" | "fetch_data" | "answer_faq" | "unknown",
   "action": {
     "type": "navigate" | "download_report" | "click_button" | "toggle_theme",
     "target": "text of the button"
@@ -81,6 +82,7 @@ RESPONSE FORMAT — You MUST reply with ONLY a valid JSON object:
   "response_text": ""
 }
 
+For "greeting" intent: action = null, response_text = "I am good, tell me what help do you need".
 For "navigate" or "click_button" or "toggle_theme" or "download_report": leave response_text completely empty ("") to save time.
 For "fetch_data" intent: action = null.
 For "answer_faq" intent: action = null.

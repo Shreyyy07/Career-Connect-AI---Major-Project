@@ -94,7 +94,7 @@ export default function AboutAuthor() {
             <div className="glass-strong rounded-2xl p-8 flex flex-col items-center text-center">
               <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white/5 mb-6 shadow-2xl relative group">
                 <img
-                  src="public\copy.png"
+                  src="/copy.png"
                   alt="Shrey Joshi"
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   onError={(e) => { e.currentTarget.src = "https://i.pravatar.cc/300"; }}

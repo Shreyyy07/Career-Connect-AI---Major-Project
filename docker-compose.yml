@@ -1,0 +1,31 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: career_connect_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/career_connect_ai.db:/app/career_connect_ai.db
+      - backend_reports:/app/reports
+    environment:
+      - ENV=production
+    # If you have a .env file, uncomment the following line
+    env_file:
+      - ./backend/.env
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: career_connect_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  backend_reports:

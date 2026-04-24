@@ -38,7 +38,7 @@ def _extract_text(content_type: str, data: bytes) -> str:
                 pages.append(p.extract_text() or "")
             return "\n".join(pages).strip()
         except Exception:
-            return ""
+            raise HTTPException(status_code=400, detail="Failed to parse PDF document. Please ensure it is a valid text-based PDF.")
 
     if content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
         try:
@@ -47,7 +47,7 @@ def _extract_text(content_type: str, data: bytes) -> str:
             doc = Document(__import__("io").BytesIO(data))
             return "\n".join(p.text for p in doc.paragraphs).strip()
         except Exception:
-            return ""
+            raise HTTPException(status_code=400, detail="Failed to parse DOCX document. Please ensure it is a valid Word document.")
 
     return ""
 

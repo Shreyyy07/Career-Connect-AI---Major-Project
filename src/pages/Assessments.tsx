@@ -5,6 +5,7 @@ import { Assessment } from '../types';
 import { apiFetch } from '../lib/api';
 import { TextAssessment } from './TextAssessment';
 import { useNavigate } from 'react-router-dom';
+import { toast } from "sonner";
 
 type JDItem = { jobID: number; title: string };
 
@@ -45,14 +46,18 @@ export const Assessments = () => {
     try {
       const data = await apiFetch<Assessment[]>('/api/v1/assessments');
       setAssessments(data || []);
-    } catch { } finally { setLoadingHistory(false); }
+    } catch { 
+      toast.error("Failed to load your assessments history.");
+    } finally { setLoadingHistory(false); }
   };
 
   const createNewAssessment = async () => {
     try {
       await apiFetch('/api/v1/assessments', { method: 'POST' });
       fetchAssessments();
-    } catch { }
+    } catch { 
+      toast.error("Failed to create a new assessment.");
+    }
   };
 
   const startPractice = async () => {
@@ -67,7 +72,11 @@ export const Assessments = () => {
       setFirstQuestion(res.firstQuestion);
       setJobTitle(jds.find(j => j.jobID === selectedJD)?.title || '');
       setPracticeState('session');
-    } catch (e: any) { setStartError(e?.message || 'Failed to start'); }
+    } catch (e: any) { 
+      const msg = e?.message || 'Failed to start practice session';
+      setStartError(msg); 
+      toast.error(msg);
+    }
     finally { setStarting(false); }
   };
 

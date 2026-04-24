@@ -36,18 +36,18 @@ interface AgentResponse {
 // We fix this before showing transcript and before sending to the API.
 function normalizeVanTranscript(text: string): string {
   if (!text) return text;
-  // Replace leading wake word variants: "one ...", "hey one" → "Van"
+  // Replace leading wake word variants: "one ...", "hey man" → "Van"
+  const wakeWordPattern = /^(hey\s+)?(one|man|ban|ben|dan|when|can|ran|band|pan)\b/i;
   let fixed = text
-    .replace(/^(hey\s+)?one\b/i, (m) => m.replace(/one/i, 'Van'))
-    .replace(/^(hey\s+)?van\b/i, (m) => m); // keep correct usages as-is
-  // Strip only the wake-word prefix before sending to API (keep the command only)
+    .replace(wakeWordPattern, (m) => m.replace(/one|man|ban|ben|dan|when|can|ran|band|pan/i, 'Van'))
+    .replace(/^(hey\s+)?van\b/i, (m) => m.replace(/van/i, 'Van')); // ensure capitalization
   return fixed;
 }
 
 // Strip "Hey Van" / "Van" prefix and return only the command portion
 function extractCommand(text: string): string {
   return text
-    .replace(/^(hey\s+)?(van|one)\s*/i, '')
+    .replace(/^(hey\s+)?(van|one|man|ban|ben|dan|when|can|ran|band|pan)\s*/i, '')
     .trim() || text.trim();
 }
 

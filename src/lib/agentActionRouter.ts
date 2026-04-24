@@ -71,17 +71,38 @@ export function executeAgentAction(
 
     case "click_button":
       if (action.target) {
-        const query = action.target.toLowerCase().replace(/button/g, "").trim();
+        let query = action.target.toLowerCase().replace(/button/g, "").trim();
+        let targetIndex = 0; // Default to first match
+
+        // Extract ordinals (1st, 2nd, first, second, etc.)
+        const ordinalMatch = query.match(/\b(1st|2nd|3rd|4th|5th|first|second|third|fourth|fifth)\b/);
+        if (ordinalMatch) {
+          const ord = ordinalMatch[1];
+          if (["2nd", "second"].includes(ord)) targetIndex = 1;
+          else if (["3rd", "third"].includes(ord)) targetIndex = 2;
+          else if (["4th", "fourth"].includes(ord)) targetIndex = 3;
+          else if (["5th", "fifth"].includes(ord)) targetIndex = 4;
+          
+          // Remove ordinal from query
+          query = query.replace(ordinalMatch[0], "").trim();
+        }
+
         const clickableElements = Array.from(document.querySelectorAll("button, a, [role='button']"));
-        const targetBtn = clickableElements.find((btn) => 
-          btn.textContent?.toLowerCase().includes(query)
-        );
         
-        if (targetBtn) {
-          (targetBtn as HTMLElement).click();
+        // Find all matching elements based on text content or aria-label
+        const matchingElements = clickableElements.filter((btn) => {
+          const text = (btn.textContent || "").toLowerCase();
+          const aria = (btn.getAttribute("aria-label") || "").toLowerCase();
+          return text.includes(query) || aria.includes(query);
+        });
+        
+        if (matchingElements.length > targetIndex) {
+          (matchingElements[targetIndex] as HTMLElement).click();
           return true;
+        } else if (matchingElements.length > 0) {
+          toast.error(`Found ${matchingElements.length} button(s), but you asked for number ${targetIndex + 1}`);
         } else {
-          toast.error(`Could not find a button matching "${action.target}"`);
+          toast.error(`Could not find a button matching "${query}"`);
         }
       }
       break;

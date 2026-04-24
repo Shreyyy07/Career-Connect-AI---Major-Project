@@ -1,0 +1,7 @@
+__pycache__
+*.pyc
+venv
+.env
+career_connect.db
+career_connect_ai.db
+yolov8n.pt

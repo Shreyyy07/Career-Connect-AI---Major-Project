@@ -8,6 +8,7 @@ import {
   Phone, ChevronRight, Loader2, Smile
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import * as faceapi from "face-api.js";
 import * as tf from "@tensorflow/tfjs";
@@ -127,12 +128,18 @@ export default function AIInterview() {
       faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
     ])
       .then(() => { faceApiReadyRef.current = true; console.log('[face-api.js] Models loaded'); })
-      .catch((err) => console.warn('[face-api.js] Model load failed:', err));
+      .catch((err) => {
+        console.warn('[face-api.js] Model load failed:', err);
+        toast.error("Failed to load Face-API models. Please refresh the page.");
+      });
     
     cocoSsd.load().then(model => {
       cocoSsdModelRef.current = model;
       console.log('[coco-ssd] Model loaded');
-    }).catch(err => console.warn('[coco-ssd] Model load failed:', err));
+    }).catch(err => {
+      console.warn('[coco-ssd] Model load failed:', err);
+      toast.error("Failed to load Anti-Cheat models. Please refresh the page.");
+    });
   }, []);
 
   useEffect(() => {
@@ -455,6 +462,7 @@ export default function AIInterview() {
         return updated;
       });
     } catch (_) {
+      toast.error("Failed to load next question. Falling back to default question.");
       setQuestions((prev) => {
         const updated = [...prev];
         updated[nextQIdx] =
@@ -485,7 +493,7 @@ export default function AIInterview() {
     } catch (e: any) {
       setEnding(false);
       setIsGeneratingReport(false);
-      alert(e.message || "Failed to finalize interview");
+      toast.error(e.message || "Failed to finalize interview. Please try again.");
     }
   };
 
