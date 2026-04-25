@@ -144,6 +144,7 @@ class InterviewAnswerResponse(BaseModel):
 
 class InterviewEndRequest(BaseModel):
     sessionID: str
+    finalTranscript: Optional[str] = Field(default=None, max_length=8000)
 
 
 class InterviewEndResponse(BaseModel):

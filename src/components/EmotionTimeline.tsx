@@ -18,6 +18,16 @@ export const EMOTION_COLORS: Record<string, string> = {
   disgust: '#a78bfa', // Purple
 };
 
+export const EMOTION_LABELS: Record<string, string> = {
+  happy: 'Confident',
+  neutral: 'Neutral',
+  sad: 'Uncertain',
+  angry: 'Tense',
+  surprise: 'Engaged',
+  fear: 'Anxious',
+  disgust: 'Skeptical',
+};
+
 export const EMOTION_KEYS = ['happy', 'surprise', 'neutral', 'sad', 'angry', 'fear', 'disgust'];
 
 interface EmotionTimelineProps {
@@ -77,7 +87,7 @@ export default function EmotionTimeline({ timeline }: EmotionTimelineProps) {
             className="font-bold uppercase tracking-widest px-3 py-1 rounded-md text-zinc-900 text-xs shadow-lg"
             style={{ background: EMOTION_COLORS[overallDom] ?? '#475569', boxShadow: `0 0 15px ${EMOTION_COLORS[overallDom]}40` }}
           >
-            {overallDom}
+            {EMOTION_LABELS[overallDom] || overallDom}
           </span>
         </div>
       </div>
@@ -95,7 +105,7 @@ export default function EmotionTimeline({ timeline }: EmotionTimelineProps) {
             />
             <Legend
               wrapperStyle={{ fontSize: 12, paddingTop: 15, fontWeight: '500' }}
-              formatter={(val) => <span style={{ textTransform: 'capitalize', color: '#94a3b8' }}>{val}</span>}
+              formatter={(val: string) => <span style={{ textTransform: 'capitalize', color: '#94a3b8' }}>{EMOTION_LABELS[val] || val}</span>}
               iconType="circle"
             />
             {EMOTION_KEYS.map((key, i) => (
@@ -118,7 +128,7 @@ export default function EmotionTimeline({ timeline }: EmotionTimelineProps) {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-widest text-zinc-900 uppercase"
               style={{ background: EMOTION_COLORS[emotion] ?? '#475569' }}
             >
-              <span>{emotion}</span> <span className="opacity-60 text-black">|</span> <span>{count}</span>
+              <span>{EMOTION_LABELS[emotion] || emotion}</span> <span className="opacity-60 text-black">|</span> <span>{count}</span>
             </div>
           ))}
       </div>

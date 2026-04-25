@@ -235,8 +235,10 @@ export default function AIInterview() {
       if (cocoSsdModelRef.current) {
         try {
           const preds = await cocoSsdModelRef.current.detect(video);
-          // Lower threshold to 0.35 so a briefly-flashed phone is caught
-          const phone = preds.find(p => p.class === 'cell phone' && p.score > 0.35);
+          // Lower threshold to 0.35 so a briefly-flashed phone is caught.
+          // Note: coco-ssd frequently misclassifies smartphones as 'remote'
+          const phoneClasses = ['cell phone', 'remote'];
+          const phone = preds.find(p => phoneClasses.includes(p.class) && p.score > 0.35);
           if (phone) {
             const now = Date.now();
             // Debounce warning display: max 1 every 15s
@@ -382,7 +384,8 @@ export default function AIInterview() {
         rec.onresult = (e: any) => {
           let interim = "", final = "";
           for (let i = e.resultIndex; i < e.results.length; i++) {
-            const t = e.results[i][0].transcript;
+            let t = e.results[i][0].transcript;
+            t = t.replace(/\b(van|vane)\b/gi, "Van");
             if (e.results[i].isFinal) final += t;
             else interim += t;
           }
@@ -481,13 +484,9 @@ export default function AIInterview() {
     stopFrameCapture(); // Stop capturing frames before ending
     setIsGeneratingReport(true); // show calculating screen
     try {
-      await apiFetch("/api/v1/interview/answer", {
-        method: "POST",
-        body: JSON.stringify({ sessionID, transcript: finalTranscript }),
-      });
       const res = await apiFetch<{ evalID: number }>("/api/v1/interview/end", {
         method: "POST",
-        body: JSON.stringify({ sessionID }),
+        body: JSON.stringify({ sessionID, finalTranscript }),
       });
       navigate(`/candidate/evaluation/${res.evalID}`);
     } catch (e: any) {

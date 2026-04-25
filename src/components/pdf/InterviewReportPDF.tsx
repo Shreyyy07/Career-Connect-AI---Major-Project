@@ -4,6 +4,8 @@ import {
   Sparkles, BarChart3, MessageSquare,
 } from "lucide-react";
 import React from "react";
+import { EMOTION_LABELS } from "../../EmotionTimeline";
+import { EMOTION_LABELS } from "../EmotionTimeline";
 
 export interface PDFData {
   candidate_name: string;
@@ -165,7 +167,7 @@ export const InterviewReportPDF = React.forwardRef<HTMLDivElement, { data: PDFDa
         <p className="text-xs text-gray-700 leading-relaxed font-medium">
           {data.candidate_name} completed the AI interview with a final score of <strong>{final}/100</strong>.
           The candidate hit {data.matched_skills?.length || 0} required skills and maintained a dominant 
-          emotion of <strong>{data.dominant_emotion || "focused"}</strong> throughout the session.
+          emotion of <strong>{EMOTION_LABELS[data.dominant_emotion] || data.dominant_emotion || "focused"}</strong> throughout the session.
         </p>
       </div>
 
@@ -235,7 +237,7 @@ export const InterviewReportPDF = React.forwardRef<HTMLDivElement, { data: PDFDa
           {[
             { label: "Pace", value: `${Math.round(data.wpm || 0)} WPM`, trend: (data.wpm && data.wpm >= 120 && data.wpm <= 160) ? "Optimal" : "Check Pace" },
           { label: "Fillers", value: `${data.filler_count || 0}`, trend: (data.filler_percentage < 3) ? "Excellent" : "High Usage" },
-          { label: "Dom. Emotion", value: (data.dominant_emotion || "Neutral").toUpperCase(), trend: "Stable" },
+          { label: "Dom. Emotion", value: (EMOTION_LABELS[data.dominant_emotion] || data.dominant_emotion || "Neutral").toUpperCase(), trend: "Stable" },
           { label: "Engagement", value: (data.emotion_score > 70) ? "High" : "Average", trend: "Consistent" },
         ].map((m, i) => (
           <div key={i} className="rounded-lg border border-gray-100 bg-gray-50/50 p-2.5 text-center">

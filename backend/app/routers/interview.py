@@ -169,6 +169,9 @@ def end(payload: InterviewEndRequest, background_tasks: BackgroundTasks, db: Ses
     if s.user_id != user.id:
         raise HTTPException(status_code=403, detail="Not allowed")
 
+    if payload.finalTranscript:
+        s.transcript = (s.transcript + f"\nA: {payload.finalTranscript}").strip()
+
     s.status = InterviewStatus.completed
     s.completed_at = datetime.utcnow()
     db.add(s)
