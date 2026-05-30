@@ -44,7 +44,7 @@ export default function HeroSection() {
           <TextReveal delay={0.3}>Hire Smarter with</TextReveal>
           <br />
           <span className="text-gradient-primary">
-            <TextReveal delay={0.6}>Neural Intelligence</TextReveal>
+            <TextReveal delay={0.6}>AI Precision</TextReveal>
           </span>
         </h1>
 

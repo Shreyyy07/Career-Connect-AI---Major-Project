@@ -1,6 +1,9 @@
+import logging
 import random
 import string
 from datetime import datetime, timedelta, timezone
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -70,8 +73,8 @@ def _send_otp_email(to_email: str, otp: str):
     smtp_user = settings.smtp_email
     smtp_pass = settings.smtp_password
     if not smtp_user or not smtp_pass:
-        print(f"[DEV] Missing SMTP config. OTP for {to_email} is {otp}")
-        return True # Dev fallback allows registration to succeed so testing continues
+        logger.warning("[DEV] Missing SMTP config — OTP email not sent (check SMTP_EMAIL/SMTP_PASSWORD in .env)")
+        return True # Dev fallback: allow registration to succeed so local testing continues
 
     try:
         msg = EmailMessage()
@@ -177,10 +180,10 @@ def _send_otp_email(to_email: str, otp: str):
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(smtp_user, smtp_pass)
             server.send_message(msg)
-        print(f"[DEV] Real HTML email sent to {to_email}")
+        logger.info(f"[EMAIL] Verification email sent to {to_email}")
         return True
     except Exception as e:
-        print(f"[ERROR] Failed to send email to {to_email}: {e}")
+        logger.error(f"[EMAIL] Failed to send to {to_email}: {e}")
         return False
 
 @router.post("/verify-email", response_model=AuthResponse)
@@ -231,7 +234,7 @@ def _send_password_reset_email(to_email: str, otp: str):
     smtp_user = settings.smtp_email
     smtp_pass = settings.smtp_password
     if not smtp_user or not smtp_pass:
-        print(f"[DEV] Missing SMTP config. Reset OTP for {to_email} is {otp}")
+        logger.warning("[DEV] Missing SMTP config — reset OTP email not sent")
         return True
 
     try:
@@ -271,7 +274,7 @@ def _send_password_reset_email(to_email: str, otp: str):
             server.send_message(msg)
         return True
     except Exception as e:
-        print(f"[ERROR] Failed to send email to {to_email}: {e}")
+        logger.error(f"[EMAIL] Failed to send reset email to {to_email}: {e}")
         return False
 
 @router.post("/forgot-password")

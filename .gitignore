@@ -50,6 +50,58 @@ backend/reports/*.pdf
 *.txt
 !requirements.txt
 !README.md
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.env
+
+# Bolt (AI scaffold tool — not needed in repo)
+.bolt/
+
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+
+# Databases
+*.db
+*.sqlite3
+
+# ML Weights & Artifacts
+*.pt
+backend/app/artifacts/doc2vec.model*
+
+# Agent & Output directories
+.agents/
+.claude/
+scratch/
+backend/reports/*.pdf
+
+# Temp text scripts
+*.txt
+!requirements.txt
+!README.md
 !backend/README.md
 extract_docx.py
 read_docx.py
@@ -59,3 +111,9 @@ tmp_mapper.py
 backend/regenerate.py
 backend/create_hr.py
 backend/create_test_hr.py
+
+# Backend secrets (belt + suspenders — also covered by root .env rule)
+backend/.env
+
+# Test scripts
+test_early_end.py
