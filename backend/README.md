@@ -1,3 +1,12 @@
+---
+title: Career Connect AI
+emoji: 🚀
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 ## Career Connect AI — Backend (FastAPI)
 
 ### Run locally
