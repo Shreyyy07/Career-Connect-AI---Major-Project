@@ -4,7 +4,6 @@ import {
   Sparkles, BarChart3, MessageSquare,
 } from "lucide-react";
 import React from "react";
-import { EMOTION_LABELS } from "../../EmotionTimeline";
 import { EMOTION_LABELS } from "../EmotionTimeline";
 
 export interface PDFData {
