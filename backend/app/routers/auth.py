@@ -106,6 +106,11 @@ def _send_otp_email(to_email: str, otp: str):
                     margin-bottom: 25px;
                     letter-spacing: -0.5px;
                 }}
+                .logo-header img {{
+                    height: 32px;
+                    vertical-align: middle;
+                    margin-right: 8px;
+                }}
                 .highlight {{
                     color: #00e5ff;
                 }}
@@ -158,7 +163,10 @@ def _send_otp_email(to_email: str, otp: str):
             </style>
         </head>
         <body>
-            <div class="logo-header">Career<span class="highlight">Connect</span> AI</div>
+            <div class="logo-header">
+                <img src="https://raw.githubusercontent.com/Shreyyy07/career-connect-ai/main/public/logo.png" alt="Logo" />
+                Career<span class="highlight">Connect</span> AI
+            </div>
             <div class="container">
                 <h1>Verify your <b>Career<span class="highlight">Connect</span></b> email</h1>
                 <p>Welcome to CareerConnect. Please use the verification code below to securely verify your email address and activate your sign in.</p>
@@ -257,7 +265,10 @@ def _send_password_reset_email(to_email: str, otp: str):
             </style>
         </head>
         <body>
-            <div style="text-align:center; font-size: 26px; font-weight: bold; margin-bottom: 25px;">Career<span class="highlight">Connect</span> AI</div>
+            <div style="text-align:center; font-size: 26px; font-weight: bold; margin-bottom: 25px;">
+                <img src="https://raw.githubusercontent.com/Shreyyy07/career-connect-ai/main/public/logo.png" alt="Logo" style="height: 32px; vertical-align: middle; margin-right: 8px;" />
+                Career<span class="highlight">Connect</span> AI
+            </div>
             <div class="container">
                 <h1 style="margin-top: 0;">Reset your Password</h1>
                 <p>We received a request to reset your password. Use the code below to securely reset it.</p>

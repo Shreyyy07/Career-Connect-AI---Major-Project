@@ -50,7 +50,7 @@ export const InterviewReportPDF = React.forwardRef<HTMLDivElement, { data: PDFDa
         <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-cyan-400/20 blur-xl" />
         <div className="relative flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="/L1.png" alt="Career Connect AI" className="h-8 object-contain" />
+            <img src="/logo.png" alt="Career Connect AI" className="h-8 object-contain" />
             <p className="text-white font-bold text-sm tracking-wide">
               Career<span className="text-cyan-400">Connect</span> AI
             </p>
