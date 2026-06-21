@@ -22,6 +22,11 @@ export default function Login() {
       const userRole = await signIn(email, password);
       navigate(userRole === "hr" || userRole === "admin" ? "/hr/dashboard" : "/candidate/dashboard");
     } catch (e: any) {
+      // 403 with "email_not_verified" → redirect to verify-email page
+      if (e.status === 403 && e.message === "email_not_verified") {
+        navigate(`/verify-email?email=${encodeURIComponent(email)}`);
+        return;
+      }
       setErr(e.message || "Failed to sign in");
     } finally {
       setLoading(false);

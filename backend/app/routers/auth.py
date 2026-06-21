@@ -349,7 +349,10 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     if not user.is_verified:
-        raise HTTPException(status_code=403, detail="Please verify your email to log in.")
+        raise HTTPException(
+            status_code=403,
+            detail="email_not_verified"  # frontend catches this exact string to redirect to verify page
+        )
 
     token = create_access_token(sub=str(user.id), role=user.role.value, name=user.full_name, company_name=getattr(user, "company_name", ""))
     return LoginResponse(token=token, refreshToken=None)
@@ -408,9 +411,10 @@ def forgot_password(payload: dict, db: Session = Depends(get_db)):
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
     _otp_store[email] = {"otp": otp, "expires_at": expires_at, "used": False}
 
-    success = _send_otp_email(email, otp)
+    success = _send_password_reset_email(email, otp)
     if not success:
-        raise HTTPException(status_code=500, detail="Failed to dispatch verification email. Please check SMTP App Password.")
+        logger.warning(f"[EMAIL] Reset OTP email failed for {email}. OTP stored but not sent.")
+        # Still return 200 so UX isn't broken — user can try resend
 
     return {"message": "If that account exists, an OTP has been sent."}
 
