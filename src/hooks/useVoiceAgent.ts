@@ -98,47 +98,58 @@ export function useVoiceAgent() {
 
   // ── Speak helper ──────────────────────────────────────────────────────────
   const speak = useCallback((text: string, onEnd?: () => void) => {
-    // Clear any stuck queues
+    if (!window.speechSynthesis) return;
+
+    // Cancel any currently-speaking utterance
     if (window.speechSynthesis.speaking) {
       window.speechSynthesis.cancel();
     }
-    
-    // CRITICAL: Chrome often gets permanently stuck in 'paused' state silently.
+
     window.speechSynthesis.resume();
-    
     setState("speaking");
 
-    setTimeout(() => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      (window as any)._vanUtterance = utterance;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
 
-      utterance.rate = 1.0;
-      // Normal pitch prevents some glitched engines from failing
-      utterance.pitch = 1.0; 
-      utterance.volume = 1.0; // Max volume
-      
-      const v = voiceRef.current;
-      if (v) utterance.voice = v;
-      
-      console.log(`[Van] Speaking: "${text}" | Voice: ${v ? v.name : 'Default'}`);
+    const v = voiceRef.current;
+    if (v) utterance.voice = v;
 
-      const cleanup = () => {
-        setState("idle");
-        onEnd?.();
-      };
+    console.log(`[Van] Speaking: "${text}" | Voice: ${v ? v.name : 'Default'}`);
 
-      utterance.onend = cleanup;
-      
-      utterance.onerror = (e) => {
-        console.error("[Van] Speech synthesis error:", e);
+    const cleanup = () => {
+      setState("idle");
+      onEnd?.();
+    };
+
+    utterance.onend = cleanup;
+    utterance.onerror = (e) => {
+      // "interrupted" fires when we cancel() before speaking ends — not a real error
+      if ((e as any).error === "interrupted" || (e as any).error === "canceled") {
         cleanup();
-      };
+        return;
+      }
+      console.error("[Van] Speech synthesis error:", e);
+      cleanup();
+    };
 
-      // Force resume again right before speak
-      window.speechSynthesis.resume();
-      window.speechSynthesis.speak(utterance);
-    }, 50);
+    window.speechSynthesis.speak(utterance);
   }, []);
+
+  // ── Unlock audio context on user gesture (Chrome autoplay policy fix) ──────
+  // Chrome blocks speechSynthesis unless triggered by a direct user gesture.
+  // We call this immediately when the mic button is clicked so the context
+  // is unlocked before the async API call returns.
+  const unlockAudio = useCallback(() => {
+    if (!window.speechSynthesis) return;
+    const unlock = new SpeechSynthesisUtterance("");
+    unlock.volume = 0;
+    window.speechSynthesis.speak(unlock);
+    window.speechSynthesis.cancel();
+  }, []);
+
+
 
   // ── Add message to panel ──────────────────────────────────────────────────
   const addMessage = useCallback((role: "user" | "van", text: string) => {
@@ -189,6 +200,11 @@ export function useVoiceAgent() {
   const startListening = useCallback(async () => {
     if (!isSupported || shouldHideVan) return;
     if (state !== "idle") return;
+
+    // ← CRITICAL: unlock audio context immediately on user gesture
+    // Chrome's autoplay policy blocks speechSynthesis unless called synchronously
+    // within a user gesture. Unlocking here covers the async API delay.
+    unlockAudio();
 
     window.speechSynthesis.cancel(); // stop any current speech
 
@@ -295,5 +311,6 @@ export function useVoiceAgent() {
     setIsPanelOpen,
     isOnInterviewPage: shouldHideVan,
     handleRobotClick,
+    unlockAudio,
   };
 }
