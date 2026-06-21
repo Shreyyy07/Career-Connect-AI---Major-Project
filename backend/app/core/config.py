@@ -19,9 +19,13 @@ class Settings(BaseSettings):
     github_ai_endpoint: str = "https://models.github.ai/inference"
     github_ai_model: str = "openai/gpt-4.1"
 
-    # --- SMTP Config ---
+    # --- SMTP Config (local dev fallback) ---
     smtp_email: str = ""
     smtp_password: str = ""
+
+    # --- Resend HTTP Email API (works on Hugging Face / any cloud) ---
+    resend_api_key: str = ""
+    resend_from_email: str = "Career Connect AI <onboarding@resend.dev>"
 
     # --- n8n Voice Agent Integration ---
     n8n_webhook_url: str = ""       # e.g. http://localhost:5678/webhook/care-connect-remind

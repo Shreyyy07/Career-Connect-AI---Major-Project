@@ -1,6 +1,7 @@
 import logging
 import random
 import string
+import json
 from datetime import datetime, timedelta, timezone
 
 logger = logging.getLogger(__name__)
@@ -16,6 +17,7 @@ from ..schemas import (
     ForgotPasswordRequest, ResetPasswordOTPRequest
 )
 import smtplib
+import httpx
 from email.message import EmailMessage
 import os
 from ..core.config import settings
@@ -61,32 +63,77 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
 
     success = _send_otp_email(user.email, otp)
     if not success:
-        # If email fails, rollback so they can try again and let them know.
-        db.delete(user)
-        db.commit()
-        raise HTTPException(status_code=500, detail="Failed to dispatch verification email. Please check SMTP App Password.")
+        # Email failed (e.g. SMTP blocked on cloud). User is still created.
+        # They can use "Resend verification email" on the verify page.
+        logger.warning(f"[EMAIL] OTP email failed for {user.email}. User created but unverified.")
 
     # Return empty token so frontend knows it must verify email next
     return AuthResponse(userID=user.id, token="")
 
-def _send_otp_email(to_email: str, otp: str):
+def _send_email_via_resend(to_email: str, subject: str, html_content: str, text_content: str) -> bool:
+    """Send email via Resend HTTP API — works on any cloud host including Hugging Face."""
+    try:
+        response = httpx.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {settings.resend_api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": settings.resend_from_email,
+                "to": [to_email],
+                "subject": subject,
+                "html": html_content,
+                "text": text_content,
+            },
+            timeout=10.0,
+        )
+        if response.status_code in (200, 201):
+            logger.info(f"[EMAIL] Sent via Resend to {to_email}")
+            return True
+        else:
+            logger.error(f"[EMAIL] Resend error {response.status_code}: {response.text}")
+            return False
+    except Exception as e:
+        logger.error(f"[EMAIL] Resend request failed: {e}")
+        return False
+
+
+def _send_email_via_smtp(to_email: str, subject: str, html_content: str, text_content: str) -> bool:
+    """Fallback SMTP sender for local dev (blocked on most cloud hosts)."""
     smtp_user = settings.smtp_email
     smtp_pass = settings.smtp_password
     if not smtp_user or not smtp_pass:
-        logger.warning("[DEV] Missing SMTP config — OTP email not sent (check SMTP_EMAIL/SMTP_PASSWORD in .env)")
-        return True # Dev fallback: allow registration to succeed so local testing continues
-
+        logger.warning("[DEV] Missing SMTP config — email not sent")
+        return False
     try:
         msg = EmailMessage()
-        msg["Subject"] = "Verify your email - Career Connect AI"
+        msg["Subject"] = subject
         msg["From"] = f"Career Connect AI <{smtp_user}>"
         msg["To"] = to_email
-        
-        # Set plaintext fallback
-        msg.set_content(f"Hello,\n\nYour Career Connect AI verification code is: {otp}\n\nThis code will expire in 15 minutes.\n\nThank you!")
+        msg.set_content(text_content)
+        msg.add_alternative(html_content, subtype="html")
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+        logger.info(f"[EMAIL] Sent via SMTP to {to_email}")
+        return True
+    except Exception as e:
+        logger.error(f"[EMAIL] SMTP failed for {to_email}: {e}")
+        return False
 
-        # Add Beautiful HTML version matching Loveable screenshot style
-        html_content = f"""
+
+def _send_email(to_email: str, subject: str, html_content: str, text_content: str) -> bool:
+    """Route email through Resend (preferred) or SMTP (local dev fallback)."""
+    if settings.resend_api_key:
+        return _send_email_via_resend(to_email, subject, html_content, text_content)
+    return _send_email_via_smtp(to_email, subject, html_content, text_content)
+
+
+def _send_otp_email(to_email: str, otp: str) -> bool:
+    subject = "Verify your email - Career Connect AI"
+    text_content = f"Hello,\n\nYour Career Connect AI verification code is: {otp}\n\nThis code will expire in 15 minutes.\n\nThank you!"
+    html_content = f"""
         <!DOCTYPE html>
         <html>
         <head>
@@ -111,9 +158,7 @@ def _send_otp_email(to_email: str, otp: str):
                     vertical-align: middle;
                     margin-right: 8px;
                 }}
-                .highlight {{
-                    color: #00e5ff;
-                }}
+                .highlight {{ color: #00e5ff; }}
                 .container {{
                     max-width: 480px;
                     margin: 0 auto;
@@ -123,24 +168,9 @@ def _send_otp_email(to_email: str, otp: str):
                     padding: 45px 40px;
                     box-shadow: 0 4px 15px rgba(0,0,0,0.03);
                 }}
-                h1 {{
-                    font-size: 22px;
-                    color: #1f2328;
-                    margin-bottom: 12px;
-                    margin-top: 0;
-                    font-weight: 700;
-                    letter-spacing: -0.3px;
-                }}
-                p {{
-                    font-size: 15px;
-                    line-height: 1.6;
-                    color: #424a53;
-                    margin-bottom: 30px;
-                }}
-                .otp-box {{
-                    text-align: center;
-                    margin-bottom: 20px;
-                }}
+                h1 {{ font-size: 22px; color: #1f2328; margin-bottom: 12px; margin-top: 0; font-weight: 700; }}
+                p {{ font-size: 15px; line-height: 1.6; color: #424a53; margin-bottom: 30px; }}
+                .otp-box {{ text-align: center; margin-bottom: 20px; }}
                 .otp-button {{
                     display: inline-block;
                     background-color: #00e5ff;
@@ -150,16 +180,9 @@ def _send_otp_email(to_email: str, otp: str):
                     letter-spacing: 8px;
                     padding: 16px 32px;
                     border-radius: 12px;
-                    text-decoration: none;
-                    margin: 0 auto;
                     box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
                 }}
-                .footer {{
-                    text-align: center;
-                    margin-top: 35px;
-                    font-size: 13px;
-                    color: #8c959f;
-                }}
+                .footer {{ text-align: center; margin-top: 35px; font-size: 13px; color: #8c959f; }}
             </style>
         </head>
         <body>
@@ -170,11 +193,7 @@ def _send_otp_email(to_email: str, otp: str):
             <div class="container">
                 <h1>Verify your <b>Career<span class="highlight">Connect</span></b> email</h1>
                 <p>Welcome to CareerConnect. Please use the verification code below to securely verify your email address and activate your sign in.</p>
-                
-                <div class="otp-box">
-                    <div class="otp-button">{otp}</div>
-                </div>
-                
+                <div class="otp-box"><div class="otp-button">{otp}</div></div>
                 <p style="font-size: 13px; color: #6e7781; margin-bottom: 0; margin-top: 30px;">
                     This code will expire in 15 minutes. If you did not request this, you can safely ignore this email.
                 </p>
@@ -182,17 +201,8 @@ def _send_otp_email(to_email: str, otp: str):
             <div class="footer">Recruitment. Redesigned.</div>
         </body>
         </html>
-        """
-        msg.add_alternative(html_content, subtype='html')
-
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(smtp_user, smtp_pass)
-            server.send_message(msg)
-        logger.info(f"[EMAIL] Verification email sent to {to_email}")
-        return True
-    except Exception as e:
-        logger.error(f"[EMAIL] Failed to send to {to_email}: {e}")
-        return False
+    """
+    return _send_email(to_email, subject, html_content, text_content)
 
 @router.post("/verify-email", response_model=AuthResponse)
 def verify_email(payload: VerifyEmailRequest, db: Session = Depends(get_db)):
@@ -238,21 +248,10 @@ def resend_verification(payload: ResendVerificationRequest, db: Session = Depend
 # Password Reset Logic
 # ──────────────────────────────────────────────────────────────────
 
-def _send_password_reset_email(to_email: str, otp: str):
-    smtp_user = settings.smtp_email
-    smtp_pass = settings.smtp_password
-    if not smtp_user or not smtp_pass:
-        logger.warning("[DEV] Missing SMTP config — reset OTP email not sent")
-        return True
-
-    try:
-        msg = EmailMessage()
-        msg["Subject"] = "Reset your password - Career Connect AI"
-        msg["From"] = f"Career Connect AI <{smtp_user}>"
-        msg["To"] = to_email
-        msg.set_content(f"Hello,\n\nYour Career Connect AI password reset code is: {otp}\n\nThis code will expire in 10 minutes.\n\nThank you!")
-        
-        html_content = f"""
+def _send_password_reset_email(to_email: str, otp: str) -> bool:
+    subject = "Reset your password - Career Connect AI"
+    text_content = f"Hello,\n\nYour Career Connect AI password reset code is: {otp}\n\nThis code will expire in 10 minutes.\n\nThank you!"
+    html_content = f"""
         <!DOCTYPE html>
         <html>
         <head>
@@ -277,16 +276,8 @@ def _send_password_reset_email(to_email: str, otp: str):
             </div>
         </body>
         </html>
-        """
-        msg.add_alternative(html_content, subtype='html')
-
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(smtp_user, smtp_pass)
-            server.send_message(msg)
-        return True
-    except Exception as e:
-        logger.error(f"[EMAIL] Failed to send reset email to {to_email}: {e}")
-        return False
+    """
+    return _send_email(to_email, subject, html_content, text_content)
 
 @router.post("/forgot-password")
 def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
