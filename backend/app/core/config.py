@@ -27,6 +27,11 @@ class Settings(BaseSettings):
     resend_api_key: str = ""
     resend_from_email: str = "Career Connect AI <onboarding@resend.dev>"
 
+    # --- Brevo (Sendinblue) Email API — free, no domain needed, just verify your Gmail ---
+    brevo_api_key: str = ""           # xkeysib-... from brevo.com → SMTP & API → API Keys
+    brevo_from_email: str = ""        # e.g. learn.with.shrey27@gmail.com (must be verified in Brevo)
+    brevo_from_name: str = "Career Connect AI"
+
     # --- n8n Voice Agent Integration ---
     n8n_webhook_url: str = ""       # e.g. http://localhost:5678/webhook/care-connect-remind
     vapi_api_key: str = ""          # Vapi.ai API key (optional — for direct calls)

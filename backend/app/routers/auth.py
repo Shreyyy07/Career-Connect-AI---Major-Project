@@ -123,8 +123,43 @@ def _send_email_via_smtp(to_email: str, subject: str, html_content: str, text_co
         return False
 
 
+def _send_email_via_brevo(to_email: str, subject: str, html_content: str, text_content: str) -> bool:
+    """Send email via Brevo (Sendinblue) HTTP API — free, no domain needed, just a verified Gmail."""
+    try:
+        response = httpx.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={
+                "api-key": settings.brevo_api_key,
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            json={
+                "sender": {
+                    "name": settings.brevo_from_name,
+                    "email": settings.brevo_from_email,
+                },
+                "to": [{"email": to_email}],
+                "subject": subject,
+                "htmlContent": html_content,
+                "textContent": text_content,
+            },
+            timeout=10.0,
+        )
+        if response.status_code in (200, 201):
+            logger.info(f"[EMAIL] Sent via Brevo to {to_email}")
+            return True
+        else:
+            logger.error(f"[EMAIL] Brevo error {response.status_code}: {response.text}")
+            return False
+    except Exception as e:
+        logger.error(f"[EMAIL] Brevo request failed: {e}")
+        return False
+
+
 def _send_email(to_email: str, subject: str, html_content: str, text_content: str) -> bool:
-    """Route email through Resend (preferred) or SMTP (local dev fallback)."""
+    """Route: Brevo (free, no domain) → Resend (has domain) → SMTP (local dev)."""
+    if settings.brevo_api_key and settings.brevo_from_email:
+        return _send_email_via_brevo(to_email, subject, html_content, text_content)
     if settings.resend_api_key:
         return _send_email_via_resend(to_email, subject, html_content, text_content)
     return _send_email_via_smtp(to_email, subject, html_content, text_content)
