@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     github_ai_endpoint: str = "https://models.github.ai/inference"
     github_ai_model: str = "openai/gpt-4.1"
 
+    # --- SMTP Config (local dev fallback) ---
+    smtp_email: str = ""
+    smtp_password: str = ""
+
     # --- Brevo (Sendinblue) Email API — free, no domain needed, just verify your Gmail ---
     brevo_api_key: str = ""           # xkeysib-... from brevo.com → SMTP & API → API Keys
     brevo_from_email: str = ""        # e.g. learn.with.shrey27@gmail.com (must be verified in Brevo)

@@ -70,8 +70,34 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     # Return empty token so frontend knows it must verify email next
     return AuthResponse(userID=user.id, token="")
 
+import smtplib
+from email.message import EmailMessage
+
+def _send_email_via_smtp(to_email: str, subject: str, html_content: str, text_content: str) -> bool:
+    """Send via Gmail SMTP (works locally, might be blocked on Hugging Face)."""
+    smtp_user = settings.smtp_email
+    smtp_pass = settings.smtp_password
+    if not smtp_user or not smtp_pass:
+        logger.warning("[DEV] Missing SMTP config — email not sent")
+        return False
+    try:
+        msg = EmailMessage()
+        msg["Subject"] = subject
+        msg["From"] = f"Career Connect AI <{smtp_user}>"
+        msg["To"] = to_email
+        msg.set_content(text_content)
+        msg.add_alternative(html_content, subtype="html")
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+        logger.info(f"[EMAIL] Sent via SMTP to {to_email}")
+        return True
+    except Exception as e:
+        logger.error(f"[EMAIL] SMTP failed for {to_email}: {e}")
+        return False
+
 def _send_email_via_brevo(to_email: str, subject: str, html_content: str, text_content: str) -> bool:
-    """Send email via Brevo (Sendinblue) HTTP API — free, no domain needed, just a verified Gmail."""
+    """Send email via Brevo (Sendinblue) HTTP API."""
     try:
         response = httpx.post(
             "https://api.brevo.com/v3/smtp/email",
@@ -104,10 +130,17 @@ def _send_email_via_brevo(to_email: str, subject: str, html_content: str, text_c
 
 
 def _send_email(to_email: str, subject: str, html_content: str, text_content: str) -> bool:
-    """Route: Brevo (free, no domain)."""
+    """Route: SMTP (Local Gmail) → Brevo."""
+    # 1. Try Gmail SMTP first (best for local dev)
+    if settings.smtp_email and settings.smtp_password:
+        success = _send_email_via_smtp(to_email, subject, html_content, text_content)
+        if success: return True
+        
+    # 2. Try Brevo
     if settings.brevo_api_key and settings.brevo_from_email:
         return _send_email_via_brevo(to_email, subject, html_content, text_content)
-    logger.warning("[DEV] Missing Brevo config — email not sent")
+        
+    logger.warning("[DEV] Missing both SMTP and Brevo config — email not sent")
     return False
 
 
